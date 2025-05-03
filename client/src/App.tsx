@@ -23,6 +23,8 @@ function Router() {
       <Route path="/auth" component={AuthPage} />
       <Route path="/projects" component={ProjectsPage} />
       <Route path="/projects/:id" component={ProjectDetails} />
+      <Route path="/about" component={() => import("@/pages/about-page").then(module => <module.default />)} />
+      <Route path="/contacts" component={() => import("@/pages/contacts-page").then(module => <module.default />)} />
       
       {/* Temporarily convert to regular routes for debugging */}
       <Route path="/dashboard/volunteer" component={VolunteerDashboard} />
