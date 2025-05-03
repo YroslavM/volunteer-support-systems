@@ -58,6 +58,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           role: userRole as any,
           password: '', // Not needed for client
           isVerified: true,
+          isBlocked: false,
           verificationToken: null,
           createdAt: new Date(),
           firstName: username,
@@ -241,6 +242,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           role: userRole as any,
           password: '',
           isVerified: true,
+          isBlocked: false,
           verificationToken: null,
           createdAt: new Date(),
           firstName: credentials.email.split('@')[0],
@@ -282,6 +284,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           role: data.role as any,
           password: '',
           isVerified: true,
+          isBlocked: false,
           verificationToken: null,
           createdAt: new Date(),
           firstName: data.firstName || data.username || data.email.split('@')[0],
