@@ -49,16 +49,18 @@ function Router() {
 
 function App() {
   return (
-    <TooltipProvider>
-      <div className="flex flex-col min-h-screen">
-        <Header />
-        <main className="flex-grow">
-          <Router />
-        </main>
-        <Footer />
-        <Toaster />
-      </div>
-    </TooltipProvider>
+    <AuthProvider>
+      <TooltipProvider>
+        <div className="flex flex-col min-h-screen">
+          <Header />
+          <main className="flex-grow">
+            <Router />
+          </main>
+          <Footer />
+          <Toaster />
+        </div>
+      </TooltipProvider>
+    </AuthProvider>
   );
 }
 
