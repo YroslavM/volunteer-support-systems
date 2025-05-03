@@ -1,0 +1,591 @@
+import type { Express, Request, Response } from "express";
+import { createServer, type Server } from "http";
+import { storage } from "./storage";
+import { setupAuth } from "./auth";
+import { z } from "zod";
+import { 
+  insertProjectSchema, 
+  insertTaskSchema, 
+  insertApplicationSchema,
+  insertDonationSchema,
+  insertReportSchema,
+  projectStatusEnum,
+  taskStatusEnum,
+  applicationStatusEnum
+} from "@shared/schema";
+
+// Function to check if user is authenticated
+function isAuthenticated(req: Request, res: Response, next: Function) {
+  if (req.isAuthenticated()) {
+    return next();
+  }
+  res.status(401).json({ message: "Необхідна авторизація" });
+}
+
+// Check if user has required role
+function hasRole(roles: string[]) {
+  return (req: Request, res: Response, next: Function) => {
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ message: "Необхідна авторизація" });
+    }
+    
+    if (!roles.includes(req.user!.role)) {
+      return res.status(403).json({ message: "Недостатньо прав для цієї дії" });
+    }
+    
+    next();
+  };
+}
+
+export async function registerRoutes(app: Express): Promise<Server> {
+  // Setup authentication
+  setupAuth(app);
+
+  // =========================
+  // Project Routes
+  // =========================
+  
+  // Get all projects
+  app.get("/api/projects", async (req, res, next) => {
+    try {
+      const querySchema = z.object({
+        status: z.enum(projectStatusEnum.enumValues).optional(),
+        search: z.string().optional(),
+        limit: z.coerce.number().optional(),
+        offset: z.coerce.number().optional(),
+      }).optional();
+      
+      const { status, search, limit = 20, offset = 0 } = querySchema.parse(req.query);
+      
+      const projects = await storage.getProjects({ status, search, limit, offset });
+      res.json(projects);
+    } catch (error) {
+      next(error);
+    }
+  });
+  
+  // Get project by ID
+  app.get("/api/projects/:id", async (req, res, next) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ message: "Некоректний ID проєкту" });
+      }
+      
+      const project = await storage.getProjectById(id);
+      if (!project) {
+        return res.status(404).json({ message: "Проєкт не знайдено" });
+      }
+      
+      res.json(project);
+    } catch (error) {
+      next(error);
+    }
+  });
+  
+  // Create new project (only for coordinators)
+  app.post("/api/projects", hasRole(["coordinator"]), async (req, res, next) => {
+    try {
+      const data = insertProjectSchema.parse(req.body);
+      
+      const project = await storage.createProject({
+        ...data,
+        coordinatorId: req.user!.id,
+      });
+      
+      res.status(201).json(project);
+    } catch (error) {
+      next(error);
+    }
+  });
+  
+  // Update project status (only for coordinators)
+  app.patch("/api/projects/:id/status", hasRole(["coordinator"]), async (req, res, next) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ message: "Некоректний ID проєкту" });
+      }
+      
+      const { status } = z.object({
+        status: z.enum(projectStatusEnum.enumValues),
+      }).parse(req.body);
+      
+      const project = await storage.getProjectById(id);
+      if (!project) {
+        return res.status(404).json({ message: "Проєкт не знайдено" });
+      }
+      
+      // Check if user is the coordinator of this project
+      if (project.coordinatorId !== req.user!.id) {
+        return res.status(403).json({ message: "Ви не є координатором цього проєкту" });
+      }
+      
+      const updatedProject = await storage.updateProjectStatus(id, status);
+      res.json(updatedProject);
+    } catch (error) {
+      next(error);
+    }
+  });
+  
+  // =========================
+  // Task Routes
+  // =========================
+  
+  // Get tasks for a project
+  app.get("/api/projects/:projectId/tasks", isAuthenticated, async (req, res, next) => {
+    try {
+      const projectId = parseInt(req.params.projectId);
+      if (isNaN(projectId)) {
+        return res.status(400).json({ message: "Некоректний ID проєкту" });
+      }
+      
+      const project = await storage.getProjectById(projectId);
+      if (!project) {
+        return res.status(404).json({ message: "Проєкт не знайдено" });
+      }
+      
+      // Check if user is coordinator or volunteer assigned to this project
+      const isCoordinator = req.user!.role === "coordinator" && project.coordinatorId === req.user!.id;
+      const isAssignedVolunteer = req.user!.role === "volunteer" && 
+        await storage.isVolunteerAssignedToProject(req.user!.id, projectId);
+      
+      if (!isCoordinator && !isAssignedVolunteer) {
+        return res.status(403).json({ message: "Недостатньо прав для цієї дії" });
+      }
+      
+      const tasks = await storage.getTasksByProjectId(projectId);
+      res.json(tasks);
+    } catch (error) {
+      next(error);
+    }
+  });
+  
+  // Create task for a project (only for coordinators)
+  app.post("/api/projects/:projectId/tasks", hasRole(["coordinator"]), async (req, res, next) => {
+    try {
+      const projectId = parseInt(req.params.projectId);
+      if (isNaN(projectId)) {
+        return res.status(400).json({ message: "Некоректний ID проєкту" });
+      }
+      
+      const project = await storage.getProjectById(projectId);
+      if (!project) {
+        return res.status(404).json({ message: "Проєкт не знайдено" });
+      }
+      
+      // Check if user is the coordinator of this project
+      if (project.coordinatorId !== req.user!.id) {
+        return res.status(403).json({ message: "Ви не є координатором цього проєкту" });
+      }
+      
+      const data = insertTaskSchema.parse(req.body);
+      
+      const task = await storage.createTask({
+        ...data,
+        projectId,
+      });
+      
+      res.status(201).json(task);
+    } catch (error) {
+      next(error);
+    }
+  });
+  
+  // Assign task to volunteer (only for coordinators)
+  app.patch("/api/tasks/:id/assign", hasRole(["coordinator"]), async (req, res, next) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ message: "Некоректний ID завдання" });
+      }
+      
+      const { volunteerId } = z.object({
+        volunteerId: z.number(),
+      }).parse(req.body);
+      
+      const task = await storage.getTaskById(id);
+      if (!task) {
+        return res.status(404).json({ message: "Завдання не знайдено" });
+      }
+      
+      const project = await storage.getProjectById(task.projectId);
+      if (!project) {
+        return res.status(404).json({ message: "Проєкт не знайдено" });
+      }
+      
+      // Check if user is the coordinator of this project
+      if (project.coordinatorId !== req.user!.id) {
+        return res.status(403).json({ message: "Ви не є координатором цього проєкту" });
+      }
+      
+      // Check if volunteer is assigned to this project
+      const isAssigned = await storage.isVolunteerAssignedToProject(volunteerId, task.projectId);
+      if (!isAssigned) {
+        return res.status(400).json({ message: "Волонтер не призначений до цього проєкту" });
+      }
+      
+      const updatedTask = await storage.assignTaskToVolunteer(id, volunteerId);
+      res.json(updatedTask);
+    } catch (error) {
+      next(error);
+    }
+  });
+  
+  // Update task status
+  app.patch("/api/tasks/:id/status", isAuthenticated, async (req, res, next) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ message: "Некоректний ID завдання" });
+      }
+      
+      const { status } = z.object({
+        status: z.enum(taskStatusEnum.enumValues),
+      }).parse(req.body);
+      
+      const task = await storage.getTaskById(id);
+      if (!task) {
+        return res.status(404).json({ message: "Завдання не знайдено" });
+      }
+      
+      const project = await storage.getProjectById(task.projectId);
+      if (!project) {
+        return res.status(404).json({ message: "Проєкт не знайдено" });
+      }
+      
+      // Check if user is the coordinator of this project or the assigned volunteer
+      const isCoordinator = req.user!.role === "coordinator" && project.coordinatorId === req.user!.id;
+      const isAssignedVolunteer = req.user!.role === "volunteer" && task.volunteerId === req.user!.id;
+      
+      if (!isCoordinator && !isAssignedVolunteer) {
+        return res.status(403).json({ message: "Недостатньо прав для цієї дії" });
+      }
+      
+      const updatedTask = await storage.updateTaskStatus(id, status);
+      res.json(updatedTask);
+    } catch (error) {
+      next(error);
+    }
+  });
+  
+  // =========================
+  // Report Routes
+  // =========================
+  
+  // Submit report for a task
+  app.post("/api/tasks/:taskId/reports", hasRole(["volunteer"]), async (req, res, next) => {
+    try {
+      const taskId = parseInt(req.params.taskId);
+      if (isNaN(taskId)) {
+        return res.status(400).json({ message: "Некоректний ID завдання" });
+      }
+      
+      const task = await storage.getTaskById(taskId);
+      if (!task) {
+        return res.status(404).json({ message: "Завдання не знайдено" });
+      }
+      
+      // Check if user is assigned to this task
+      if (task.volunteerId !== req.user!.id) {
+        return res.status(403).json({ message: "Ви не призначені до цього завдання" });
+      }
+      
+      const data = insertReportSchema.parse(req.body);
+      
+      const report = await storage.createReport({
+        ...data,
+        taskId,
+      });
+      
+      // Update task status to completed
+      await storage.updateTaskStatus(taskId, "completed");
+      
+      res.status(201).json(report);
+    } catch (error) {
+      next(error);
+    }
+  });
+  
+  // Get reports for a task
+  app.get("/api/tasks/:taskId/reports", isAuthenticated, async (req, res, next) => {
+    try {
+      const taskId = parseInt(req.params.taskId);
+      if (isNaN(taskId)) {
+        return res.status(400).json({ message: "Некоректний ID завдання" });
+      }
+      
+      const task = await storage.getTaskById(taskId);
+      if (!task) {
+        return res.status(404).json({ message: "Завдання не знайдено" });
+      }
+      
+      const project = await storage.getProjectById(task.projectId);
+      if (!project) {
+        return res.status(404).json({ message: "Проєкт не знайдено" });
+      }
+      
+      // Check if user is the coordinator of this project or the assigned volunteer
+      const isCoordinator = req.user!.role === "coordinator" && project.coordinatorId === req.user!.id;
+      const isAssignedVolunteer = req.user!.role === "volunteer" && task.volunteerId === req.user!.id;
+      
+      if (!isCoordinator && !isAssignedVolunteer) {
+        return res.status(403).json({ message: "Недостатньо прав для цієї дії" });
+      }
+      
+      const reports = await storage.getReportsByTaskId(taskId);
+      res.json(reports);
+    } catch (error) {
+      next(error);
+    }
+  });
+  
+  // =========================
+  // Application Routes
+  // =========================
+  
+  // Apply to a project as volunteer
+  app.post("/api/projects/:projectId/apply", hasRole(["volunteer"]), async (req, res, next) => {
+    try {
+      const projectId = parseInt(req.params.projectId);
+      if (isNaN(projectId)) {
+        return res.status(400).json({ message: "Некоректний ID проєкту" });
+      }
+      
+      const project = await storage.getProjectById(projectId);
+      if (!project) {
+        return res.status(404).json({ message: "Проєкт не знайдено" });
+      }
+      
+      // Check if project is in a valid state for applications
+      if (project.status !== "in_progress") {
+        return res.status(400).json({ message: "Проєкт не приймає заявки в даний момент" });
+      }
+      
+      // Check if volunteer has already applied
+      const existingApplication = await storage.getApplicationByVolunteerAndProject(
+        req.user!.id, 
+        projectId
+      );
+      
+      if (existingApplication) {
+        return res.status(400).json({ message: "Ви вже подали заявку на цей проєкт" });
+      }
+      
+      const data = insertApplicationSchema.parse(req.body);
+      
+      const application = await storage.createApplication({
+        ...data,
+        projectId,
+        volunteerId: req.user!.id,
+      });
+      
+      res.status(201).json(application);
+    } catch (error) {
+      next(error);
+    }
+  });
+  
+  // Get applications for a project (coordinator only)
+  app.get("/api/projects/:projectId/applications", hasRole(["coordinator"]), async (req, res, next) => {
+    try {
+      const projectId = parseInt(req.params.projectId);
+      if (isNaN(projectId)) {
+        return res.status(400).json({ message: "Некоректний ID проєкту" });
+      }
+      
+      const project = await storage.getProjectById(projectId);
+      if (!project) {
+        return res.status(404).json({ message: "Проєкт не знайдено" });
+      }
+      
+      // Check if user is the coordinator of this project
+      if (project.coordinatorId !== req.user!.id) {
+        return res.status(403).json({ message: "Ви не є координатором цього проєкту" });
+      }
+      
+      const applications = await storage.getApplicationsByProjectId(projectId);
+      res.json(applications);
+    } catch (error) {
+      next(error);
+    }
+  });
+  
+  // Update application status (coordinator only)
+  app.patch("/api/applications/:id/status", hasRole(["coordinator"]), async (req, res, next) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ message: "Некоректний ID заявки" });
+      }
+      
+      const { status } = z.object({
+        status: z.enum(applicationStatusEnum.enumValues),
+      }).parse(req.body);
+      
+      const application = await storage.getApplicationById(id);
+      if (!application) {
+        return res.status(404).json({ message: "Заявку не знайдено" });
+      }
+      
+      const project = await storage.getProjectById(application.projectId);
+      if (!project) {
+        return res.status(404).json({ message: "Проєкт не знайдено" });
+      }
+      
+      // Check if user is the coordinator of this project
+      if (project.coordinatorId !== req.user!.id) {
+        return res.status(403).json({ message: "Ви не є координатором цього проєкту" });
+      }
+      
+      const updatedApplication = await storage.updateApplicationStatus(id, status);
+      res.json(updatedApplication);
+    } catch (error) {
+      next(error);
+    }
+  });
+  
+  // =========================
+  // Donation Routes
+  // =========================
+  
+  // Make a donation to a project
+  app.post("/api/projects/:projectId/donate", isAuthenticated, async (req, res, next) => {
+    try {
+      const projectId = parseInt(req.params.projectId);
+      if (isNaN(projectId)) {
+        return res.status(400).json({ message: "Некоректний ID проєкту" });
+      }
+      
+      const project = await storage.getProjectById(projectId);
+      if (!project) {
+        return res.status(404).json({ message: "Проєкт не знайдено" });
+      }
+      
+      // Check if project is in a valid state for donations
+      if (project.status !== "funding") {
+        return res.status(400).json({ message: "Проєкт не приймає пожертви в даний момент" });
+      }
+      
+      const data = insertDonationSchema.parse(req.body);
+      
+      // In a real app, we would integrate with a payment processor here
+      // For this demo, we'll just create the donation record
+      
+      const donation = await storage.createDonation({
+        ...data,
+        projectId,
+        donorId: req.user!.id,
+      });
+      
+      // Update the project's collected amount
+      await storage.updateProjectCollectedAmount(projectId, data.amount);
+      
+      // Check if project has reached its target amount
+      if (project.collectedAmount + data.amount >= project.targetAmount) {
+        await storage.updateProjectStatus(projectId, "in_progress");
+      }
+      
+      res.status(201).json(donation);
+    } catch (error) {
+      next(error);
+    }
+  });
+  
+  // Get donations for a project (coordinator only)
+  app.get("/api/projects/:projectId/donations", hasRole(["coordinator"]), async (req, res, next) => {
+    try {
+      const projectId = parseInt(req.params.projectId);
+      if (isNaN(projectId)) {
+        return res.status(400).json({ message: "Некоректний ID проєкту" });
+      }
+      
+      const project = await storage.getProjectById(projectId);
+      if (!project) {
+        return res.status(404).json({ message: "Проєкт не знайдено" });
+      }
+      
+      // Check if user is the coordinator of this project
+      if (project.coordinatorId !== req.user!.id) {
+        return res.status(403).json({ message: "Ви не є координатором цього проєкту" });
+      }
+      
+      const donations = await storage.getDonationsByProjectId(projectId);
+      res.json(donations);
+    } catch (error) {
+      next(error);
+    }
+  });
+  
+  // Get donations made by the current user
+  app.get("/api/user/donations", isAuthenticated, async (req, res, next) => {
+    try {
+      const donations = await storage.getDonationsByUserId(req.user!.id);
+      res.json(donations);
+    } catch (error) {
+      next(error);
+    }
+  });
+
+  // =========================
+  // User Routes
+  // =========================
+  
+  // Get volunteers for a project (coordinator only)
+  app.get("/api/projects/:projectId/volunteers", hasRole(["coordinator"]), async (req, res, next) => {
+    try {
+      const projectId = parseInt(req.params.projectId);
+      if (isNaN(projectId)) {
+        return res.status(400).json({ message: "Некоректний ID проєкту" });
+      }
+      
+      const project = await storage.getProjectById(projectId);
+      if (!project) {
+        return res.status(404).json({ message: "Проєкт не знайдено" });
+      }
+      
+      // Check if user is the coordinator of this project
+      if (project.coordinatorId !== req.user!.id) {
+        return res.status(403).json({ message: "Ви не є координатором цього проєкту" });
+      }
+      
+      const volunteers = await storage.getVolunteersByProjectId(projectId);
+      res.json(volunteers);
+    } catch (error) {
+      next(error);
+    }
+  });
+
+  // Get projects for current volunteer
+  app.get("/api/volunteer/projects", hasRole(["volunteer"]), async (req, res, next) => {
+    try {
+      const projects = await storage.getProjectsForVolunteer(req.user!.id);
+      res.json(projects);
+    } catch (error) {
+      next(error);
+    }
+  });
+
+  // Get tasks for current volunteer
+  app.get("/api/volunteer/tasks", hasRole(["volunteer"]), async (req, res, next) => {
+    try {
+      const tasks = await storage.getTasksForVolunteer(req.user!.id);
+      res.json(tasks);
+    } catch (error) {
+      next(error);
+    }
+  });
+
+  // Get projects for current coordinator
+  app.get("/api/coordinator/projects", hasRole(["coordinator"]), async (req, res, next) => {
+    try {
+      const projects = await storage.getProjectsByCoordinatorId(req.user!.id);
+      res.json(projects);
+    } catch (error) {
+      next(error);
+    }
+  });
+
+  const httpServer = createServer(app);
+  return httpServer;
+}

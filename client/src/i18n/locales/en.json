@@ -1,0 +1,208 @@
+{
+  "app": {
+    "name": "VolunteerHub",
+    "tagline": "Together we change the world"
+  },
+  "nav": {
+    "home": "Home",
+    "projects": "Projects",
+    "about": "About",
+    "contacts": "Contacts",
+    "dashboard": "Dashboard",
+    "profile": "Profile"
+  },
+  "auth": {
+    "login": "Login",
+    "register": "Register",
+    "logout": "Logout",
+    "email": "Email",
+    "username": "Username",
+    "password": "Password",
+    "confirmPassword": "Confirm Password",
+    "role": "Choose role",
+    "firstName": "First Name",
+    "lastName": "Last Name",
+    "rememberMe": "Remember me",
+    "forgotPassword": "Forgot password?",
+    "noAccount": "Don't have an account?",
+    "hasAccount": "Already have an account?",
+    "verifyEmail": "Check your email",
+    "verificationSent": "A verification link has been sent to your email"
+  },
+  "roles": {
+    "volunteer": "Volunteer",
+    "coordinator": "Coordinator",
+    "donor": "Donor"
+  },
+  "home": {
+    "hero": {
+      "title": "Together we change the world",
+      "subtitle": "VolunteerHub unites volunteers, coordinators, and donors to work together on socially important projects.",
+      "joinButton": "Join",
+      "viewProjects": "View Projects"
+    },
+    "mission": {
+      "title": "Our Mission",
+      "subtitle": "How VolunteerHub Works",
+      "description": "Our platform is designed for effective interaction between volunteers, coordinators, and donors."
+    },
+    "roles": {
+      "volunteer": {
+        "title": "Volunteers",
+        "description": "Join projects, receive tasks from coordinators, report on completed work, and help implement changes."
+      },
+      "coordinator": {
+        "title": "Coordinators",
+        "description": "Create projects, organize fundraising, manage volunteers, and control task execution."
+      },
+      "donor": {
+        "title": "Donors",
+        "description": "Support important projects financially, track the use of funds, and see the results of your help."
+      }
+    },
+    "projects": {
+      "title": "Current Projects",
+      "subtitle": "Join projects that need your support right now.",
+      "seeAll": "All Projects",
+      "collected": "Collected",
+      "target": "Target",
+      "donateButton": "Support"
+    },
+    "dashboard": {
+      "title": "User-friendly interface for each role",
+      "subtitle": "Our platform is adapted to the needs of each user, depending on their role in projects."
+    },
+    "testimonials": {
+      "title": "What our users say",
+      "subtitle": "Join the community of people who are changing Ukraine for the better."
+    },
+    "cta": {
+      "title": "Ready to start?",
+      "subtitle": "Join VolunteerHub today."
+    }
+  },
+  "projects": {
+    "status": {
+      "funding": "Fundraising",
+      "in_progress": "In Progress",
+      "completed": "Completed"
+    },
+    "filter": {
+      "title": "Filters",
+      "status": "Status",
+      "search": "Search",
+      "reset": "Reset"
+    },
+    "create": {
+      "title": "Create Project",
+      "name": "Project Name",
+      "description": "Description",
+      "targetAmount": "Target Amount",
+      "imageUrl": "Image URL",
+      "bankDetails": "Bank Details",
+      "submit": "Create Project",
+      "success": "Project created successfully!"
+    },
+    "details": {
+      "coordinator": "Coordinator",
+      "status": "Status",
+      "collected": "Collected",
+      "target": "Target",
+      "donateButton": "Support",
+      "applyButton": "Apply",
+      "tasks": "Tasks",
+      "volunteers": "Volunteers",
+      "donations": "Donations",
+      "noTasks": "No tasks assigned yet"
+    }
+  },
+  "dashboard": {
+    "volunteer": {
+      "title": "Volunteer Dashboard",
+      "currentTasks": "Current Tasks",
+      "availableProjects": "Available Projects",
+      "completedTasks": "Completed Tasks",
+      "applyButton": "Apply"
+    },
+    "coordinator": {
+      "title": "Coordinator Dashboard",
+      "myProjects": "My Projects",
+      "createProjectButton": "New Project",
+      "volunteerApplications": "Volunteer Applications",
+      "approveButton": "Approve",
+      "rejectButton": "Reject",
+      "volunteersButton": "Volunteers",
+      "tasksButton": "Tasks"
+    },
+    "donor": {
+      "title": "Donor Dashboard",
+      "myDonations": "My Donations",
+      "recommendedProjects": "Recommended Projects",
+      "projectDetails": "Project Details",
+      "donateButton": "Support"
+    }
+  },
+  "tasks": {
+    "status": {
+      "pending": "Pending",
+      "in_progress": "In Progress",
+      "completed": "Completed"
+    },
+    "create": {
+      "title": "Create Task",
+      "name": "Task Name",
+      "description": "Description",
+      "deadline": "Deadline",
+      "submit": "Create Task"
+    },
+    "details": {
+      "deadline": "Deadline",
+      "status": "Status",
+      "volunteer": "Assigned Volunteer",
+      "noVolunteer": "Not assigned",
+      "assignButton": "Assign",
+      "reportButton": "Report"
+    },
+    "report": {
+      "title": "Task Report",
+      "comment": "Comment",
+      "imageUrl": "Photo Report URL",
+      "submit": "Submit Report"
+    }
+  },
+  "donate": {
+    "title": "Support Project",
+    "amount": "Amount",
+    "comment": "Comment (optional)",
+    "submit": "Donate",
+    "success": "Thank you for your support!"
+  },
+  "applications": {
+    "status": {
+      "pending": "Pending",
+      "approved": "Approved",
+      "rejected": "Rejected"
+    },
+    "create": {
+      "title": "Application to Participate",
+      "message": "Message (optional)",
+      "submit": "Submit Application"
+    }
+  },
+  "footer": {
+    "rights": "All rights reserved",
+    "privacy": "Privacy Policy",
+    "terms": "Terms of Use"
+  },
+  "common": {
+    "loading": "Loading...",
+    "error": "Error",
+    "success": "Success",
+    "cancel": "Cancel",
+    "save": "Save",
+    "edit": "Edit",
+    "delete": "Delete",
+    "confirm": "Confirm",
+    "back": "Back"
+  }
+}
