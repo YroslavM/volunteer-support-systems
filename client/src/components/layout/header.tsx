@@ -2,7 +2,14 @@ import { useState } from "react";
 import { Link, useLocation } from "wouter";
 import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
-import { VolunteerActivism, Language, Menu, Person } from "@mui/icons-material";
+import { 
+  Select, 
+  SelectContent, 
+  SelectItem, 
+  SelectTrigger, 
+  SelectValue 
+} from "@/components/ui/select";
+import { VolunteerActivism, Menu } from "@mui/icons-material";
 
 // Basic header component without auth for debugging
 export function Header() {
@@ -10,9 +17,8 @@ export function Header() {
   const { t, i18n } = useTranslation();
   const [location] = useLocation();
 
-  const toggleLanguage = () => {
-    const newLang = i18n.language === "uk" ? "en" : "uk";
-    i18n.changeLanguage(newLang);
+  const changeLanguage = (value: string) => {
+    i18n.changeLanguage(value);
   };
 
   const isActive = (path: string) => location === path;
@@ -62,15 +68,19 @@ export function Header() {
             </nav>
           </div>
           <div className="hidden sm:ml-6 sm:flex sm:items-center">
-            <Button 
-              variant="ghost" 
-              size="icon" 
-              onClick={toggleLanguage} 
-              className="mr-4"
-              aria-label="Change language"
+            <Select 
+              value={i18n.language} 
+              onValueChange={changeLanguage}
+              className="mr-4 w-20"
             >
-              <Language className="text-gray-400 hover:text-gray-500" />
-            </Button>
+              <SelectTrigger aria-label="Select language">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="uk">UA</SelectItem>
+                <SelectItem value="en">EN</SelectItem>
+              </SelectContent>
+            </Select>
             
             <div className="flex space-x-2">
               <Link href="/auth">
@@ -133,7 +143,21 @@ export function Header() {
             </Link>
           </div>
           <div className="pt-4 pb-3 border-t border-gray-200">
-            <div className="ml-3">
+            <div className="flex flex-col gap-4 px-4">
+              <div className="w-full max-w-[120px]">
+                <Select 
+                  value={i18n.language} 
+                  onValueChange={changeLanguage}
+                >
+                  <SelectTrigger aria-label="Select language">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="uk">UA</SelectItem>
+                    <SelectItem value="en">EN</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
               <Link href="/auth" className="text-base font-medium text-gray-800 hover:text-primary-600">
                 {t('auth.login')}
               </Link>
