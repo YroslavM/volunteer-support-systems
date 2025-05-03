@@ -16,6 +16,13 @@ import {
   Work,
   LocalAtm,
   HourglassEmpty,
+  ExpandMore,
+  PeopleAlt,
+  LightbulbOutlined,
+  Apartment,
+  EmojiEvents,
+  Diversity3,
+  HandshakeOutlined,
 } from "@mui/icons-material";
 import { SelectProject } from "@shared/schema";
 
@@ -24,8 +31,21 @@ export default function HomePage() {
   const [projects, setProjects] = useState<SelectProject[]>([]);
   const [projectsLoading, setProjectsLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<"volunteer" | "coordinator" | "donor">("volunteer");
+  const [scrolled, setScrolled] = useState(false);
 
   useEffect(() => {
+    // Додаємо обробник прокрутки для анімації
+    const handleScroll = () => {
+      const scrollPosition = window.scrollY;
+      if (scrollPosition > 50) {
+        setScrolled(true);
+      } else {
+        setScrolled(false);
+      }
+    };
+
+    window.addEventListener('scroll', handleScroll);
+    
     // Load projects
     fetch("/api/projects?status=funding")
       .then((res) => res.json())
@@ -37,199 +57,392 @@ export default function HomePage() {
         console.error("Error fetching projects:", error);
         setProjectsLoading(false);
       });
+      
+    return () => {
+      window.removeEventListener('scroll', handleScroll);
+    };
   }, []);
 
   const handleTabChange = (tab: "volunteer" | "coordinator" | "donor") => {
     setActiveTab(tab);
   };
+  
+  const scrollToNextSection = () => {
+    window.scrollTo({
+      top: window.innerHeight,
+      behavior: 'smooth'
+    });
+  };
 
   return (
-    <div>
+    <div className="overflow-hidden">
       {/* Hero Section */}
-      <div className="relative bg-gradient-to-br from-primary-800 to-primary-600 min-h-[80vh] flex items-center">
-        <div className="absolute inset-0 overflow-hidden">
-          <img 
-            className="w-full h-full object-cover opacity-25" 
-            src="https://images.unsplash.com/photo-1593113630400-ea4288922497?ixlib=rb-1.2.1&auto=format&fit=crop&w=1950&q=80" 
-            alt="Volunteers helping" 
-          />
-          <div className="absolute inset-0 bg-gradient-to-r from-primary-900/80 to-primary-600/70" aria-hidden="true"></div>
+      <div className="relative min-h-screen flex flex-col">
+        {/* Фон з сучасним дизайном */}
+        <div className="absolute inset-0 bg-neutral-950 overflow-hidden">
+          {/* Головний фон */}
+          <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(67,56,202,0.12),transparent_40%)]"></div>
+          <div className="absolute inset-0 bg-[radial-gradient(circle_at_bottom_left,rgba(99,102,241,0.1),transparent_40%)]"></div>
+          
+          {/* Мерехтливі кулі (імітація світлодіодів) */}
+          <div className="absolute top-1/4 left-1/3 w-64 h-64 bg-primary-600/20 rounded-full blur-3xl animate-pulse"></div>
+          <div className="absolute bottom-1/4 right-1/3 w-80 h-80 bg-secondary-500/20 rounded-full blur-3xl animate-pulse" style={{ animationDelay: "1s" }}></div>
+          
+          {/* Сітка точок (технічний вигляд) */}
+          <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAiIGhlaWdodD0iMjAiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PGNpcmNsZSBjeD0iMSIgY3k9IjEiIHI9IjEiIGZpbGw9InJnYmEoMjU1LDI1NSwyNTUsMC4wNSkiLz48L3N2Zz4=')] bg-repeat opacity-20"></div>
         </div>
-        <div className="relative max-w-7xl mx-auto py-24 px-6 sm:py-32 sm:px-8 lg:px-12 z-10">
-          <div className="max-w-3xl backdrop-blur-sm bg-white/5 p-8 rounded-2xl border border-white/10 shadow-2xl">
-            <h1 className="text-4xl font-extrabold tracking-tight sm:text-5xl lg:text-6xl font-heading bg-gradient-to-r from-yellow-200 via-yellow-100 to-white text-transparent bg-clip-text drop-shadow">
-              {t('home.hero.title')}
-            </h1>
-            <div className="h-1 w-24 bg-gradient-to-r from-secondary-500 to-yellow-300 my-8 rounded-full"></div>
-            <p className="text-xl text-yellow-50 font-medium leading-relaxed">
-              {t('home.hero.subtitle')}
-            </p>
-            <div className="mt-12 flex flex-col sm:flex-row gap-6">
-              <Link href="/auth">
-                <button className="w-full sm:w-auto inline-flex items-center justify-center rounded-xl bg-white text-primary-700 border-2 border-primary-700 hover:bg-primary-700 hover:text-white transition-all duration-300 font-medium px-8 py-3.5 text-lg mr-4 mb-4 sm:mb-0">
-                  <span>{t('home.hero.joinButton')}</span>
-                  <ArrowForward className="ml-2 h-5 w-5" />
-                </button>
-              </Link>
-              <Link href="/projects">
-                <button className="w-full sm:w-auto inline-flex items-center justify-center text-black border-black border-2 hover:bg-black hover:text-white transition-all duration-300 font-medium px-8 py-3.5 text-lg rounded-xl">
-                  <span>{t('home.hero.viewProjects')}</span>
-                </button>
-              </Link>
+
+        {/* Основна секція */}
+        <div className="flex-1 relative flex items-center justify-center z-10">
+          <div className="max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-16 sm:py-24">
+            <div className="flex flex-col lg:flex-row items-center gap-12">
+              {/* Текст і кнопки */}
+              <div className="flex-1">
+                <div className={`transition-all duration-700 ${scrolled ? 'opacity-70' : 'opacity-100'}`}>
+                  <div className="inline-flex items-center px-4 py-2 rounded-full bg-primary-900/30 border border-primary-700/50 mb-6 backdrop-blur-sm">
+                    <div className="h-2 w-2 rounded-full bg-green-400 mr-2 animate-pulse"></div>
+                    <span className="text-sm font-medium text-white/90">{t('home.hero.badge') || 'Волонтерство змінює світ'}</span>
+                  </div>
+                  
+                  <h1 className="text-4xl md:text-5xl lg:text-6xl font-extrabold text-white leading-tight mb-6">
+                    <span className="block">
+                      {t('home.hero.title').split(' ').slice(0, 2).join(' ')}
+                    </span>
+                    <span className="text-transparent bg-clip-text bg-gradient-to-r from-primary-400 to-secondary-400">
+                      {t('home.hero.title').split(' ').slice(2).join(' ')}
+                    </span>
+                  </h1>
+                  
+                  <p className="text-xl text-white/70 font-medium leading-relaxed mb-10 max-w-2xl">
+                    {t('home.hero.subtitle')}
+                  </p>
+                  
+                  <div className="flex flex-col sm:flex-row gap-4">
+                    <Link href="/auth">
+                      <button className="flex items-center justify-center px-8 py-4 rounded-xl bg-primary-600 text-white hover:bg-primary-700 transition-all duration-300 shadow-lg shadow-primary-900/20 hover:shadow-primary-800/40">
+                        <span className="font-medium">{t('home.hero.joinButton')}</span>
+                        <ArrowForward className="ml-2 h-5 w-5" />
+                      </button>
+                    </Link>
+                    <Link href="/projects">
+                      <button className="flex items-center justify-center px-8 py-4 rounded-xl border border-white/20 text-white hover:bg-white/10 transition-all duration-300">
+                        <span className="font-medium">{t('home.hero.viewProjects')}</span>
+                      </button>
+                    </Link>
+                  </div>
+                </div>
+              </div>
+              
+              {/* Герб/зображення */}
+              <div className="flex-1 flex justify-center lg:justify-end max-w-md lg:max-w-xl">
+                <div className="w-full relative">
+                  <div className="absolute inset-0 bg-gradient-to-br from-primary-500/20 to-secondary-500/20 rounded-2xl blur-3xl transform scale-95"></div>
+                  <div className="relative rounded-2xl overflow-hidden border border-white/10 bg-gradient-to-b from-white/10 to-white/5 backdrop-blur-sm shadow-xl">
+                    <div className="aspect-[4/3] w-full flex items-center justify-center">
+                      <div className="flex items-center justify-center p-8">
+                        <div className="relative">
+                          <Diversity3 className="h-32 w-32 text-primary-400 opacity-70" />
+                          <div className="absolute -inset-4 rounded-full border-2 border-dashed border-primary-500/50 animate-[spin_16s_linear_infinite]"></div>
+                          <div className="absolute inset-0 flex items-center justify-center">
+                            <HandshakeOutlined className="h-16 w-16 text-white" />
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
         </div>
         
-        <div className="absolute bottom-0 left-0 right-0 h-24 bg-gradient-to-t from-white to-transparent"></div>
+        {/* Кнопка прокрутки вниз */}
+        <div className="absolute bottom-8 left-1/2 transform -translate-x-1/2 z-10">
+          <button 
+            onClick={scrollToNextSection}
+            className="flex items-center justify-center h-12 w-12 rounded-full bg-white/10 backdrop-blur-sm border border-white/20 text-white hover:bg-white/20 transition-all duration-300 animate-bounce"
+            aria-label="Прокрутити вниз"
+          >
+            <ExpandMore className="h-6 w-6" />
+          </button>
+        </div>
       </div>
 
       {/* How It Works Section */}
-      <div className="bg-white py-24">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="lg:text-center mb-16">
-            <span className="inline-block px-3 py-1 text-sm font-medium bg-primary-100 text-primary-800 rounded-full mb-3">
-              {t('home.mission.title')}
-            </span>
-            <h2 className="text-3xl leading-8 font-extrabold tracking-tight text-gray-900 sm:text-4xl font-heading bg-clip-text text-transparent bg-gradient-to-r from-primary-700 to-primary-900">
+      <div className="relative py-24 bg-slate-50 overflow-hidden">
+        {/* Декоративні елементи */}
+        <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-slate-300 to-transparent"></div>
+        <div className="absolute bottom-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-slate-300 to-transparent"></div>
+        <div className="absolute left-0 top-1/3 w-32 h-32 bg-primary-100 opacity-30 rounded-full blur-3xl"></div>
+        <div className="absolute right-0 bottom-1/3 w-32 h-32 bg-primary-100 opacity-20 rounded-full blur-3xl"></div>
+        
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative">
+          {/* Заголовок секції */}
+          <div className="text-center mb-20">
+            <div className="inline-flex items-center px-4 py-2 rounded-full bg-primary-100 border border-primary-200 mb-6">
+              <span className="text-sm font-semibold text-primary-800">{t('home.mission.title')}</span>
+            </div>
+            
+            <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold text-slate-900 mb-6">
               {t('home.mission.subtitle')}
             </h2>
-            <div className="w-24 h-1 bg-gradient-to-r from-primary-500 to-secondary-500 mx-auto my-6 rounded-full"></div>
-            <p className="mt-4 max-w-2xl text-xl text-gray-500 lg:mx-auto">
+            
+            <p className="max-w-2xl mx-auto text-lg text-slate-600">
               {t('home.mission.description')}
             </p>
           </div>
 
-          <div className="mt-10">
-            <dl className="space-y-10 md:space-y-0 md:grid md:grid-cols-3 md:gap-8">
-              <div className="relative bg-white p-6 rounded-2xl shadow-lg transform transition-all duration-200 hover:scale-105 border border-gray-100">
-                <dt>
-                  <div className="absolute flex items-center justify-center h-16 w-16 rounded-xl bg-gradient-to-br from-primary-400 to-primary-600 text-white -top-8 shadow-lg">
-                    <VolunteerActivism className="h-8 w-8" />
+          {/* Картки ролей */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+            {/* Картка волонтера */}
+            <div className="group relative bg-white rounded-2xl overflow-hidden shadow-md transition-all duration-300 hover:shadow-xl border border-slate-200 hover:border-primary-200">
+              <div className="absolute h-1 left-0 right-0 top-0 bg-primary-500 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+              
+              <div className="p-8">
+                <div className="flex items-center mb-6">
+                  <div className="flex items-center justify-center w-14 h-14 rounded-full bg-primary-100 text-primary-600">
+                    <VolunteerActivism className="h-7 w-7" />
                   </div>
-                  <p className="mt-6 text-xl leading-6 font-bold text-gray-900 font-heading">
-                    {t('home.roles.volunteer.title')}
-                  </p>
-                </dt>
-                <dd className="mt-4 text-base text-gray-500">
+                  <h3 className="ml-5 text-xl font-bold text-slate-900">{t('home.roles.volunteer.title')}</h3>
+                </div>
+                
+                <p className="text-slate-600 mb-8 h-32">
                   {t('home.roles.volunteer.description')}
-                </dd>
-                <div className="mt-6">
+                </p>
+                
+                <div className="flex justify-between items-center">
                   <Link href="/auth">
-                    <button className="px-4 py-2 text-primary-700 border border-primary-700 rounded-md hover:bg-primary-50 transition-all duration-300">
-                      {t('common.learnMore')}
+                    <button className="flex items-center text-primary-600 hover:text-primary-800 font-medium transition-colors duration-300">
+                      <span>{t('common.learnMore')}</span>
+                      <ArrowForward className="h-4 w-4 ml-2 opacity-0 -translate-x-2 group-hover:opacity-100 group-hover:translate-x-0 transition-all duration-300" />
                     </button>
                   </Link>
+                  
+                  <span className="flex h-8 w-8 rounded-full bg-primary-50 text-primary-500 items-center justify-center">
+                    <span className="text-sm font-semibold">01</span>
+                  </span>
                 </div>
               </div>
-
-              <div className="relative bg-white p-6 rounded-2xl shadow-lg transform transition-all duration-200 hover:scale-105 border border-gray-100">
-                <dt>
-                  <div className="absolute flex items-center justify-center h-16 w-16 rounded-xl bg-gradient-to-br from-secondary-400 to-secondary-600 text-white -top-8 shadow-lg">
-                    <ManageAccounts className="h-8 w-8" />
+            </div>
+            
+            {/* Картка координатора */}
+            <div className="group relative bg-white rounded-2xl overflow-hidden shadow-md transition-all duration-300 hover:shadow-xl border border-slate-200 hover:border-secondary-200">
+              <div className="absolute h-1 left-0 right-0 top-0 bg-secondary-500 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+              
+              <div className="p-8">
+                <div className="flex items-center mb-6">
+                  <div className="flex items-center justify-center w-14 h-14 rounded-full bg-secondary-100 text-secondary-600">
+                    <ManageAccounts className="h-7 w-7" />
                   </div>
-                  <p className="mt-6 text-xl leading-6 font-bold text-gray-900 font-heading">
-                    {t('home.roles.coordinator.title')}
-                  </p>
-                </dt>
-                <dd className="mt-4 text-base text-gray-500">
+                  <h3 className="ml-5 text-xl font-bold text-slate-900">{t('home.roles.coordinator.title')}</h3>
+                </div>
+                
+                <p className="text-slate-600 mb-8 h-32">
                   {t('home.roles.coordinator.description')}
-                </dd>
-                <div className="mt-6">
+                </p>
+                
+                <div className="flex justify-between items-center">
                   <Link href="/auth">
-                    <button className="px-4 py-2 text-secondary-700 border border-secondary-700 rounded-md hover:bg-secondary-50 transition-all duration-300">
-                      {t('common.learnMore')}
+                    <button className="flex items-center text-secondary-600 hover:text-secondary-800 font-medium transition-colors duration-300">
+                      <span>{t('common.learnMore')}</span>
+                      <ArrowForward className="h-4 w-4 ml-2 opacity-0 -translate-x-2 group-hover:opacity-100 group-hover:translate-x-0 transition-all duration-300" />
                     </button>
                   </Link>
+                  
+                  <span className="flex h-8 w-8 rounded-full bg-secondary-50 text-secondary-500 items-center justify-center">
+                    <span className="text-sm font-semibold">02</span>
+                  </span>
                 </div>
               </div>
-
-              <div className="relative bg-white p-6 rounded-2xl shadow-lg transform transition-all duration-200 hover:scale-105 border border-gray-100">
-                <dt>
-                  <div className="absolute flex items-center justify-center h-16 w-16 rounded-xl bg-gradient-to-br from-yellow-400 to-yellow-600 text-white -top-8 shadow-lg">
-                    <Favorite className="h-8 w-8" />
+            </div>
+            
+            {/* Картка донора */}
+            <div className="group relative bg-white rounded-2xl overflow-hidden shadow-md transition-all duration-300 hover:shadow-xl border border-slate-200 hover:border-yellow-200">
+              <div className="absolute h-1 left-0 right-0 top-0 bg-yellow-500 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+              
+              <div className="p-8">
+                <div className="flex items-center mb-6">
+                  <div className="flex items-center justify-center w-14 h-14 rounded-full bg-yellow-100 text-yellow-600">
+                    <Favorite className="h-7 w-7" />
                   </div>
-                  <p className="mt-6 text-xl leading-6 font-bold text-gray-900 font-heading">
-                    {t('home.roles.donor.title')}
-                  </p>
-                </dt>
-                <dd className="mt-4 text-base text-gray-500">
+                  <h3 className="ml-5 text-xl font-bold text-slate-900">{t('home.roles.donor.title')}</h3>
+                </div>
+                
+                <p className="text-slate-600 mb-8 h-32">
                   {t('home.roles.donor.description')}
-                </dd>
-                <div className="mt-6">
+                </p>
+                
+                <div className="flex justify-between items-center">
                   <Link href="/auth">
-                    <button className="px-4 py-2 text-yellow-600 border border-yellow-600 rounded-md hover:bg-yellow-50 transition-all duration-300">
-                      {t('common.learnMore')}
+                    <button className="flex items-center text-yellow-600 hover:text-yellow-800 font-medium transition-colors duration-300">
+                      <span>{t('common.learnMore')}</span>
+                      <ArrowForward className="h-4 w-4 ml-2 opacity-0 -translate-x-2 group-hover:opacity-100 group-hover:translate-x-0 transition-all duration-300" />
                     </button>
                   </Link>
+                  
+                  <span className="flex h-8 w-8 rounded-full bg-yellow-50 text-yellow-500 items-center justify-center">
+                    <span className="text-sm font-semibold">03</span>
+                  </span>
                 </div>
               </div>
-            </dl>
+            </div>
           </div>
         </div>
       </div>
 
       {/* Active Projects Section */}
-      <div className="bg-gray-50 py-24 relative" id="active-projects">
-        {/* Decorative elements */}
-        <div className="absolute top-0 inset-x-0 h-36 bg-gradient-to-b from-white to-transparent"></div>
-        <div className="absolute left-0 top-1/4 w-32 h-32 bg-gradient-to-br from-primary-200 to-primary-300 opacity-20 rounded-full blur-3xl"></div>
-        <div className="absolute right-0 bottom-1/4 w-48 h-48 bg-gradient-to-tr from-secondary-200 to-secondary-300 opacity-20 rounded-full blur-3xl"></div>
+      <div className="bg-white py-24 relative" id="active-projects">
+        {/* Декоративні елементи заднього плану */}
+        <div className="absolute inset-0 overflow-hidden">
+          <div className="absolute left-0 top-1/4 w-72 h-72 bg-primary-50 opacity-40 rounded-full blur-3xl"></div>
+          <div className="absolute right-0 bottom-1/4 w-72 h-72 bg-secondary-50 opacity-40 rounded-full blur-3xl"></div>
+          <div className="absolute left-1/3 bottom-0 w-48 h-48 bg-slate-100 opacity-30 rounded-full blur-3xl"></div>
+        </div>
         
         <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="lg:text-center mb-16">
-            <span className="inline-block px-3 py-1 text-sm font-medium bg-secondary-100 text-secondary-800 rounded-full mb-3">
-              {t('home.projects.title')}
-            </span>
-            <h2 className="text-3xl leading-8 font-extrabold tracking-tight text-gray-900 sm:text-4xl font-heading bg-clip-text text-transparent bg-gradient-to-r from-secondary-700 to-secondary-900">
+          {/* Заголовок з міткою */}
+          <div className="text-center mb-16">
+            <div className="inline-flex items-center px-4 py-2 rounded-full bg-secondary-100 border border-secondary-200 mb-6">
+              <span className="text-sm font-semibold text-secondary-800">{t('home.projects.title')}</span>
+            </div>
+            
+            <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold text-slate-900 mb-6">
               {t('home.projects.subtitle')}
             </h2>
-            <div className="w-24 h-1 bg-gradient-to-r from-secondary-500 to-primary-500 mx-auto my-6 rounded-full"></div>
+            
+            <p className="max-w-3xl mx-auto text-lg text-slate-600">
+              {t('home.projects.description') || 'Долучайтеся до проєктів, які потребують вашої підтримки вже зараз.'}
+            </p>
           </div>
 
-          <div className="mt-10 grid gap-8 max-w-lg mx-auto lg:grid-cols-3 lg:max-w-none">
-            {projectsLoading ? (
-              // Loading skeleton for projects
-              Array(3).fill(0).map((_, index) => (
-                <div key={index} className="flex flex-col rounded-2xl shadow-lg overflow-hidden bg-white animate-pulse">
-                  <div className="flex-shrink-0 h-56 bg-gray-300"></div>
-                  <div className="flex-1 p-6 flex flex-col justify-between">
-                    <div className="flex-1">
-                      <div className="h-6 bg-gray-300 rounded w-3/4 mb-4"></div>
-                      <div className="h-4 bg-gray-300 rounded w-full mb-2"></div>
-                      <div className="h-4 bg-gray-300 rounded w-5/6"></div>
+          {/* Картки проєктів */}
+          <div className="relative">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+              {projectsLoading ? (
+                // Skeleton для завантаження проєктів
+                Array(3).fill(0).map((_, index) => (
+                  <div key={index} className="flex flex-col rounded-2xl shadow-md overflow-hidden bg-white border border-slate-200 animate-pulse">
+                    <div className="relative h-52 bg-slate-200">
+                      <div className="absolute inset-0 bg-gradient-to-t from-slate-200 to-transparent"></div>
                     </div>
-                    <div className="mt-6 border-t border-gray-100 pt-4">
-                      <div className="h-2 bg-gray-300 rounded-full"></div>
+                    <div className="flex-1 p-6">
+                      <div className="h-6 bg-slate-200 rounded w-3/4 mb-4"></div>
+                      <div className="h-4 bg-slate-200 rounded w-full mb-2"></div>
+                      <div className="h-4 bg-slate-200 rounded w-5/6 mb-6"></div>
+                      <div className="h-2 bg-slate-200 rounded-full mb-2"></div>
                       <div className="flex justify-between mt-2">
-                        <div className="h-4 bg-gray-300 rounded w-1/3"></div>
-                        <div className="h-4 bg-gray-300 rounded w-1/4"></div>
+                        <div className="h-8 bg-slate-200 rounded w-1/3"></div>
+                        <div className="h-8 bg-slate-200 rounded w-1/4"></div>
                       </div>
                     </div>
                   </div>
+                ))
+              ) : !projects || projects.length === 0 ? (
+                // Порожній стан
+                <div className="col-span-1 md:col-span-2 lg:col-span-3 text-center py-16">
+                  <div className="flex flex-col items-center justify-center p-8 rounded-2xl bg-slate-50 border border-slate-200">
+                    <div className="rounded-full bg-slate-100 p-4 mb-4">
+                      <HourglassEmpty className="h-12 w-12 text-slate-400" />
+                    </div>
+                    <h3 className="text-xl font-medium text-slate-700 mb-2">{t('common.noProjects')}</h3>
+                    <p className="text-slate-500 max-w-lg">
+                      {t('common.checkBackLater')}
+                    </p>
+                  </div>
                 </div>
-              ))
-            ) : !projects || projects.length === 0 ? (
-              <div className="col-span-3 text-center py-16">
-                <div className="flex flex-col items-center justify-center">
-                  <HourglassEmpty className="h-16 w-16 text-gray-300 mb-4" />
-                  <p className="text-xl text-gray-500 font-medium">{t('common.noProjects')}</p>
-                  <p className="mt-2 text-gray-400">{t('common.checkBackLater')}</p>
-                </div>
-              </div>
-            ) : (
-              projects.slice(0, 3).map((project) => (
-                <ProjectCard
-                  key={project.id}
-                  project={project}
-                />
-              ))
+              ) : (
+                // Проєкти
+                projects.slice(0, 3).map((project) => (
+                  <div key={project.id} className="group relative rounded-2xl shadow-sm hover:shadow-xl overflow-hidden bg-white border border-slate-200 transition-all duration-300 hover:border-secondary-200 flex flex-col">
+                    {/* Верхня частина карточки */}
+                    <div className="relative h-52 bg-slate-100 overflow-hidden">
+                      {project.image ? (
+                        <img
+                          src={project.image}
+                          alt={project.name}
+                          className="w-full h-full object-cover object-center transition-transform duration-700 group-hover:scale-110"
+                        />
+                      ) : (
+                        <div className="absolute inset-0 bg-gradient-to-br from-secondary-200 to-primary-200 opacity-50"></div>
+                      )}
+                      
+                      {/* Градієнт для кращого читання тексту */}
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent"></div>
+                      
+                      {/* Статус і назва */}
+                      <div className="absolute bottom-0 left-0 right-0 p-5">
+                        <div className="flex items-center justify-between">
+                          <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-white/20 text-white backdrop-blur-sm">
+                            {project.status === 'funding' ? t('projects.status.funding') : 
+                             project.status === 'in_progress' ? t('projects.status.in_progress') : 
+                             t('projects.status.completed')}
+                          </span>
+                        </div>
+                        <h3 className="mt-2 text-xl font-bold text-white truncate">{project.name}</h3>
+                      </div>
+                    </div>
+                    
+                    {/* Нижня частина карточки */}
+                    <div className="flex-1 p-5">
+                      <p className="text-slate-600 line-clamp-3 mb-6 h-18">
+                        {project.description}
+                      </p>
+                      
+                      {/* Прогрес бар і кнопки */}
+                      <div className="mt-auto">
+                        {project.status === 'funding' && (
+                          <div className="mb-4">
+                            <div className="flex items-center justify-between text-sm mb-1">
+                              <span className="font-medium text-slate-700">
+                                {t('projects.funded')}
+                              </span>
+                              <span className="font-medium text-secondary-700">
+                                {Math.floor((project.collectedAmount / project.targetAmount) * 100)}%
+                              </span>
+                            </div>
+                            <div className="h-2 bg-slate-200 rounded-full overflow-hidden">
+                              <div 
+                                className="h-full bg-secondary-500 rounded-full" 
+                                style={{width: `${Math.min(100, Math.floor((project.collectedAmount / project.targetAmount) * 100))}%`}}
+                              ></div>
+                            </div>
+                          </div>
+                        )}
+                        
+                        <div className="flex justify-between items-center pt-4 border-t border-slate-100">
+                          <Link href={`/projects/${project.id}`}>
+                            <button className="text-secondary-600 hover:text-secondary-800 font-medium transition-colors duration-300 flex items-center">
+                              <span>{t('projects.learnMore')}</span>
+                              <ArrowForward className="h-4 w-4 ml-1 opacity-0 -translate-x-2 group-hover:opacity-100 group-hover:translate-x-0 transition-all duration-300" />
+                            </button>
+                          </Link>
+                          
+                          <div className="flex items-center text-slate-500 text-sm">
+                            {project.createdAt && (
+                              <span>
+                                {new Date(project.createdAt).toLocaleDateString()}
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+            
+            {/* Затертий край */}
+            {projects && projects.length > 0 && (
+              <div className="absolute -right-4 top-0 bottom-0 w-16 bg-gradient-to-l from-white to-transparent md:hidden"></div>
             )}
           </div>
 
+          {/* Кнопка "Переглянути всі" */}
           <div className="mt-16 text-center">
             <Link href="/projects">
-              <button className="inline-flex items-center justify-center px-8 py-3.5 text-white bg-secondary-600 hover:bg-secondary-700 transition-all duration-300 rounded-lg text-lg font-medium shadow-md hover:shadow-lg">
-                {t('home.projects.seeAll')}
+              <button className="inline-flex items-center justify-center px-6 py-3 text-white bg-secondary-600 hover:bg-secondary-700 transition-all duration-300 rounded-xl font-medium shadow-md hover:shadow-lg hover:translate-y-[-2px]">
+                <span>{t('home.projects.seeAll')}</span>
                 <ArrowForward className="ml-2 h-5 w-5" />
               </button>
             </Link>
@@ -238,21 +451,26 @@ export default function HomePage() {
       </div>
 
       {/* Dashboard Preview Section */}
-      <div className="bg-white py-24 relative">
-        {/* Decorative elements */}
-        <div className="absolute bottom-0 inset-x-0 h-36 bg-gradient-to-t from-gray-50 to-transparent"></div>
-        <div className="absolute right-0 top-1/3 w-40 h-40 bg-gradient-to-bl from-primary-200 to-primary-300 opacity-20 rounded-full blur-3xl"></div>
-        <div className="absolute left-0 bottom-1/3 w-40 h-40 bg-gradient-to-tr from-yellow-200 to-yellow-300 opacity-20 rounded-full blur-3xl"></div>
+      <div className="bg-slate-50 py-24 relative overflow-hidden">
+        {/* Декоративні елементи */}
+        <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-slate-300 to-transparent"></div>
+        <div className="absolute -right-32 top-32 w-96 h-96 bg-primary-100 opacity-20 rounded-full blur-3xl"></div>
+        <div className="absolute -left-32 bottom-32 w-96 h-96 bg-secondary-100 opacity-20 rounded-full blur-3xl"></div>
         
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="lg:text-center mb-16">
-            <span className="inline-block px-3 py-1 text-sm font-medium bg-primary-100 text-primary-800 rounded-full mb-3">
-              {t('home.dashboard.title')}
-            </span>
-            <h2 className="text-3xl leading-8 font-extrabold tracking-tight text-gray-900 sm:text-4xl font-heading bg-clip-text text-transparent bg-gradient-to-r from-primary-700 to-primary-900">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative">
+          {/* Заголовок секції */}
+          <div className="text-center mb-20">
+            <div className="inline-flex items-center px-4 py-2 rounded-full bg-primary-100 border border-primary-200 mb-6">
+              <span className="text-sm font-semibold text-primary-800">{t('home.dashboard.title')}</span>
+            </div>
+            
+            <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold text-slate-900 mb-6">
               {t('home.dashboard.subtitle')}
             </h2>
-            <div className="w-24 h-1 bg-gradient-to-r from-primary-500 to-yellow-500 mx-auto my-6 rounded-full"></div>
+            
+            <p className="max-w-2xl mx-auto text-lg text-slate-600 mb-8">
+              {t('home.dashboard.description') || 'Отримайте доступ до інтерактивної панелі інструментів, яка дозволяє ефективно керувати своїми волонтерськими активностями.'}
+            </p>
           </div>
 
           <div className="mt-10 relative">
