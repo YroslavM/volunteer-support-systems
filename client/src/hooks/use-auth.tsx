@@ -60,11 +60,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       
       // Redirect to the appropriate dashboard based on user role
       if (user.role === 'volunteer') {
-        window.location.href = '/volunteer-dashboard';
+        window.location.href = '/dashboard/volunteer';
       } else if (user.role === 'coordinator') {
-        window.location.href = '/coordinator-dashboard';
+        window.location.href = '/dashboard/coordinator';
       } else if (user.role === 'donor') {
-        window.location.href = '/donor-dashboard';
+        window.location.href = '/dashboard/donor';
       }
     },
     onError: (error: Error) => {
@@ -90,11 +90,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       
       // Redirect to the appropriate dashboard based on user role
       if (user.role === 'volunteer') {
-        window.location.href = '/volunteer-dashboard';
+        window.location.href = '/dashboard/volunteer';
       } else if (user.role === 'coordinator') {
-        window.location.href = '/coordinator-dashboard';
+        window.location.href = '/dashboard/coordinator';
       } else if (user.role === 'donor') {
-        window.location.href = '/donor-dashboard';
+        window.location.href = '/dashboard/donor';
       }
     },
     onError: (error: Error) => {
