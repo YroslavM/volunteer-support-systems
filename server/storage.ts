@@ -135,7 +135,9 @@ export class DatabaseStorage implements IStorage {
   async blockUser(id: number): Promise<User> {
     const [user] = await db
       .update(users)
-      .set({ isBlocked: true })
+      .set({ 
+        isBlocked: true
+      })
       .where(eq(users.id, id))
       .returning();
     return user;
@@ -507,6 +509,26 @@ export class MemStorage implements IStorage {
     return updatedUser;
   }
   
+  async blockUser(id: number): Promise<User> {
+    const user = this.users.get(id);
+    if (!user) {
+      throw new Error("User not found");
+    }
+    
+    const updatedUser = { 
+      ...user, 
+      isBlocked: true
+    };
+    
+    this.users.set(id, updatedUser);
+    return updatedUser;
+  }
+  
+  async getAllUsers(): Promise<User[]> {
+    return Array.from(this.users.values())
+      .sort((a, b) => a.username.localeCompare(b.username));
+  }
+  
   // Project methods
   async getProjects(options?: { status?: string; search?: string; limit?: number; offset?: number }): Promise<Project[]> {
     let result = Array.from(this.projects.values());
@@ -612,6 +634,45 @@ export class MemStorage implements IStorage {
     
     this.projects.set(id, updatedProject);
     return updatedProject;
+  }
+  
+  async updateProject(id: number, projectData: Partial<InsertProject>): Promise<Project> {
+    const project = this.projects.get(id);
+    if (!project) {
+      throw new Error("Project not found");
+    }
+    
+    const updatedProject = { 
+      ...project, 
+      ...projectData,
+      updatedAt: new Date() 
+    };
+    
+    this.projects.set(id, updatedProject);
+    return updatedProject;
+  }
+  
+  async deleteProject(id: number): Promise<void> {
+    if (!this.projects.has(id)) {
+      throw new Error("Project not found");
+    }
+    
+    this.projects.delete(id);
+    
+    // Remove related tasks
+    Array.from(this.tasks.entries())
+      .filter(([_, task]) => task.projectId === id)
+      .forEach(([taskId, _]) => this.tasks.delete(taskId));
+    
+    // Remove related applications
+    Array.from(this.applications.entries())
+      .filter(([_, app]) => app.projectId === id)
+      .forEach(([appId, _]) => this.applications.delete(appId));
+    
+    // Remove related donations
+    Array.from(this.donations.entries())
+      .filter(([_, donation]) => donation.projectId === id)
+      .forEach(([donationId, _]) => this.donations.delete(donationId));
   }
   
   // Task methods

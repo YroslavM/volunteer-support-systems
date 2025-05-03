@@ -25,6 +25,7 @@ export const users = pgTable("users", {
   firstName: text("first_name"),
   lastName: text("last_name"),
   isVerified: boolean("is_verified").default(false).notNull(),
+  isBlocked: boolean("is_blocked").default(false).notNull(),
   verificationToken: text("verification_token"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
