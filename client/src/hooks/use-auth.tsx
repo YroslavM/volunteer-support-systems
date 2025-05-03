@@ -163,6 +163,35 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   });
 
   const handleLogout = () => {
+    // Show logout loader
+    const loaderElement = document.createElement('div');
+    loaderElement.id = 'logout-loader';
+    loaderElement.style.position = 'fixed';
+    loaderElement.style.top = '0';
+    loaderElement.style.left = '0';
+    loaderElement.style.width = '100%';
+    loaderElement.style.height = '100%';
+    loaderElement.style.backgroundColor = 'rgba(255, 255, 255, 0.8)';
+    loaderElement.style.display = 'flex';
+    loaderElement.style.justifyContent = 'center';
+    loaderElement.style.alignItems = 'center';
+    loaderElement.style.zIndex = '9999';
+    
+    const spinnerElement = document.createElement('div');
+    spinnerElement.style.width = '50px';
+    spinnerElement.style.height = '50px';
+    spinnerElement.style.border = '5px solid #f3f3f3';
+    spinnerElement.style.borderTop = '5px solid var(--primary-600)';
+    spinnerElement.style.borderRadius = '50%';
+    spinnerElement.style.animation = 'spin 1s linear infinite';
+    
+    const style = document.createElement('style');
+    style.textContent = '@keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }';
+    
+    document.head.appendChild(style);
+    loaderElement.appendChild(spinnerElement);
+    document.body.appendChild(loaderElement);
+    
     // Clear session storage
     sessionStorage.removeItem('isLoggedIn');
     sessionStorage.removeItem('userRole');
@@ -172,8 +201,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     // Reset state
     setSessionUser(null);
     
-    // Redirect to home page
-    window.location.href = '/';
+    // Add a slight delay before redirect to show the loader
+    setTimeout(() => {
+      // Redirect to home page
+      window.location.href = '/';
+    }, 800);
   };
   
   // Custom mutations for session-based auth
