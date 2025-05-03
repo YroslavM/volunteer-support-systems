@@ -115,9 +115,9 @@ export default function HomePage() {
                 </dd>
                 <div className="mt-6">
                   <Link href="/auth">
-                    <Button variant="outline" className="text-primary-600 border-primary-600 hover:bg-primary-50">
+                    <button className="px-4 py-2 text-primary-700 border border-primary-700 rounded-md hover:bg-primary-50 transition-all duration-300">
                       {t('common.learnMore')}
-                    </Button>
+                    </button>
                   </Link>
                 </div>
               </div>
@@ -136,9 +136,9 @@ export default function HomePage() {
                 </dd>
                 <div className="mt-6">
                   <Link href="/auth">
-                    <Button variant="outline" className="text-secondary-600 border-secondary-600 hover:bg-secondary-50">
+                    <button className="px-4 py-2 text-secondary-700 border border-secondary-700 rounded-md hover:bg-secondary-50 transition-all duration-300">
                       {t('common.learnMore')}
-                    </Button>
+                    </button>
                   </Link>
                 </div>
               </div>
@@ -157,9 +157,9 @@ export default function HomePage() {
                 </dd>
                 <div className="mt-6">
                   <Link href="/auth">
-                    <Button variant="outline" className="text-yellow-600 border-yellow-600 hover:bg-yellow-50">
+                    <button className="px-4 py-2 text-yellow-600 border border-yellow-600 rounded-md hover:bg-yellow-50 transition-all duration-300">
                       {t('common.learnMore')}
-                    </Button>
+                    </button>
                   </Link>
                 </div>
               </div>
@@ -228,10 +228,10 @@ export default function HomePage() {
 
           <div className="mt-16 text-center">
             <Link href="/projects">
-              <Button className="inline-flex items-center justify-center px-8 py-4 text-white bg-gradient-to-r from-secondary-500 to-secondary-600 hover:from-secondary-600 hover:to-secondary-700 shadow-md hover:shadow-xl transition-all duration-300 rounded-xl text-lg font-medium">
+              <button className="inline-flex items-center justify-center px-8 py-3.5 text-white bg-secondary-600 hover:bg-secondary-700 transition-all duration-300 rounded-lg text-lg font-medium shadow-md hover:shadow-lg">
                 {t('home.projects.seeAll')}
                 <ArrowForward className="ml-2 h-5 w-5" />
-              </Button>
+              </button>
             </Link>
           </div>
         </div>
@@ -371,7 +371,7 @@ export default function HomePage() {
                           <Work className="h-5 w-5 text-primary-500 mr-2" />
                           {t('dashboard.coordinator.myProjects')}
                         </div>
-                        <button className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-lg shadow-sm text-white bg-gradient-to-r from-primary-600 to-primary-700 hover:from-primary-700 hover:to-primary-800 transition-all duration-200">
+                        <button className="inline-flex items-center px-4 py-2 text-sm font-medium rounded-md shadow-sm text-white bg-primary-600 hover:bg-primary-700 transition-all duration-200">
                           <Add className="h-4 w-4 mr-1" />
                           {t('dashboard.coordinator.createProjectButton')}
                         </button>
@@ -458,10 +458,10 @@ export default function HomePage() {
                 
                 <div className="mt-8 text-center">
                   <Link href="/auth">
-                    <Button className="inline-flex items-center justify-center px-6 py-3 text-white bg-gradient-to-r from-primary-500 to-primary-600 hover:from-primary-600 hover:to-primary-700 shadow-md hover:shadow-xl transition-all duration-300 rounded-xl">
+                    <button className="inline-flex items-center justify-center px-6 py-3 text-white bg-primary-600 hover:bg-primary-700 shadow-md hover:shadow-lg transition-all duration-300 rounded-lg">
                       {t('dashboard.startNow')}
                       <ArrowForward className="ml-2 h-5 w-5" />
-                    </Button>
+                    </button>
                   </Link>
                 </div>
               </div>
@@ -541,16 +541,16 @@ export default function HomePage() {
           <div className="mt-8 flex lg:mt-0 lg:flex-shrink-0">
             <div className="inline-flex rounded-md shadow">
               <Link href="/auth">
-                <Button className="inline-flex items-center justify-center px-5 py-3 border border-transparent text-base font-medium rounded-md text-primary-600 bg-white hover:bg-gray-50">
+                <button className="inline-flex items-center justify-center px-5 py-3 text-base font-medium rounded-md text-primary-600 bg-white hover:bg-gray-50">
                   {t('auth.register')}
-                </Button>
+                </button>
               </Link>
             </div>
             <div className="ml-3 inline-flex rounded-md shadow">
               <Link href="/auth">
-                <Button variant="outline" className="inline-flex items-center justify-center px-5 py-3 border border-transparent text-base font-medium rounded-md text-white bg-primary-600 hover:bg-primary-500">
+                <button className="inline-flex items-center justify-center px-5 py-3 text-base font-medium rounded-md text-white bg-primary-600 hover:bg-primary-500 border border-primary-500">
                   {t('auth.login')}
-                </Button>
+                </button>
               </Link>
             </div>
           </div>
