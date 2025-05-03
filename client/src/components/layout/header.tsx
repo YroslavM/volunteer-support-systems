@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link, useLocation } from "wouter";
 import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
@@ -7,21 +7,92 @@ import {
   SelectContent, 
   SelectItem, 
   SelectTrigger, 
-  SelectValue 
+  SelectValue,
 } from "@/components/ui/select";
-import { VolunteerActivism, Menu } from "@mui/icons-material";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { VolunteerActivism, AccountCircle } from "@mui/icons-material";
+import { ChevronDown, LayoutDashboard, Menu, LogOut, User } from "lucide-react";
 
-// Basic header component without auth for debugging
+// Header component with mockLogout feature
 export function Header() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const { t, i18n } = useTranslation();
-  const [location] = useLocation();
+  const [location, navigate] = useLocation();
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [userRole, setUserRole] = useState<string | null>(null);
+  const [username, setUsername] = useState<string | null>(null);
+  
+  // Check if user is logged in - this is a mock implementation
+  useEffect(() => {
+    // Check if URL contains specific dashboard paths to simulate logged in state
+    if (location.includes('volunteer-dashboard')) {
+      setIsLoggedIn(true);
+      setUserRole('volunteer');
+      setUsername('Волонтер');
+    } else if (location.includes('coordinator-dashboard')) {
+      setIsLoggedIn(true);
+      setUserRole('coordinator');
+      setUsername('Координатор');
+    } else if (location.includes('donor-dashboard')) {
+      setIsLoggedIn(true);
+      setUserRole('donor');
+      setUsername('Донор');
+    } else {
+      // On auth page, we can simulate logging in
+      const onAuthPage = location === '/auth';
+      
+      if (!onAuthPage && sessionStorage.getItem('isLoggedIn')) {
+        setIsLoggedIn(true);
+        setUserRole(sessionStorage.getItem('userRole'));
+        setUsername(sessionStorage.getItem('username'));
+      }
+    }
+  }, [location]);
 
   const changeLanguage = (value: string) => {
     i18n.changeLanguage(value);
   };
 
   const isActive = (path: string) => location === path;
+  
+  // Handle logout
+  const handleLogout = () => {
+    // Clear session storage
+    sessionStorage.removeItem('isLoggedIn');
+    sessionStorage.removeItem('userRole');
+    sessionStorage.removeItem('username');
+    
+    // Reset state
+    setIsLoggedIn(false);
+    setUserRole(null);
+    setUsername(null);
+    
+    // Redirect to home page
+    navigate('/');
+  };
+  
+  // Get dashboard URL based on role
+  const getDashboardUrl = () => {
+    if (!userRole) return '/';
+    
+    switch(userRole) {
+      case 'volunteer':
+        return '/volunteer-dashboard';
+      case 'coordinator':
+        return '/coordinator-dashboard';
+      case 'donor':
+        return '/donor-dashboard';
+      default:
+        return '/';
+    }
+  };
 
   return (
     <header className="bg-white shadow">
@@ -83,18 +154,52 @@ export function Header() {
               </Select>
             </div>
             
-            <div className="flex space-x-2">
-              <Link href="/auth">
-                <Button variant="outline">
-                  {t('auth.login')}
-                </Button>
-              </Link>
-              <Link href="/auth">
-                <Button>
-                  {t('auth.register')}
-                </Button>
-              </Link>
-            </div>
+            {isLoggedIn ? (
+              <div className="flex items-center space-x-2">
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="outline" className="flex items-center space-x-1">
+                      <AccountCircle className="h-5 w-5" />
+                      <span>{username || userRole}</span>
+                      <ChevronDown className="h-4 w-4" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end">
+                    <DropdownMenuLabel>{t('account.welcome')}, {username}</DropdownMenuLabel>
+                    <DropdownMenuSeparator />
+                    <Link href={getDashboardUrl()}>
+                      <DropdownMenuItem>
+                        <Dashboard className="mr-2 h-4 w-4" />
+                        <span>{t('account.dashboard')}</span>
+                      </DropdownMenuItem>
+                    </Link>
+                    <Link href="/profile">
+                      <DropdownMenuItem>
+                        <AccountCircle className="mr-2 h-4 w-4" />
+                        <span>{t('account.profile')}</span>
+                      </DropdownMenuItem>
+                    </Link>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem onClick={handleLogout}>
+                      <span className="text-destructive">{t('account.logout')}</span>
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </div>
+            ) : (
+              <div className="flex space-x-2">
+                <Link href="/auth">
+                  <Button variant="outline">
+                    {t('auth.login')}
+                  </Button>
+                </Link>
+                <Link href="/auth">
+                  <Button>
+                    {t('auth.register')}
+                  </Button>
+                </Link>
+              </div>
+            )}
           </div>
           
           <div className="-mr-2 flex items-center sm:hidden">
@@ -159,9 +264,38 @@ export function Header() {
                   </SelectContent>
                 </Select>
               </div>
-              <Link href="/auth" className="text-base font-medium text-gray-800 hover:text-primary-600">
-                {t('auth.login')}
-              </Link>
+              
+              {isLoggedIn ? (
+                <div className="space-y-2">
+                  <div className="flex items-center">
+                    <AccountCircle className="h-6 w-6 text-primary-600 mr-2" />
+                    <span className="text-base font-medium">{username || userRole}</span>
+                  </div>
+                  <Link href={getDashboardUrl()}>
+                    <div className="flex items-center text-gray-700 py-2">
+                      <Menu className="h-5 w-5 mr-2" />
+                      <span>{t('account.dashboard')}</span>
+                    </div>
+                  </Link>
+                  <Link href="/profile">
+                    <div className="flex items-center text-gray-700 py-2">
+                      <AccountCircle className="h-5 w-5 mr-2" />
+                      <span>{t('account.profile')}</span>
+                    </div>
+                  </Link>
+                  <Button 
+                    variant="ghost" 
+                    onClick={handleLogout} 
+                    className="w-full justify-start text-red-600 px-0"
+                  >
+                    {t('account.logout')}
+                  </Button>
+                </div>
+              ) : (
+                <Link href="/auth" className="text-base font-medium text-gray-800 hover:text-primary-600">
+                  {t('auth.login')}
+                </Link>
+              )}
             </div>
           </div>
         </div>
