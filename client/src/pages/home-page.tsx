@@ -119,15 +119,15 @@ export default function HomePage() {
                   
                   <div className="flex flex-col sm:flex-row gap-4">
                     <Link href="/auth">
-                      <button className="flex items-center justify-center px-8 py-4 rounded-xl bg-primary-600 text-white hover:bg-primary-700 transition-all duration-300 shadow-lg shadow-primary-900/20 hover:shadow-primary-800/40">
+                      <Button variant="default" size="lg" className="flex items-center justify-center px-8 py-4 rounded-xl bg-blue-600 text-white hover:bg-blue-700 transition-all duration-300 shadow-lg shadow-blue-900/20 hover:shadow-blue-800/40">
                         <span className="font-medium">{t('home.hero.joinButton')}</span>
                         <ArrowForward className="ml-2 h-5 w-5" />
-                      </button>
+                      </Button>
                     </Link>
                     <Link href="/projects">
-                      <button className="flex items-center justify-center px-8 py-4 rounded-xl border border-white/20 text-white hover:bg-white/10 transition-all duration-300">
+                      <Button variant="outline" size="lg" className="flex items-center justify-center px-8 py-4 rounded-xl border border-gray-400 text-gray-800 dark:text-white dark:border-gray-600 hover:bg-gray-100 dark:hover:bg-gray-800 transition-all duration-300">
                         <span className="font-medium">{t('home.hero.viewProjects')}</span>
-                      </button>
+                      </Button>
                     </Link>
                   </div>
                 </div>
@@ -212,10 +212,10 @@ export default function HomePage() {
                 
                 <div className="flex justify-between items-center">
                   <Link href="/auth">
-                    <button className="flex items-center text-primary-600 hover:text-primary-800 font-medium transition-colors duration-300">
+                    <Button variant="link" className="flex items-center text-primary-600 hover:text-primary-800 font-medium transition-colors duration-300 p-0">
                       <span>{t('common.learnMore')}</span>
                       <ArrowForward className="h-4 w-4 ml-2 opacity-0 -translate-x-2 group-hover:opacity-100 group-hover:translate-x-0 transition-all duration-300" />
-                    </button>
+                    </Button>
                   </Link>
                   
                   <span className="flex h-8 w-8 rounded-full bg-primary-50 text-primary-500 items-center justify-center">
@@ -243,10 +243,10 @@ export default function HomePage() {
                 
                 <div className="flex justify-between items-center">
                   <Link href="/auth">
-                    <button className="flex items-center text-secondary-600 hover:text-secondary-800 font-medium transition-colors duration-300">
+                    <Button variant="link" className="flex items-center text-secondary-600 hover:text-secondary-800 font-medium transition-colors duration-300 p-0">
                       <span>{t('common.learnMore')}</span>
                       <ArrowForward className="h-4 w-4 ml-2 opacity-0 -translate-x-2 group-hover:opacity-100 group-hover:translate-x-0 transition-all duration-300" />
-                    </button>
+                    </Button>
                   </Link>
                   
                   <span className="flex h-8 w-8 rounded-full bg-secondary-50 text-secondary-500 items-center justify-center">
@@ -274,10 +274,10 @@ export default function HomePage() {
                 
                 <div className="flex justify-between items-center">
                   <Link href="/auth">
-                    <button className="flex items-center text-yellow-600 hover:text-yellow-800 font-medium transition-colors duration-300">
+                    <Button variant="link" className="flex items-center text-yellow-600 hover:text-yellow-800 font-medium transition-colors duration-300 p-0">
                       <span>{t('common.learnMore')}</span>
                       <ArrowForward className="h-4 w-4 ml-2 opacity-0 -translate-x-2 group-hover:opacity-100 group-hover:translate-x-0 transition-all duration-300" />
-                    </button>
+                    </Button>
                   </Link>
                   
                   <span className="flex h-8 w-8 rounded-full bg-yellow-50 text-yellow-500 items-center justify-center">
@@ -411,10 +411,10 @@ export default function HomePage() {
                         
                         <div className="flex justify-between items-center pt-4 border-t border-slate-100">
                           <Link href={`/projects/${project.id}`}>
-                            <button className="text-secondary-600 hover:text-secondary-800 font-medium transition-colors duration-300 flex items-center">
+                            <Button variant="link" className="text-secondary-600 hover:text-secondary-800 font-medium transition-colors duration-300 flex items-center p-0">
                               <span>{t('projects.learnMore')}</span>
                               <ArrowForward className="h-4 w-4 ml-1 opacity-0 -translate-x-2 group-hover:opacity-100 group-hover:translate-x-0 transition-all duration-300" />
-                            </button>
+                            </Button>
                           </Link>
                           
                           <div className="flex items-center text-slate-500 text-sm">
@@ -441,10 +441,10 @@ export default function HomePage() {
           {/* Кнопка "Переглянути всі" */}
           <div className="mt-16 text-center">
             <Link href="/projects">
-              <button className="inline-flex items-center justify-center px-6 py-3 text-white bg-secondary-600 hover:bg-secondary-700 transition-all duration-300 rounded-xl font-medium shadow-md hover:shadow-lg hover:translate-y-[-2px]">
+              <Button className="px-6 py-3 text-white bg-secondary-600 hover:bg-secondary-700 transition-all duration-300 rounded-xl font-medium shadow-md hover:shadow-lg hover:translate-y-[-2px]">
                 <span>{t('home.projects.seeAll')}</span>
                 <ArrowForward className="ml-2 h-5 w-5" />
-              </button>
+              </Button>
             </Link>
           </div>
         </div>
