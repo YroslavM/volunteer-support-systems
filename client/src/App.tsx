@@ -8,6 +8,7 @@ import HomePage from "@/pages/home-page";
 import AuthPage from "@/pages/auth-page";
 import ProjectsPage from "@/pages/projects-page";
 import ProjectDetails from "@/pages/project-details";
+import ProjectSliderPage from "@/pages/project-slider-page";
 import VolunteerDashboard from "@/pages/volunteer-dashboard";
 import CoordinatorDashboard from "@/pages/coordinator-dashboard";
 import DonorDashboard from "@/pages/donor-dashboard";
@@ -25,6 +26,7 @@ function Router() {
       <Route path="/auth" component={AuthPage} />
       <Route path="/projects" component={ProjectsPage} />
       <Route path="/projects/:id" component={ProjectDetails} />
+      <Route path="/projects/:id/slider" component={ProjectSliderPage} />
       <Route path="/about" component={AboutPage} />
       <Route path="/contacts" component={ContactsPage} />
       
