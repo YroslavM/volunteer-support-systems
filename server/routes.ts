@@ -14,9 +14,29 @@ import {
   applicationStatusEnum
 } from "@shared/schema";
 
+// Режим тестового середовища (для демонстрації)
+const DEV_MODE = process.env.NODE_ENV === 'development';
+
+// Допоміжна функція для отримання ID користувача в DEV_MODE
+function getUserId(req: Request): number {
+  if (DEV_MODE) {
+    return req.body.userId || req.user?.id || 1;
+  }
+  return req.user!.id;
+}
+
+// Допоміжна функція для отримання ролі користувача в DEV_MODE
+function getUserRole(req: Request): string {
+  if (DEV_MODE) {
+    return req.body.userRole || req.user?.role || "coordinator";
+  }
+  return req.user!.role;
+}
+
 // Function to check if user is authenticated
 function isAuthenticated(req: Request, res: Response, next: Function) {
-  if (req.isAuthenticated()) {
+  // В тестовому режимі завжди пропускаємо
+  if (DEV_MODE || req.isAuthenticated()) {
     return next();
   }
   res.status(401).json({ message: "Необхідна авторизація" });
@@ -25,6 +45,11 @@ function isAuthenticated(req: Request, res: Response, next: Function) {
 // Check if user has required role
 function hasRole(roles: string[]) {
   return (req: Request, res: Response, next: Function) => {
+    // В тестовому режимі завжди пропускаємо
+    if (DEV_MODE) {
+      return next();
+    }
+    
     if (!req.isAuthenticated()) {
       return res.status(401).json({ message: "Необхідна авторизація" });
     }
@@ -88,9 +113,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const data = insertProjectSchema.parse(req.body);
       
+      // Використовуємо функцію для отримання ID координатора
+      const coordinatorId = getUserId(req);
+      
       const project = await storage.createProject({
         ...data,
-        coordinatorId: req.user!.id,
+        coordinatorId,
       });
       
       res.status(201).json(project);
