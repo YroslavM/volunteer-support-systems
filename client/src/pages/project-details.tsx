@@ -2,7 +2,8 @@ import { useState, useEffect } from "react";
 import { useLocation, Link } from "wouter";
 import { useTranslation } from "react-i18next";
 import { useQuery, useMutation } from "@tanstack/react-query";
-import { useAuth } from "@/hooks/use-auth";
+// Temporarily commenting out auth for debugging
+// import { useAuth } from "@/hooks/use-auth";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { Button } from "@/components/ui/button";
 import {
@@ -50,7 +51,8 @@ export default function ProjectDetails() {
   const [, params] = useLocation();
   const projectId = params ? parseInt(params.split("/")[2]) : null;
   const { t } = useTranslation();
-  const { user } = useAuth();
+  // Mocking user for debugging
+  const user = null;
   const { toast } = useToast();
   const [, navigate] = useLocation();
   

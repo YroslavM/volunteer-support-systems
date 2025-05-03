@@ -4,7 +4,8 @@ import { useTranslation } from "react-i18next";
 import { z } from "zod";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useAuth } from "@/hooks/use-auth";
+// Temporarily commenting out auth for debugging
+// import { useAuth } from "@/hooks/use-auth";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -66,7 +67,16 @@ type RegisterFormValues = z.infer<typeof registerSchema>;
 export default function AuthPage() {
   const { t } = useTranslation();
   const [location, navigate] = useLocation();
-  const { user, loginMutation, registerMutation } = useAuth();
+  // Mock auth data for debugging
+  const user = null;
+  const loginMutation = {
+    mutate: (credentials: any) => console.log('Login mutation called', credentials),
+    isPending: false
+  };
+  const registerMutation = {
+    mutate: (data: any) => console.log('Register mutation called', data),
+    isPending: false
+  };
   const [activeTab, setActiveTab] = useState<string>("login");
 
   // Redirect if already logged in
