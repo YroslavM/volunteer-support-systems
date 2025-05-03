@@ -116,7 +116,8 @@
       "tasks": "Tasks",
       "volunteers": "Volunteers",
       "donations": "Donations",
-      "noTasks": "No tasks assigned yet"
+      "noTasks": "No tasks assigned yet",
+      "gallery": "Gallery"
     },
     "funded": "Funded",
     "learnMore": "Learn More"
