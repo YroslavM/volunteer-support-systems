@@ -356,9 +356,9 @@ export default function HomePage() {
                   <div key={project.id} className="group relative rounded-2xl shadow-sm hover:shadow-xl overflow-hidden bg-white border border-slate-200 transition-all duration-300 hover:border-secondary-200 flex flex-col">
                     {/* Верхня частина карточки */}
                     <div className="relative h-52 bg-slate-100 overflow-hidden">
-                      {project.image ? (
+                      {project.imageUrl ? (
                         <img
-                          src={project.image}
+                          src={project.imageUrl}
                           alt={project.name}
                           className="w-full h-full object-cover object-center transition-transform duration-700 group-hover:scale-110"
                         />
@@ -473,223 +473,353 @@ export default function HomePage() {
             </p>
           </div>
 
-          <div className="mt-10 relative">
-            <div className="lg:grid lg:grid-cols-12 lg:gap-8">
-              {/* Sidebar tabs */}
-              <div className="lg:col-span-3">
-                <div className="bg-white rounded-xl shadow-md overflow-hidden border border-gray-100">
-                  <div className="p-4 border-b border-gray-100 bg-gradient-to-r from-primary-50 to-primary-100">
-                    <h3 className="text-lg font-semibold text-primary-900">
-                      {t('dashboard.choose')}
-                    </h3>
+          {/* Інтерактивний перемикач ролей */}
+          <div className="flex justify-center mb-12">
+            <div className="inline-flex p-1 bg-slate-200 rounded-xl shadow-inner">
+              <button 
+                onClick={() => handleTabChange("volunteer")}
+                className={`px-5 py-2.5 rounded-lg text-sm font-medium transition-all duration-300 ${
+                  activeTab === "volunteer" 
+                    ? "bg-white text-primary-700 shadow-sm" 
+                    : "text-slate-600 hover:text-primary-600"
+                }`}
+              >
+                <div className="flex items-center">
+                  <VolunteerActivism className="h-5 w-5 mr-2" />
+                  <span>{t('roles.volunteer')}</span>
+                </div>
+              </button>
+              
+              <button 
+                onClick={() => handleTabChange("coordinator")}
+                className={`px-5 py-2.5 rounded-lg text-sm font-medium transition-all duration-300 ${
+                  activeTab === "coordinator" 
+                    ? "bg-white text-secondary-700 shadow-sm" 
+                    : "text-slate-600 hover:text-secondary-600"
+                }`}
+              >
+                <div className="flex items-center">
+                  <ManageAccounts className="h-5 w-5 mr-2" />
+                  <span>{t('roles.coordinator')}</span>
+                </div>
+              </button>
+              
+              <button 
+                onClick={() => handleTabChange("donor")}
+                className={`px-5 py-2.5 rounded-lg text-sm font-medium transition-all duration-300 ${
+                  activeTab === "donor" 
+                    ? "bg-white text-yellow-700 shadow-sm" 
+                    : "text-slate-600 hover:text-yellow-600"
+                }`}
+              >
+                <div className="flex items-center">
+                  <Favorite className="h-5 w-5 mr-2" />
+                  <span>{t('roles.donor')}</span>
+                </div>
+              </button>
+            </div>
+          </div>
+          
+          {/* Вміст приладової панелі - контейнер */}
+          <div className="relative max-w-5xl mx-auto rounded-2xl bg-white border border-slate-200 shadow-xl overflow-hidden">
+            {/* Верхня частина з моковими дашборд-елементами */}
+            <div className="border-b border-slate-200">
+              <div className="grid grid-cols-3 divide-x divide-slate-200">
+                {/* Перший елемент */}
+                <div className="p-6">
+                  <div className="flex items-center justify-between mb-4">
+                    <span className="text-sm font-medium text-slate-500">
+                      {activeTab === "volunteer" && t('dashboard.volunteer.tasksDone')}
+                      {activeTab === "coordinator" && t('dashboard.coordinator.activeProjects')}
+                      {activeTab === "donor" && t('dashboard.donor.totalDonated')}
+                    </span>
+                    <div className={`flex items-center justify-center h-8 w-8 rounded-full ${
+                      activeTab === "volunteer" ? "bg-green-100 text-green-600" :
+                      activeTab === "coordinator" ? "bg-purple-100 text-purple-600" :
+                      "bg-yellow-100 text-yellow-600"
+                    }`}>
+                      {activeTab === "volunteer" && <CheckCircle className="h-4 w-4" />}
+                      {activeTab === "coordinator" && <Work className="h-4 w-4" />}
+                      {activeTab === "donor" && <Money className="h-4 w-4" />}
+                    </div>
                   </div>
-                  <ul className="divide-y divide-gray-100">
-                    <li>
-                      <button 
-                        className={`w-full p-4 text-left transition-all duration-200 ${
-                          activeTab === "volunteer" 
-                            ? "bg-primary-50 text-primary-700 font-medium border-l-4 border-primary-700" 
-                            : "text-gray-700 hover:bg-gray-50"
-                        }`}
-                        onClick={() => handleTabChange("volunteer")}
-                      >
-                        <div className="flex items-center">
-                          <VolunteerActivism className={`mr-3 h-5 w-5 ${activeTab === "volunteer" ? "text-primary-700" : "text-gray-400"}`} />
-                          <span>{t('roles.volunteer')}</span>
-                        </div>
-                      </button>
-                    </li>
-                    <li>
-                      <button 
-                        className={`w-full p-4 text-left transition-all duration-200 ${
-                          activeTab === "coordinator" 
-                            ? "bg-primary-50 text-primary-700 font-medium border-l-4 border-primary-700" 
-                            : "text-gray-700 hover:bg-gray-50"
-                        }`}
-                        onClick={() => handleTabChange("coordinator")}
-                      >
-                        <div className="flex items-center">
-                          <ManageAccounts className={`mr-3 h-5 w-5 ${activeTab === "coordinator" ? "text-primary-700" : "text-gray-400"}`} />
-                          <span>{t('roles.coordinator')}</span>
-                        </div>
-                      </button>
-                    </li>
-                    <li>
-                      <button 
-                        className={`w-full p-4 text-left transition-all duration-200 ${
-                          activeTab === "donor" 
-                            ? "bg-primary-50 text-primary-700 font-medium border-l-4 border-primary-700" 
-                            : "text-gray-700 hover:bg-gray-50"
-                        }`}
-                        onClick={() => handleTabChange("donor")}
-                      >
-                        <div className="flex items-center">
-                          <Favorite className={`mr-3 h-5 w-5 ${activeTab === "donor" ? "text-primary-700" : "text-gray-400"}`} />
-                          <span>{t('roles.donor')}</span>
-                        </div>
-                      </button>
-                    </li>
-                  </ul>
+                  <div className="flex items-end space-x-1">
+                    <span className="text-2xl font-bold text-slate-900">
+                      {activeTab === "volunteer" && "12"}
+                      {activeTab === "coordinator" && "3"}
+                      {activeTab === "donor" && "₴15,800"}
+                    </span>
+                    <span className="text-sm font-medium text-green-600 mb-0.5">+4%</span>
+                  </div>
+                </div>
+                
+                {/* Другий елемент */}
+                <div className="p-6">
+                  <div className="flex items-center justify-between mb-4">
+                    <span className="text-sm font-medium text-slate-500">
+                      {activeTab === "volunteer" && t('dashboard.volunteer.projectsJoined')}
+                      {activeTab === "coordinator" && t('dashboard.coordinator.activeVolunteers')}
+                      {activeTab === "donor" && t('dashboard.donor.projectsSupported')}
+                    </span>
+                    <div className={`flex items-center justify-center h-8 w-8 rounded-full ${
+                      activeTab === "volunteer" ? "bg-blue-100 text-blue-600" :
+                      activeTab === "coordinator" ? "bg-indigo-100 text-indigo-600" :
+                      "bg-green-100 text-green-600"
+                    }`}>
+                      {activeTab === "volunteer" && <CalendarToday className="h-4 w-4" />}
+                      {activeTab === "coordinator" && <PeopleAlt className="h-4 w-4" />}
+                      {activeTab === "donor" && <Work className="h-4 w-4" />}
+                    </div>
+                  </div>
+                  <div className="flex items-end space-x-1">
+                    <span className="text-2xl font-bold text-slate-900">
+                      {activeTab === "volunteer" && "4"}
+                      {activeTab === "coordinator" && "28"}
+                      {activeTab === "donor" && "6"}
+                    </span>
+                    <span className="text-sm font-medium text-green-600 mb-0.5">+2%</span>
+                  </div>
+                </div>
+                
+                {/* Третій елемент */}
+                <div className="p-6">
+                  <div className="flex items-center justify-between mb-4">
+                    <span className="text-sm font-medium text-slate-500">
+                      {activeTab === "volunteer" && t('dashboard.volunteer.hoursVolunteered')}
+                      {activeTab === "coordinator" && t('dashboard.coordinator.pendingTasks')}
+                      {activeTab === "donor" && t('dashboard.donor.lastDonation')}
+                    </span>
+                    <div className={`flex items-center justify-center h-8 w-8 rounded-full ${
+                      activeTab === "volunteer" ? "bg-primary-100 text-primary-600" :
+                      activeTab === "coordinator" ? "bg-secondary-100 text-secondary-600" :
+                      "bg-primary-100 text-primary-600"
+                    }`}>
+                      {activeTab === "volunteer" && <VolunteerActivism className="h-4 w-4" />}
+                      {activeTab === "coordinator" && <Add className="h-4 w-4" />}
+                      {activeTab === "donor" && <LocalAtm className="h-4 w-4" />}
+                    </div>
+                  </div>
+                  <div className="flex items-end space-x-1">
+                    <span className="text-2xl font-bold text-slate-900">
+                      {activeTab === "volunteer" && "48"}
+                      {activeTab === "coordinator" && "7"}
+                      {activeTab === "donor" && "₴2,500"}
+                    </span>
+                    <span className="text-sm font-medium text-green-600 mb-0.5">+8%</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+            
+            {/* Основний вміст панелі */}
+            <div className="p-6">
+              <div className="flex items-center justify-between mb-6">
+                <h3 className="text-lg font-semibold text-slate-900">
+                  {activeTab === "volunteer" && t('dashboard.volunteer.activeTasks')}
+                  {activeTab === "coordinator" && t('dashboard.coordinator.projectAnalytics')}
+                  {activeTab === "donor" && t('dashboard.donor.supportedProjects')}
+                </h3>
+                
+                <div className="flex space-x-2">
+                  <button className="p-1.5 rounded-lg border border-slate-200 text-slate-400 hover:text-primary-600 hover:border-primary-300 transition-colors">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-4 h-4">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3" />
+                    </svg>
+                  </button>
+                  <button className="p-1.5 rounded-lg border border-slate-200 text-slate-400 hover:text-primary-600 hover:border-primary-300 transition-colors">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-4 h-4">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M12 6.75a.75.75 0 110-1.5.75.75 0 010 1.5zM12 12.75a.75.75 0 110-1.5.75.75 0 010 1.5zM12 18.75a.75.75 0 110-1.5.75.75 0 010 1.5z" />
+                    </svg>
+                  </button>
                 </div>
               </div>
               
-              <div className="mt-10 lg:col-span-9 lg:mt-0">
-                {/* Volunteer dashboard preview */}
-                {activeTab === "volunteer" && (
-                  <div className="bg-white rounded-xl shadow-lg overflow-hidden border border-gray-100">
-                    <div className="bg-gradient-to-r from-primary-600 to-primary-700 px-6 py-5">
-                      <h3 className="text-xl leading-6 font-semibold text-white font-heading">
-                        {t('dashboard.volunteer.title')}
-                      </h3>
-                    </div>
-                    <div className="border-t border-gray-200">
-                      <div className="bg-gradient-to-r from-gray-50 to-white px-6 py-5 font-medium">
-                        <div className="text-md font-semibold text-gray-800 flex items-center">
-                          <CheckCircle className="h-5 w-5 text-green-500 mr-2" />
-                          {t('dashboard.volunteer.currentTasks')}
+              {/* Вміст в залежності від вибраної ролі */}
+              {activeTab === "volunteer" && (
+                <div className="border border-slate-200 rounded-xl overflow-hidden">
+                  <div className="divide-y divide-slate-200">
+                    <div className="p-4 bg-slate-50 flex items-center justify-between">
+                      <div className="flex items-center">
+                        <div className="flex-shrink-0 mr-3">
+                          <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center">
+                            <VolunteerActivism className="h-5 w-5 text-blue-600" />
+                          </div>
+                        </div>
+                        <div>
+                          <div className="text-sm font-medium text-slate-900">Розподіл їжі для бездомних</div>
+                          <div className="text-xs text-slate-500">Допомога Спільноти • Завтра, 10:00</div>
                         </div>
                       </div>
-                      <ul className="divide-y divide-gray-100">
-                        <li className="px-6 py-5 hover:bg-gray-50 transition-colors duration-150">
-                          <div className="flex items-center justify-between">
-                            <p className="text-md font-medium text-primary-700 truncate">
-                              Доставка продуктових наборів
-                            </p>
-                            <div className="ml-2 flex-shrink-0 flex">
-                              <p className="px-3 py-1 inline-flex text-sm leading-5 font-semibold rounded-full bg-yellow-100 text-yellow-800">
-                                {t('tasks.status.in_progress')}
-                              </p>
-                            </div>
-                          </div>
-                          <div className="mt-3 sm:flex sm:justify-between">
-                            <div className="sm:flex">
-                              <p className="flex items-center text-sm text-gray-500">
-                                <CalendarToday className="h-4 w-4 mr-1 text-gray-400" />
-                                Термін: 25 жовтня 2023
-                              </p>
-                            </div>
-                          </div>
-                        </li>
-                      </ul>
+                      <span className="px-2.5 py-1 text-xs font-medium rounded-full bg-yellow-100 text-yellow-800">
+                        {t('tasks.status.in_progress')}
+                      </span>
                     </div>
-                  </div>
-                )}
-
-                {/* Coordinator dashboard preview */}
-                {activeTab === "coordinator" && (
-                  <div className="bg-white rounded-xl shadow-lg overflow-hidden border border-gray-100">
-                    <div className="bg-gradient-to-r from-primary-600 to-primary-700 px-6 py-5">
-                      <h3 className="text-xl leading-6 font-semibold text-white font-heading">
-                        {t('dashboard.coordinator.title')}
-                      </h3>
-                    </div>
-                    <div className="border-t border-gray-200">
-                      <div className="bg-gradient-to-r from-gray-50 to-white px-6 py-5 flex justify-between items-center">
-                        <div className="text-md font-semibold text-gray-800 flex items-center">
-                          <Work className="h-5 w-5 text-primary-500 mr-2" />
-                          {t('dashboard.coordinator.myProjects')}
+                    
+                    <div className="p-4 flex items-center justify-between">
+                      <div className="flex items-center">
+                        <div className="flex-shrink-0 mr-3">
+                          <div className="w-10 h-10 rounded-full bg-green-100 flex items-center justify-center">
+                            <Work className="h-5 w-5 text-green-600" />
+                          </div>
                         </div>
-                        <button className="inline-flex items-center px-4 py-2 text-sm font-medium rounded-md shadow-sm text-white bg-primary-600 hover:bg-primary-700 transition-all duration-200">
-                          <Add className="h-4 w-4 mr-1" />
-                          {t('dashboard.coordinator.createProjectButton')}
-                        </button>
-                      </div>
-                      <ul className="divide-y divide-gray-100">
-                        <li className="px-6 py-5 hover:bg-gray-50 transition-colors duration-150">
-                          <div className="flex items-center justify-between">
-                            <p className="text-md font-medium text-primary-700 truncate">
-                              Допомога вразливим групам населення
-                            </p>
-                            <div className="ml-2 flex-shrink-0 flex">
-                              <p className="px-3 py-1 inline-flex text-sm leading-5 font-semibold rounded-full bg-green-100 text-green-800">
-                                {t('projects.status.in_progress')}
-                              </p>
-                            </div>
-                          </div>
-                          <div className="mt-3">
-                            <div className="relative pt-1">
-                              <div className="overflow-hidden h-2 text-xs flex rounded-full bg-gray-200">
-                                <div style={{ width: "70%" }} className="shadow-none flex flex-col text-center whitespace-nowrap text-white justify-center bg-primary-500"></div>
-                              </div>
-                              <div className="flex justify-between mt-1">
-                                <p className="text-sm text-gray-500 font-medium">
-                                  Зібрано: 70 000 грн
-                                </p>
-                                <p className="text-sm text-gray-500">
-                                  Ціль: 100 000 грн
-                                </p>
-                              </div>
-                            </div>
-                          </div>
-                        </li>
-                      </ul>
-                    </div>
-                  </div>
-                )}
-
-                {/* Donor dashboard preview */}
-                {activeTab === "donor" && (
-                  <div className="bg-white rounded-xl shadow-lg overflow-hidden border border-gray-100">
-                    <div className="bg-gradient-to-r from-primary-600 to-primary-700 px-6 py-5">
-                      <h3 className="text-xl leading-6 font-semibold text-white font-heading">
-                        {t('dashboard.donor.title')}
-                      </h3>
-                    </div>
-                    <div className="border-t border-gray-200">
-                      <div className="bg-gradient-to-r from-gray-50 to-white px-6 py-5">
-                        <div className="text-md font-semibold text-gray-800 flex items-center">
-                          <LocalAtm className="h-5 w-5 text-yellow-500 mr-2" />
-                          {t('dashboard.donor.myDonations')}
+                        <div>
+                          <div className="text-sm font-medium text-slate-900">Збирання сміття в парку</div>
+                          <div className="text-xs text-slate-500">Еко Майбутнє • 15 червня 2023</div>
                         </div>
                       </div>
-                      <ul className="divide-y divide-gray-100">
-                        <li className="px-6 py-5 hover:bg-gray-50 transition-colors duration-150">
-                          <div className="flex items-center justify-between">
-                            <p className="text-md font-medium text-primary-700 truncate">
-                              Обладнання для лікарень
-                            </p>
-                            <div className="ml-2 flex-shrink-0 flex">
-                              <p className="px-3 py-1 inline-flex text-sm leading-5 font-semibold rounded-full bg-green-100 text-green-800">
-                                {t('projects.status.in_progress')}
-                              </p>
-                            </div>
+                      <span className="px-2.5 py-1 text-xs font-medium rounded-full bg-green-100 text-green-800">
+                        {t('tasks.status.completed')}
+                      </span>
+                    </div>
+                    
+                    <div className="p-4 flex items-center justify-between">
+                      <div className="flex items-center">
+                        <div className="flex-shrink-0 mr-3">
+                          <div className="w-10 h-10 rounded-full bg-purple-100 flex items-center justify-center">
+                            <LightbulbOutlined className="h-5 w-5 text-purple-600" />
                           </div>
-                          <div className="mt-3 flex flex-col sm:flex-row sm:justify-between gap-2">
-                            <div className="flex items-center">
-                              <Money className="h-4 w-4 mr-1 text-gray-400" />
-                              <p className="text-sm text-gray-500">
-                                Сума пожертви: <span className="font-semibold text-yellow-600">1000 грн</span>
-                              </p>
-                            </div>
-                            <div className="flex items-center">
-                              <CalendarToday className="h-4 w-4 mr-1 text-gray-400" />
-                              <p className="text-sm text-gray-500">
-                                Дата: 10 вересня 2023
-                              </p>
-                            </div>
-                          </div>
-                        </li>
-                      </ul>
+                        </div>
+                        <div>
+                          <div className="text-sm font-medium text-slate-900">Навчання дітей програмуванню</div>
+                          <div className="text-xs text-slate-500">IT Волонтери • Щонеділі</div>
+                        </div>
+                      </div>
+                      <span className="px-2.5 py-1 text-xs font-medium rounded-full bg-purple-100 text-purple-800">
+                        {t('tasks.status.pending')}
+                      </span>
                     </div>
                   </div>
-                )}
-                
-                <div className="mt-8 text-center">
-                  <Link href="/auth">
-                    <button className="inline-flex items-center justify-center px-6 py-3 text-white bg-primary-600 hover:bg-primary-700 shadow-md hover:shadow-lg transition-all duration-300 rounded-lg">
-                      {t('dashboard.startNow')}
-                      <ArrowForward className="ml-2 h-5 w-5" />
-                    </button>
-                  </Link>
                 </div>
-              </div>
+              )}
+              
+              {activeTab === "coordinator" && (
+                <div>
+                  <div className="mb-4">
+                    <div className="flex justify-between items-center mb-2">
+                      <div className="flex items-center">
+                        <div className="flex-shrink-0 mr-2">
+                          <div className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center">
+                            <Apartment className="h-4 w-4 text-blue-600" />
+                          </div>
+                        </div>
+                        <div className="text-sm font-medium text-slate-900">Допомога Спільноти</div>
+                      </div>
+                      <div className="text-sm font-semibold text-primary-600">85%</div>
+                    </div>
+                    <div className="overflow-hidden h-2 text-xs flex rounded-full bg-slate-200">
+                      <div style={{ width: "85%" }} className="shadow-none flex flex-col text-center whitespace-nowrap text-white justify-center bg-primary-500 rounded-full"></div>
+                    </div>
+                  </div>
+                  
+                  <div className="mb-4">
+                    <div className="flex justify-between items-center mb-2">
+                      <div className="flex items-center">
+                        <div className="flex-shrink-0 mr-2">
+                          <div className="w-8 h-8 rounded-full bg-green-100 flex items-center justify-center">
+                            <LightbulbOutlined className="h-4 w-4 text-green-600" />
+                          </div>
+                        </div>
+                        <div className="text-sm font-medium text-slate-900">Еко Майбутнє</div>
+                      </div>
+                      <div className="text-sm font-semibold text-secondary-600">62%</div>
+                    </div>
+                    <div className="overflow-hidden h-2 text-xs flex rounded-full bg-slate-200">
+                      <div style={{ width: "62%" }} className="shadow-none flex flex-col text-center whitespace-nowrap text-white justify-center bg-secondary-500 rounded-full"></div>
+                    </div>
+                  </div>
+                  
+                  <div>
+                    <div className="flex justify-between items-center mb-2">
+                      <div className="flex items-center">
+                        <div className="flex-shrink-0 mr-2">
+                          <div className="w-8 h-8 rounded-full bg-yellow-100 flex items-center justify-center">
+                            <EmojiEvents className="h-4 w-4 text-yellow-600" />
+                          </div>
+                        </div>
+                        <div className="text-sm font-medium text-slate-900">Спортивні змагання для дітей</div>
+                      </div>
+                      <div className="text-sm font-semibold text-yellow-600">35%</div>
+                    </div>
+                    <div className="overflow-hidden h-2 text-xs flex rounded-full bg-slate-200">
+                      <div style={{ width: "35%" }} className="shadow-none flex flex-col text-center whitespace-nowrap text-white justify-center bg-yellow-500 rounded-full"></div>
+                    </div>
+                  </div>
+                </div>
+              )}
+              
+              {activeTab === "donor" && (
+                <div className="border border-slate-200 rounded-xl overflow-hidden">
+                  <div className="divide-y divide-slate-200">
+                    <div className="p-4 bg-slate-50 flex items-center justify-between">
+                      <div className="flex-1 flex items-center">
+                        <div className="flex-shrink-0 mr-3">
+                          <div className="w-10 h-10 rounded-full bg-amber-100 flex items-center justify-center">
+                            <VolunteerActivism className="h-5 w-5 text-amber-600" />
+                          </div>
+                        </div>
+                        <div>
+                          <div className="text-sm font-medium text-slate-900">Тваринний притулок</div>
+                          <div className="text-xs text-slate-500">₴5,000 • 14 травня 2023</div>
+                        </div>
+                      </div>
+                      <span className="px-2.5 py-1 text-xs font-medium rounded-full bg-green-100 text-green-800">
+                        {t('projects.status.completed')}
+                      </span>
+                    </div>
+                    
+                    <div className="p-4 flex items-center justify-between">
+                      <div className="flex-1 flex items-center">
+                        <div className="flex-shrink-0 mr-3">
+                          <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center">
+                            <Apartment className="h-5 w-5 text-blue-600" />
+                          </div>
+                        </div>
+                        <div>
+                          <div className="text-sm font-medium text-slate-900">Освітній центр для дітей</div>
+                          <div className="text-xs text-slate-500">₴2,500 • 2 травня 2023</div>
+                        </div>
+                      </div>
+                      <span className="px-2.5 py-1 text-xs font-medium rounded-full bg-blue-100 text-blue-800">
+                        {t('projects.status.in_progress')}
+                      </span>
+                    </div>
+                    
+                    <div className="p-4 flex items-center justify-between">
+                      <div className="flex-1 flex items-center">
+                        <div className="flex-shrink-0 mr-3">
+                          <div className="w-10 h-10 rounded-full bg-purple-100 flex items-center justify-center">
+                            <LightbulbOutlined className="h-5 w-5 text-purple-600" />
+                          </div>
+                        </div>
+                        <div>
+                          <div className="text-sm font-medium text-slate-900">Технології для шкіл</div>
+                          <div className="text-xs text-slate-500">₴8,300 • 15 квітня 2023</div>
+                        </div>
+                      </div>
+                      <span className="px-2.5 py-1 text-xs font-medium rounded-full bg-blue-100 text-blue-800">
+                        {t('projects.status.in_progress')}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+            
+            {/* Нижня частина з кнопкою */}
+            <div className="p-6 bg-slate-50 border-t border-slate-200 flex justify-center">
+              <Link href="/auth">
+                <button className="flex items-center justify-center px-6 py-3 rounded-lg bg-primary-600 text-white font-medium shadow-sm hover:bg-primary-700 hover:shadow-md transition-all duration-300 transform hover:-translate-y-0.5">
+                  <span>{t('dashboard.startNow')}</span>
+                  <ArrowForward className="ml-2 h-5 w-5" />
+                </button>
+              </Link>
             </div>
           </div>
         </div>
       </div>
 
       {/* Testimonials Section */}
-      <div className="bg-gray-50 py-16">
+      <div className="bg-white py-16">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center">
             <h2 className="text-3xl font-extrabold text-gray-900 font-heading">
