@@ -127,6 +127,10 @@ export default function AdminDashboard() {
       return sortOrder === "asc" 
         ? (a.isVerified ? 1 : 0) - (b.isVerified ? 1 : 0) 
         : (b.isVerified ? 1 : 0) - (a.isVerified ? 1 : 0);
+    } else if (sortField === "isBlocked") {
+      return sortOrder === "asc" 
+        ? (a.isBlocked ? 1 : 0) - (b.isBlocked ? 1 : 0) 
+        : (b.isBlocked ? 1 : 0) - (a.isBlocked ? 1 : 0);
     }
     return 0;
   });
@@ -661,6 +665,19 @@ export default function AdminDashboard() {
                         )}
                       </div>
                     </TableHead>
+                    <TableHead
+                      className="cursor-pointer"
+                      onClick={() => handleSort("isBlocked")}
+                    >
+                      <div className="flex items-center">
+                        {t('dashboard.admin.blockStatus')}
+                        {sortField === "isBlocked" && (
+                          sortOrder === "asc" ? 
+                          <ArrowUpward className="ml-1 h-4 w-4" /> : 
+                          <ArrowDownward className="ml-1 h-4 w-4" />
+                        )}
+                      </div>
+                    </TableHead>
                     <TableHead className="text-right">
                       {t('common.actions')}
                     </TableHead>
@@ -690,6 +707,17 @@ export default function AdminDashboard() {
                         ) : (
                           <Badge className="bg-yellow-100 text-yellow-800">
                             {t('dashboard.admin.notVerified')}
+                          </Badge>
+                        )}
+                      </TableCell>
+                      <TableCell>
+                        {user.isBlocked ? (
+                          <Badge className="bg-red-100 text-red-800">
+                            {t('dashboard.admin.blocked')}
+                          </Badge>
+                        ) : (
+                          <Badge className="bg-green-100 text-green-800">
+                            {t('dashboard.admin.active')}
                           </Badge>
                         )}
                       </TableCell>
