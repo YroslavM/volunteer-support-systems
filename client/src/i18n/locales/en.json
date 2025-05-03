@@ -39,7 +39,8 @@
       "title": "Together we change the world",
       "subtitle": "VolunteerHub unites volunteers, coordinators, and donors to work together on socially important projects.",
       "joinButton": "Join",
-      "viewProjects": "View Projects"
+      "viewProjects": "View Projects",
+      "badge": "Volunteering changes the world"
     },
     "mission": {
       "title": "Our Mission",
@@ -63,6 +64,7 @@
     "projects": {
       "title": "Current Projects",
       "subtitle": "Join projects that need your support right now.",
+      "description": "Join projects that need your support right now.",
       "seeAll": "All Projects",
       "collected": "Collected",
       "target": "Target",
@@ -70,7 +72,8 @@
     },
     "dashboard": {
       "title": "User-friendly interface for each role",
-      "subtitle": "Our platform is adapted to the needs of each user, depending on their role in projects."
+      "subtitle": "Our platform is adapted to the needs of each user, depending on their role in projects.",
+      "description": "Access an interactive dashboard that allows you to effectively manage your volunteer activities."
     },
     "testimonials": {
       "title": "What our users say",
@@ -114,15 +117,23 @@
       "volunteers": "Volunteers",
       "donations": "Donations",
       "noTasks": "No tasks assigned yet"
-    }
+    },
+    "funded": "Funded",
+    "learnMore": "Learn More"
   },
   "dashboard": {
+    "choose": "Choose view mode",
+    "startNow": "Start Now",
     "volunteer": {
       "title": "Volunteer Dashboard",
       "currentTasks": "Current Tasks",
       "availableProjects": "Available Projects",
       "completedTasks": "Completed Tasks",
-      "applyButton": "Apply"
+      "applyButton": "Apply",
+      "tasksDone": "Tasks Completed",
+      "projectsJoined": "Projects Joined",
+      "hoursVolunteered": "Hours Volunteered",
+      "activeTasks": "Active Tasks"
     },
     "coordinator": {
       "title": "Coordinator Dashboard",
@@ -132,14 +143,22 @@
       "approveButton": "Approve",
       "rejectButton": "Reject",
       "volunteersButton": "Volunteers",
-      "tasksButton": "Tasks"
+      "tasksButton": "Tasks",
+      "activeProjects": "Active Projects",
+      "activeVolunteers": "Active Volunteers",
+      "pendingTasks": "Pending Tasks",
+      "projectAnalytics": "Project Analytics"
     },
     "donor": {
       "title": "Donor Dashboard",
       "myDonations": "My Donations",
       "recommendedProjects": "Recommended Projects",
       "projectDetails": "Project Details",
-      "donateButton": "Support"
+      "donateButton": "Support",
+      "totalDonated": "Total Donated",
+      "projectsSupported": "Projects Supported",
+      "lastDonation": "Last Donation",
+      "supportedProjects": "Supported Projects"
     }
   },
   "tasks": {
@@ -269,6 +288,9 @@
     "edit": "Edit",
     "delete": "Delete",
     "confirm": "Confirm",
-    "back": "Back"
+    "back": "Back",
+    "learnMore": "Learn More",
+    "noProjects": "No projects found",
+    "checkBackLater": "Check back later or create a new project."
   }
 }
