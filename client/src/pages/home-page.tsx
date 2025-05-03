@@ -9,6 +9,13 @@ import {
   Favorite,
   ArrowForward,
   AccountCircle,
+  CheckCircle,
+  CalendarToday,
+  Money,
+  Add,
+  Work,
+  LocalAtm,
+  HourglassEmpty,
 } from "@mui/icons-material";
 import { SelectProject } from "@shared/schema";
 
@@ -231,90 +238,115 @@ export default function HomePage() {
       </div>
 
       {/* Dashboard Preview Section */}
-      <div className="bg-white py-16">
+      <div className="bg-white py-24 relative">
+        {/* Decorative elements */}
+        <div className="absolute bottom-0 inset-x-0 h-36 bg-gradient-to-t from-gray-50 to-transparent"></div>
+        <div className="absolute right-0 top-1/3 w-40 h-40 bg-gradient-to-bl from-primary-200 to-primary-300 opacity-20 rounded-full blur-3xl"></div>
+        <div className="absolute left-0 bottom-1/3 w-40 h-40 bg-gradient-to-tr from-yellow-200 to-yellow-300 opacity-20 rounded-full blur-3xl"></div>
+        
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="lg:text-center">
-            <h2 className="text-base text-primary-600 font-semibold tracking-wide uppercase">
+          <div className="lg:text-center mb-16">
+            <span className="inline-block px-3 py-1 text-sm font-medium bg-primary-100 text-primary-800 rounded-full mb-3">
               {t('home.dashboard.title')}
-            </h2>
-            <p className="mt-2 text-3xl leading-8 font-extrabold tracking-tight text-gray-900 sm:text-4xl font-heading">
+            </span>
+            <h2 className="text-3xl leading-8 font-extrabold tracking-tight text-gray-900 sm:text-4xl font-heading bg-clip-text text-transparent bg-gradient-to-r from-primary-700 to-primary-900">
               {t('home.dashboard.subtitle')}
-            </p>
+            </h2>
+            <div className="w-24 h-1 bg-gradient-to-r from-primary-500 to-yellow-500 mx-auto my-6 rounded-full"></div>
           </div>
 
-          <div className="mt-10">
+          <div className="mt-10 relative">
             <div className="lg:grid lg:grid-cols-12 lg:gap-8">
+              {/* Sidebar tabs */}
               <div className="lg:col-span-3">
-                <ul className="space-y-2">
-                  <li>
-                    <button 
-                      className={`w-full p-3 text-left ${
-                        activeTab === "volunteer" 
-                          ? "bg-primary-50 text-primary-700 font-medium" 
-                          : "text-gray-700 hover:bg-gray-50"
-                      }`}
-                      onClick={() => handleTabChange("volunteer")}
-                    >
-                      {t('roles.volunteer')}
-                    </button>
-                  </li>
-                  <li>
-                    <button 
-                      className={`w-full p-3 text-left ${
-                        activeTab === "coordinator" 
-                          ? "bg-primary-50 text-primary-700 font-medium" 
-                          : "text-gray-700 hover:bg-gray-50"
-                      }`}
-                      onClick={() => handleTabChange("coordinator")}
-                    >
-                      {t('roles.coordinator')}
-                    </button>
-                  </li>
-                  <li>
-                    <button 
-                      className={`w-full p-3 text-left ${
-                        activeTab === "donor" 
-                          ? "bg-primary-50 text-primary-700 font-medium" 
-                          : "text-gray-700 hover:bg-gray-50"
-                      }`}
-                      onClick={() => handleTabChange("donor")}
-                    >
-                      {t('roles.donor')}
-                    </button>
-                  </li>
-                </ul>
+                <div className="bg-white rounded-xl shadow-md overflow-hidden border border-gray-100">
+                  <div className="p-4 border-b border-gray-100 bg-gradient-to-r from-primary-50 to-primary-100">
+                    <h3 className="text-lg font-semibold text-primary-900">
+                      {t('dashboard.choose')}
+                    </h3>
+                  </div>
+                  <ul className="divide-y divide-gray-100">
+                    <li>
+                      <button 
+                        className={`w-full p-4 text-left transition-all duration-200 ${
+                          activeTab === "volunteer" 
+                            ? "bg-primary-50 text-primary-700 font-medium border-l-4 border-primary-700" 
+                            : "text-gray-700 hover:bg-gray-50"
+                        }`}
+                        onClick={() => handleTabChange("volunteer")}
+                      >
+                        <div className="flex items-center">
+                          <VolunteerActivism className={`mr-3 h-5 w-5 ${activeTab === "volunteer" ? "text-primary-700" : "text-gray-400"}`} />
+                          <span>{t('roles.volunteer')}</span>
+                        </div>
+                      </button>
+                    </li>
+                    <li>
+                      <button 
+                        className={`w-full p-4 text-left transition-all duration-200 ${
+                          activeTab === "coordinator" 
+                            ? "bg-primary-50 text-primary-700 font-medium border-l-4 border-primary-700" 
+                            : "text-gray-700 hover:bg-gray-50"
+                        }`}
+                        onClick={() => handleTabChange("coordinator")}
+                      >
+                        <div className="flex items-center">
+                          <ManageAccounts className={`mr-3 h-5 w-5 ${activeTab === "coordinator" ? "text-primary-700" : "text-gray-400"}`} />
+                          <span>{t('roles.coordinator')}</span>
+                        </div>
+                      </button>
+                    </li>
+                    <li>
+                      <button 
+                        className={`w-full p-4 text-left transition-all duration-200 ${
+                          activeTab === "donor" 
+                            ? "bg-primary-50 text-primary-700 font-medium border-l-4 border-primary-700" 
+                            : "text-gray-700 hover:bg-gray-50"
+                        }`}
+                        onClick={() => handleTabChange("donor")}
+                      >
+                        <div className="flex items-center">
+                          <Favorite className={`mr-3 h-5 w-5 ${activeTab === "donor" ? "text-primary-700" : "text-gray-400"}`} />
+                          <span>{t('roles.donor')}</span>
+                        </div>
+                      </button>
+                    </li>
+                  </ul>
+                </div>
               </div>
               
               <div className="mt-10 lg:col-span-9 lg:mt-0">
                 {/* Volunteer dashboard preview */}
                 {activeTab === "volunteer" && (
-                  <div className="bg-white rounded-lg shadow overflow-hidden">
-                    <div className="bg-primary-700 px-4 py-5 sm:px-6">
-                      <h3 className="text-lg leading-6 font-medium text-white font-heading">
+                  <div className="bg-white rounded-xl shadow-lg overflow-hidden border border-gray-100">
+                    <div className="bg-gradient-to-r from-primary-600 to-primary-700 px-6 py-5">
+                      <h3 className="text-xl leading-6 font-semibold text-white font-heading">
                         {t('dashboard.volunteer.title')}
                       </h3>
                     </div>
                     <div className="border-t border-gray-200">
-                      <div className="bg-gray-50 px-4 py-5 sm:px-6">
-                        <div className="text-sm font-medium text-gray-500">
+                      <div className="bg-gradient-to-r from-gray-50 to-white px-6 py-5 font-medium">
+                        <div className="text-md font-semibold text-gray-800 flex items-center">
+                          <CheckCircle className="h-5 w-5 text-green-500 mr-2" />
                           {t('dashboard.volunteer.currentTasks')}
                         </div>
                       </div>
-                      <ul className="divide-y divide-gray-200">
-                        <li className="px-4 py-4 sm:px-6">
+                      <ul className="divide-y divide-gray-100">
+                        <li className="px-6 py-5 hover:bg-gray-50 transition-colors duration-150">
                           <div className="flex items-center justify-between">
-                            <p className="text-sm font-medium text-primary-600 truncate">
+                            <p className="text-md font-medium text-primary-700 truncate">
                               Доставка продуктових наборів
                             </p>
                             <div className="ml-2 flex-shrink-0 flex">
-                              <p className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-yellow-100 text-yellow-800">
+                              <p className="px-3 py-1 inline-flex text-sm leading-5 font-semibold rounded-full bg-yellow-100 text-yellow-800">
                                 {t('tasks.status.in_progress')}
                               </p>
                             </div>
                           </div>
-                          <div className="mt-2 sm:flex sm:justify-between">
+                          <div className="mt-3 sm:flex sm:justify-between">
                             <div className="sm:flex">
                               <p className="flex items-center text-sm text-gray-500">
+                                <CalendarToday className="h-4 w-4 mr-1 text-gray-400" />
                                 Термін: 25 жовтня 2023
                               </p>
                             </div>
@@ -327,37 +359,49 @@ export default function HomePage() {
 
                 {/* Coordinator dashboard preview */}
                 {activeTab === "coordinator" && (
-                  <div className="bg-white rounded-lg shadow overflow-hidden">
-                    <div className="bg-primary-700 px-4 py-5 sm:px-6">
-                      <h3 className="text-lg leading-6 font-medium text-white font-heading">
+                  <div className="bg-white rounded-xl shadow-lg overflow-hidden border border-gray-100">
+                    <div className="bg-gradient-to-r from-primary-600 to-primary-700 px-6 py-5">
+                      <h3 className="text-xl leading-6 font-semibold text-white font-heading">
                         {t('dashboard.coordinator.title')}
                       </h3>
                     </div>
                     <div className="border-t border-gray-200">
-                      <div className="bg-gray-50 px-4 py-5 sm:px-6 flex justify-between items-center">
-                        <div className="text-sm font-medium text-gray-500">
+                      <div className="bg-gradient-to-r from-gray-50 to-white px-6 py-5 flex justify-between items-center">
+                        <div className="text-md font-semibold text-gray-800 flex items-center">
+                          <Work className="h-5 w-5 text-primary-500 mr-2" />
                           {t('dashboard.coordinator.myProjects')}
                         </div>
-                        <button className="inline-flex items-center px-3 py-1 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-primary-600 hover:bg-primary-700">
+                        <button className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-lg shadow-sm text-white bg-gradient-to-r from-primary-600 to-primary-700 hover:from-primary-700 hover:to-primary-800 transition-all duration-200">
+                          <Add className="h-4 w-4 mr-1" />
                           {t('dashboard.coordinator.createProjectButton')}
                         </button>
                       </div>
-                      <ul className="divide-y divide-gray-200">
-                        <li className="px-4 py-4 sm:px-6">
+                      <ul className="divide-y divide-gray-100">
+                        <li className="px-6 py-5 hover:bg-gray-50 transition-colors duration-150">
                           <div className="flex items-center justify-between">
-                            <p className="text-sm font-medium text-primary-600 truncate">
+                            <p className="text-md font-medium text-primary-700 truncate">
                               Допомога вразливим групам населення
                             </p>
                             <div className="ml-2 flex-shrink-0 flex">
-                              <p className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">
+                              <p className="px-3 py-1 inline-flex text-sm leading-5 font-semibold rounded-full bg-green-100 text-green-800">
                                 {t('projects.status.in_progress')}
                               </p>
                             </div>
                           </div>
-                          <div className="mt-2 flex justify-between items-center">
-                            <p className="text-sm text-gray-500">
-                              Збір коштів: 70 000 / 100 000 грн
-                            </p>
+                          <div className="mt-3">
+                            <div className="relative pt-1">
+                              <div className="overflow-hidden h-2 text-xs flex rounded-full bg-gray-200">
+                                <div style={{ width: "70%" }} className="shadow-none flex flex-col text-center whitespace-nowrap text-white justify-center bg-primary-500"></div>
+                              </div>
+                              <div className="flex justify-between mt-1">
+                                <p className="text-sm text-gray-500 font-medium">
+                                  Зібрано: 70 000 грн
+                                </p>
+                                <p className="text-sm text-gray-500">
+                                  Ціль: 100 000 грн
+                                </p>
+                              </div>
+                            </div>
                           </div>
                         </li>
                       </ul>
@@ -367,35 +411,42 @@ export default function HomePage() {
 
                 {/* Donor dashboard preview */}
                 {activeTab === "donor" && (
-                  <div className="bg-white rounded-lg shadow overflow-hidden">
-                    <div className="bg-primary-700 px-4 py-5 sm:px-6">
-                      <h3 className="text-lg leading-6 font-medium text-white font-heading">
+                  <div className="bg-white rounded-xl shadow-lg overflow-hidden border border-gray-100">
+                    <div className="bg-gradient-to-r from-primary-600 to-primary-700 px-6 py-5">
+                      <h3 className="text-xl leading-6 font-semibold text-white font-heading">
                         {t('dashboard.donor.title')}
                       </h3>
                     </div>
                     <div className="border-t border-gray-200">
-                      <div className="bg-gray-50 px-4 py-5 sm:px-6">
-                        <div className="text-sm font-medium text-gray-500">
+                      <div className="bg-gradient-to-r from-gray-50 to-white px-6 py-5">
+                        <div className="text-md font-semibold text-gray-800 flex items-center">
+                          <LocalAtm className="h-5 w-5 text-yellow-500 mr-2" />
                           {t('dashboard.donor.myDonations')}
                         </div>
                       </div>
-                      <ul className="divide-y divide-gray-200">
-                        <li className="px-4 py-4 sm:px-6">
+                      <ul className="divide-y divide-gray-100">
+                        <li className="px-6 py-5 hover:bg-gray-50 transition-colors duration-150">
                           <div className="flex items-center justify-between">
-                            <p className="text-sm font-medium text-primary-600 truncate">
+                            <p className="text-md font-medium text-primary-700 truncate">
                               Обладнання для лікарень
                             </p>
                             <div className="ml-2 flex-shrink-0 flex">
-                              <p className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">
+                              <p className="px-3 py-1 inline-flex text-sm leading-5 font-semibold rounded-full bg-green-100 text-green-800">
                                 {t('projects.status.in_progress')}
                               </p>
                             </div>
                           </div>
-                          <div className="mt-2 sm:flex sm:justify-between">
-                            <div className="sm:flex items-center">
-                              <p className="flex items-center text-sm text-gray-500">
-                                <Favorite className="text-secondary-500 text-sm mr-1" />
-                                Ваш внесок: 2000 грн
+                          <div className="mt-3 flex flex-col sm:flex-row sm:justify-between gap-2">
+                            <div className="flex items-center">
+                              <Money className="h-4 w-4 mr-1 text-gray-400" />
+                              <p className="text-sm text-gray-500">
+                                Сума пожертви: <span className="font-semibold text-yellow-600">1000 грн</span>
+                              </p>
+                            </div>
+                            <div className="flex items-center">
+                              <CalendarToday className="h-4 w-4 mr-1 text-gray-400" />
+                              <p className="text-sm text-gray-500">
+                                Дата: 10 вересня 2023
                               </p>
                             </div>
                           </div>
@@ -404,6 +455,15 @@ export default function HomePage() {
                     </div>
                   </div>
                 )}
+                
+                <div className="mt-8 text-center">
+                  <Link href="/auth">
+                    <Button className="inline-flex items-center justify-center px-6 py-3 text-white bg-gradient-to-r from-primary-500 to-primary-600 hover:from-primary-600 hover:to-primary-700 shadow-md hover:shadow-xl transition-all duration-300 rounded-xl">
+                      {t('dashboard.startNow')}
+                      <ArrowForward className="ml-2 h-5 w-5" />
+                    </Button>
+                  </Link>
+                </div>
               </div>
             </div>
           </div>
