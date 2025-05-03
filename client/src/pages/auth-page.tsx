@@ -72,13 +72,26 @@ export default function AuthPage() {
   const loginMutation = {
     mutate: (credentials: any) => {
       console.log('Login mutation called', credentials);
-      // Redirect to the appropriate dashboard based on user role
-      if (credentials.email.includes('volunteer')) {
-        window.location.href = '/dashboard/volunteer';
-      } else if (credentials.email.includes('coordinator')) {
-        window.location.href = '/dashboard/coordinator';
+      
+      // Store auth info in sessionStorage
+      const userRole = credentials.email.includes('volunteer') 
+        ? 'volunteer' 
+        : credentials.email.includes('coordinator') 
+          ? 'coordinator' 
+          : 'donor';
+          
+      sessionStorage.setItem('isLoggedIn', 'true');
+      sessionStorage.setItem('userRole', userRole);
+      sessionStorage.setItem('username', credentials.email.split('@')[0]);
+      sessionStorage.setItem('userId', '1'); // Mock user ID
+      
+      // Redirect to the appropriate dashboard
+      if (userRole === 'volunteer') {
+        window.location.href = '/volunteer-dashboard';
+      } else if (userRole === 'coordinator') {
+        window.location.href = '/coordinator-dashboard';
       } else {
-        window.location.href = '/dashboard/donor';
+        window.location.href = '/donor-dashboard';
       }
     },
     isPending: false
@@ -86,13 +99,20 @@ export default function AuthPage() {
   const registerMutation = {
     mutate: (data: any) => {
       console.log('Register mutation called', data);
+      
+      // Store auth info in sessionStorage
+      sessionStorage.setItem('isLoggedIn', 'true');
+      sessionStorage.setItem('userRole', data.role);
+      sessionStorage.setItem('username', data.username || data.email.split('@')[0]);
+      sessionStorage.setItem('userId', '1'); // Mock user ID
+      
       // Redirect to the appropriate dashboard based on user role
       if (data.role === 'volunteer') {
-        window.location.href = '/dashboard/volunteer';
+        window.location.href = '/volunteer-dashboard';
       } else if (data.role === 'coordinator') {
-        window.location.href = '/dashboard/coordinator';
+        window.location.href = '/coordinator-dashboard';
       } else if (data.role === 'donor') {
-        window.location.href = '/dashboard/donor';
+        window.location.href = '/donor-dashboard';
       }
     },
     isPending: false

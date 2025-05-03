@@ -169,18 +169,19 @@ export function Header() {
                     <DropdownMenuSeparator />
                     <Link href={getDashboardUrl()}>
                       <DropdownMenuItem>
-                        <Dashboard className="mr-2 h-4 w-4" />
+                        <LayoutDashboard className="mr-2 h-4 w-4" />
                         <span>{t('account.dashboard')}</span>
                       </DropdownMenuItem>
                     </Link>
                     <Link href="/profile">
                       <DropdownMenuItem>
-                        <AccountCircle className="mr-2 h-4 w-4" />
+                        <User className="mr-2 h-4 w-4" />
                         <span>{t('account.profile')}</span>
                       </DropdownMenuItem>
                     </Link>
                     <DropdownMenuSeparator />
                     <DropdownMenuItem onClick={handleLogout}>
+                      <LogOut className="mr-2 h-4 w-4 text-destructive" />
                       <span className="text-destructive">{t('account.logout')}</span>
                     </DropdownMenuItem>
                   </DropdownMenuContent>
@@ -273,13 +274,13 @@ export function Header() {
                   </div>
                   <Link href={getDashboardUrl()}>
                     <div className="flex items-center text-gray-700 py-2">
-                      <Menu className="h-5 w-5 mr-2" />
+                      <LayoutDashboard className="h-5 w-5 mr-2" />
                       <span>{t('account.dashboard')}</span>
                     </div>
                   </Link>
                   <Link href="/profile">
                     <div className="flex items-center text-gray-700 py-2">
-                      <AccountCircle className="h-5 w-5 mr-2" />
+                      <User className="h-5 w-5 mr-2" />
                       <span>{t('account.profile')}</span>
                     </div>
                   </Link>
@@ -288,6 +289,7 @@ export function Header() {
                     onClick={handleLogout} 
                     className="w-full justify-start text-red-600 px-0"
                   >
+                    <LogOut className="mr-2 h-5 w-5" />
                     {t('account.logout')}
                   </Button>
                 </div>
