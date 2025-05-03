@@ -36,29 +36,29 @@ export function Header() {
                 </span>
               </Link>
             </div>
-            <nav className="hidden sm:ml-6 sm:flex sm:space-x-8" aria-label="Main navigation">
-              <Link href="/" className={`px-1 pt-1 border-b-2 text-sm font-medium ${
+            <nav className="hidden sm:ml-6 sm:flex sm:items-center sm:space-x-8" aria-label="Main navigation">
+              <Link href="/" className={`px-1 py-2 border-b-2 text-sm font-medium inline-flex items-center ${
                 isActive("/") 
                   ? "border-primary text-primary-600" 
                   : "border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700"
               }`}>
                 {t('nav.home')}
               </Link>
-              <Link href="/projects" className={`px-1 pt-1 border-b-2 text-sm font-medium ${
+              <Link href="/projects" className={`px-1 py-2 border-b-2 text-sm font-medium inline-flex items-center ${
                 isActive("/projects") 
                   ? "border-primary text-primary-600" 
                   : "border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700"
               }`}>
                 {t('nav.projects')}
               </Link>
-              <Link href="/about" className={`px-1 pt-1 border-b-2 text-sm font-medium ${
+              <Link href="/about" className={`px-1 py-2 border-b-2 text-sm font-medium inline-flex items-center ${
                 isActive("/about") 
                   ? "border-primary text-primary-600" 
                   : "border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700"
               }`}>
                 {t('nav.about')}
               </Link>
-              <Link href="/contacts" className={`px-1 pt-1 border-b-2 text-sm font-medium ${
+              <Link href="/contacts" className={`px-1 py-2 border-b-2 text-sm font-medium inline-flex items-center ${
                 isActive("/contacts") 
                   ? "border-primary text-primary-600" 
                   : "border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700"
