@@ -194,6 +194,66 @@
     "privacy": "Privacy Policy",
     "terms": "Terms of Use"
   },
+  "about": {
+    "title": "About Us",
+    "intro": "The Volunteer Activity Information System is a platform that brings together volunteers, coordinators, and donors to address socially important issues.",
+    "mission": {
+      "title": "Our Mission",
+      "subtitle": "Improving Lives Through Volunteering",
+      "description": "We strive to create an effective ecosystem for volunteer projects that maximizes their positive impact on society."
+    },
+    "history": {
+      "title": "Our History",
+      "content": "The platform was created in 2023 in response to the growing need for coordination of volunteer efforts in Ukraine. We started with a small group of enthusiasts and quickly grew into a national network connecting thousands of volunteers, hundreds of projects, and dozens of organizations."
+    },
+    "values": {
+      "title": "Our Values",
+      "transparency": "Transparency",
+      "transparency.desc": "We ensure complete transparency regarding the goals, funding, and results of all projects.",
+      "respect": "Respect",
+      "respect.desc": "We value the contribution of each participant and respect the diversity of opinions and approaches.",
+      "impact": "Impact",
+      "impact.desc": "We focus on projects with measurable and meaningful social impact.",
+      "innovation": "Innovation",
+      "innovation.desc": "We seek new approaches to solving social problems and continually improve our platform.",
+      "community": "Community",
+      "community.desc": "We build a strong community of like-minded people united by common goals and values.",
+      "responsibility": "Responsibility",
+      "responsibility.desc": "We take responsible attitudes toward our commitments to volunteers, beneficiaries, and society as a whole."
+    },
+    "team": {
+      "title": "Our Team",
+      "content": "Our team consists of professionals from various fields united by a common desire to change the world for the better. We combine expertise in technology, social work, management, and communications to create the most effective platform for volunteering."
+    }
+  },
+  "contacts": {
+    "title": "Contacts",
+    "intro": "Contact us if you have questions or suggestions. We are always happy to help and hear your thoughts.",
+    "contactInfo": "Contact Information",
+    "phone": "Phone",
+    "email": "Email",
+    "address": "Address",
+    "workingHours": "Working Hours",
+    "weekdays": "Monday - Friday",
+    "saturday": "Saturday",
+    "sunday": "Sunday",
+    "closed": "Closed",
+    "contactForm": "Contact Form",
+    "messageSent": "Message Sent!",
+    "thankYou": "Thank you for your message. Our team will review it shortly and contact you.",
+    "sendAnother": "Send Another Message",
+    "form": {
+      "name": "Name",
+      "namePlaceholder": "Your name",
+      "email": "Email",
+      "subject": "Subject",
+      "subjectPlaceholder": "Message subject",
+      "message": "Message",
+      "messagePlaceholder": "Your message...",
+      "sending": "Sending...",
+      "send": "Send Message"
+    }
+  },
   "common": {
     "loading": "Loading...",
     "error": "Error",

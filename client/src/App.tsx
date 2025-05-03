@@ -13,6 +13,8 @@ import CoordinatorDashboard from "@/pages/coordinator-dashboard";
 import DonorDashboard from "@/pages/donor-dashboard";
 import ProfilePage from "@/pages/profile-page";
 import CreateProject from "@/pages/create-project";
+import AboutPage from "@/pages/about-page";
+import ContactsPage from "@/pages/contacts-page";
 import { ProtectedRoute } from "./lib/protected-route";
 
 function Router() {
@@ -23,8 +25,8 @@ function Router() {
       <Route path="/auth" component={AuthPage} />
       <Route path="/projects" component={ProjectsPage} />
       <Route path="/projects/:id" component={ProjectDetails} />
-      <Route path="/about" component={() => import("@/pages/about-page").then(module => <module.default />)} />
-      <Route path="/contacts" component={() => import("@/pages/contacts-page").then(module => <module.default />)} />
+      <Route path="/about" component={AboutPage} />
+      <Route path="/contacts" component={ContactsPage} />
       
       {/* Temporarily convert to regular routes for debugging */}
       <Route path="/dashboard/volunteer" component={VolunteerDashboard} />
