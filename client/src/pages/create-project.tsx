@@ -84,6 +84,7 @@ export default function CreateProject() {
       // Redirect to the new project page
       navigate(`/projects/${newProject.id}`);
     } catch (error) {
+      console.error("Failed to create project:", error);
       toast({
         title: "Помилка",
         description: "Не вдалося створити проєкт. Перевірте дані та спробуйте знову.",

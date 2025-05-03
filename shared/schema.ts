@@ -154,7 +154,7 @@ export const donationsRelations = relations(donations, ({ one }) => ({
 export const insertUserSchema = createInsertSchema(users).omit({ id: true, createdAt: true });
 export const selectUserSchema = createSelectSchema(users);
 
-export const insertProjectSchema = createInsertSchema(projects).omit({ id: true, createdAt: true, updatedAt: true, collectedAmount: true, status: true });
+export const insertProjectSchema = createInsertSchema(projects).omit({ id: true, createdAt: true, updatedAt: true, collectedAmount: true, status: true, coordinatorId: true });
 export const selectProjectSchema = createSelectSchema(projects);
 
 export const insertTaskSchema = createInsertSchema(tasks).omit({ id: true, createdAt: true, updatedAt: true });
