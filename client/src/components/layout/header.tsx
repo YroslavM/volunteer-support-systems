@@ -68,19 +68,20 @@ export function Header() {
             </nav>
           </div>
           <div className="hidden sm:ml-6 sm:flex sm:items-center">
-            <Select 
-              value={i18n.language} 
-              onValueChange={changeLanguage}
-              className="mr-4 w-20"
-            >
-              <SelectTrigger aria-label="Select language">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="uk">UA</SelectItem>
-                <SelectItem value="en">EN</SelectItem>
-              </SelectContent>
-            </Select>
+            <div className="mr-4 w-20">
+              <Select 
+                value={i18n.language} 
+                onValueChange={changeLanguage}
+              >
+                <SelectTrigger aria-label="Select language">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="uk">UA</SelectItem>
+                  <SelectItem value="en">EN</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
             
             <div className="flex space-x-2">
               <Link href="/auth">
