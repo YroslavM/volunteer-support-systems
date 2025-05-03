@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Link } from "wouter";
 import { useTranslation } from "react-i18next";
 import { useQuery } from "@tanstack/react-query";
-// import { useAuth } from "@/hooks/use-auth";
+import { useAuth } from "@/hooks/use-auth";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -24,28 +24,19 @@ import { useToast } from "@/hooks/use-toast";
 
 export default function CoordinatorDashboard() {
   const { t } = useTranslation();
-  // Mock auth data for debugging
-  const user = {
-    id: 2,
-    username: "coordinator_user",
-    firstName: "Координатор",
-    lastName: "Тестовий",
-    email: "coordinator@example.com",
-    role: "coordinator",
-    verified: true,
-    createdAt: new Date().toISOString()
-  };
+  const { user } = useAuth();
   const { toast } = useToast();
   const [activeTab, setActiveTab] = useState("my-projects");
 
   // Fetch coordinator's projects
   const { data: projects, isLoading: projectsLoading } = useQuery<SelectProject[]>({
-    queryKey: ["/api/coordinator/projects"],
+    queryKey: [`/api/projects/coordinator/${user?.id}`],
+    enabled: !!user?.id,
   });
 
   // Fetch pending applications for all projects
   const { data: applications, isLoading: applicationsLoading } = useQuery<SelectApplication[]>({
-    queryKey: ["/api/coordinator/applications"],
+    queryKey: [`/api/coordinator/${user?.id}/applications`],
     queryFn: async () => {
       if (!projects?.length) return [];
       
@@ -66,7 +57,7 @@ export default function CoordinatorDashboard() {
       
       return allApplications.filter(app => app.status === "pending");
     },
-    enabled: !!projects?.length,
+    enabled: !!projects?.length && !!user?.id,
   });
 
   // Handle application approval/rejection
