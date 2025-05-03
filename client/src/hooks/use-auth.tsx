@@ -57,6 +57,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         title: "Вхід успішний",
         description: `Вітаємо, ${user.firstName || user.username}!`,
       });
+      
+      // Redirect to the appropriate dashboard based on user role
+      if (user.role === 'volunteer') {
+        window.location.href = '/volunteer-dashboard';
+      } else if (user.role === 'coordinator') {
+        window.location.href = '/coordinator-dashboard';
+      } else if (user.role === 'donor') {
+        window.location.href = '/donor-dashboard';
+      }
     },
     onError: (error: Error) => {
       toast({
@@ -78,6 +87,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         title: "Реєстрація успішна",
         description: "Вітаємо в нашій спільноті!",
       });
+      
+      // Redirect to the appropriate dashboard based on user role
+      if (user.role === 'volunteer') {
+        window.location.href = '/volunteer-dashboard';
+      } else if (user.role === 'coordinator') {
+        window.location.href = '/coordinator-dashboard';
+      } else if (user.role === 'donor') {
+        window.location.href = '/donor-dashboard';
+      }
     },
     onError: (error: Error) => {
       toast({

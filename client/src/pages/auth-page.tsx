@@ -5,7 +5,7 @@ import { z } from "zod";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 // Temporarily commenting out auth for debugging
-// import { useAuth } from "@/hooks/use-auth";
+import { useAuth } from "@/hooks/use-auth";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -67,16 +67,7 @@ type RegisterFormValues = z.infer<typeof registerSchema>;
 export default function AuthPage() {
   const { t } = useTranslation();
   const [location, navigate] = useLocation();
-  // Mock auth data for debugging
-  const user = null;
-  const loginMutation = {
-    mutate: (credentials: any) => console.log('Login mutation called', credentials),
-    isPending: false
-  };
-  const registerMutation = {
-    mutate: (data: any) => console.log('Register mutation called', data),
-    isPending: false
-  };
+  const { user, loginMutation, registerMutation } = useAuth();
   const [activeTab, setActiveTab] = useState<string>("login");
 
   // Redirect if already logged in
@@ -216,9 +207,9 @@ export default function AuthPage() {
                       <Button 
                         type="submit" 
                         className="w-full" 
-                        disabled={loginMutation.isPending}
+                        disabled={loginMutation.isPending || loginMutation.isLoading}
                       >
-                        {loginMutation.isPending ? (
+                        {(loginMutation.isPending || loginMutation.isLoading) ? (
                           <>
                             <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                             {t('common.loading')}
