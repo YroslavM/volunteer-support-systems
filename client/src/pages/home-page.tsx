@@ -108,7 +108,7 @@ export default function HomePage() {
               </Button>
             </Link>
             <Link href="/projects">
-              <Button variant="outline" className="inline-flex items-center justify-center text-yellow-50 border-yellow-100 hover:bg-yellow-50 hover:text-primary-700 transition-all duration-200 shadow-lg font-medium px-6 py-6 text-lg">
+              <Button variant="outline" className="inline-flex items-center justify-center text-black border-black border-2 hover:bg-yellow-50 hover:text-primary-700 transition-all duration-200 shadow-lg font-medium px-6 py-6 text-lg">
                 {t('home.hero.viewProjects')}
               </Button>
             </Link>
