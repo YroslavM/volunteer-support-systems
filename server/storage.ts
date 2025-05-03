@@ -33,6 +33,8 @@ export interface IStorage {
   getUserByVerificationToken(token: string): Promise<User | undefined>;
   createUser(user: InsertUser): Promise<User>;
   verifyUser(id: number): Promise<User>;
+  blockUser(id: number): Promise<User>;
+  getAllUsers(): Promise<User[]>;
   
   // Project methods
   getProjects(options?: { status?: string; search?: string; limit?: number; offset?: number }): Promise<Project[]>;
@@ -42,6 +44,8 @@ export interface IStorage {
   createProject(project: InsertProject): Promise<Project>;
   updateProjectStatus(id: number, status: string): Promise<Project>;
   updateProjectCollectedAmount(id: number, amount: number): Promise<Project>;
+  updateProject(id: number, project: Partial<InsertProject>): Promise<Project>;
+  deleteProject(id: number): Promise<void>;
   
   // Task methods
   getTaskById(id: number): Promise<Task | undefined>;
@@ -126,6 +130,22 @@ export class DatabaseStorage implements IStorage {
       .where(eq(users.id, id))
       .returning();
     return user;
+  }
+
+  async blockUser(id: number): Promise<User> {
+    const [user] = await db
+      .update(users)
+      .set({ isBlocked: true })
+      .where(eq(users.id, id))
+      .returning();
+    return user;
+  }
+
+  async getAllUsers(): Promise<User[]> {
+    return await db
+      .select()
+      .from(users)
+      .orderBy(users.username);
   }
   
   // Project methods
@@ -215,6 +235,21 @@ export class DatabaseStorage implements IStorage {
       .where(eq(projects.id, id))
       .returning();
     return project;
+  }
+  
+  async updateProject(id: number, projectData: Partial<InsertProject>): Promise<Project> {
+    const [project] = await db
+      .update(projects)
+      .set(projectData)
+      .where(eq(projects.id, id))
+      .returning();
+    return project;
+  }
+  
+  async deleteProject(id: number): Promise<void> {
+    await db
+      .delete(projects)
+      .where(eq(projects.id, id));
   }
   
   // Task methods

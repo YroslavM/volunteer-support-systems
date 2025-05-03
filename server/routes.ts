@@ -531,6 +531,151 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // User Routes
   // =========================
   
+  // Get all users (admin only)
+  app.get("/api/users", hasRole(["admin"]), async (req, res, next) => {
+    try {
+      const users = await storage.getAllUsers();
+      res.json(users);
+    } catch (error) {
+      next(error);
+    }
+  });
+
+  // Get user by ID (admin only)
+  app.get("/api/users/:id", hasRole(["admin"]), async (req, res, next) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ message: "Некоректний ID користувача" });
+      }
+      
+      const user = await storage.getUser(id);
+      if (!user) {
+        return res.status(404).json({ message: "Користувача не знайдено" });
+      }
+      
+      res.json(user);
+    } catch (error) {
+      next(error);
+    }
+  });
+
+  // Verify user (admin only)
+  app.post("/api/users/:id/verify", hasRole(["admin"]), async (req, res, next) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ message: "Некоректний ID користувача" });
+      }
+      
+      const user = await storage.getUser(id);
+      if (!user) {
+        return res.status(404).json({ message: "Користувача не знайдено" });
+      }
+      
+      const verifiedUser = await storage.verifyUser(id);
+      res.json(verifiedUser);
+    } catch (error) {
+      next(error);
+    }
+  });
+
+  // Block user (admin only)
+  app.post("/api/users/:id/block", hasRole(["admin"]), async (req, res, next) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ message: "Некоректний ID користувача" });
+      }
+      
+      const user = await storage.getUser(id);
+      if (!user) {
+        return res.status(404).json({ message: "Користувача не знайдено" });
+      }
+      
+      if (user.role === "admin") {
+        return res.status(400).json({ message: "Неможливо заблокувати адміністратора" });
+      }
+      
+      const blockedUser = await storage.blockUser(id);
+      res.json(blockedUser);
+    } catch (error) {
+      next(error);
+    }
+  });
+  
+  // Create project (admin can create for any coordinator)
+  app.post("/api/admin/projects", hasRole(["admin"]), async (req, res, next) => {
+    try {
+      const data = insertProjectSchema.extend({
+        coordinatorId: z.number()
+      }).parse(req.body);
+      
+      const coordinator = await storage.getUser(data.coordinatorId);
+      if (!coordinator || coordinator.role !== "coordinator") {
+        return res.status(400).json({ message: "Вказаний користувач не є координатором" });
+      }
+      
+      const project = await storage.createProject(data);
+      res.status(201).json(project);
+    } catch (error) {
+      next(error);
+    }
+  });
+  
+  // Update project (admin only)
+  app.put("/api/projects/:id", hasRole(["admin"]), async (req, res, next) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ message: "Некоректний ID проєкту" });
+      }
+      
+      const project = await storage.getProjectById(id);
+      if (!project) {
+        return res.status(404).json({ message: "Проєкт не знайдено" });
+      }
+      
+      const data = insertProjectSchema.extend({
+        status: z.enum(projectStatusEnum.enumValues).optional(),
+        collectedAmount: z.number().optional(),
+        coordinatorId: z.number().optional()
+      }).parse(req.body);
+      
+      if (data.coordinatorId) {
+        const coordinator = await storage.getUser(data.coordinatorId);
+        if (!coordinator || coordinator.role !== "coordinator") {
+          return res.status(400).json({ message: "Вказаний користувач не є координатором" });
+        }
+      }
+      
+      const updatedProject = await storage.updateProject(id, data);
+      res.json(updatedProject);
+    } catch (error) {
+      next(error);
+    }
+  });
+  
+  // Delete project (admin only)
+  app.delete("/api/projects/:id", hasRole(["admin"]), async (req, res, next) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ message: "Некоректний ID проєкту" });
+      }
+      
+      const project = await storage.getProjectById(id);
+      if (!project) {
+        return res.status(404).json({ message: "Проєкт не знайдено" });
+      }
+      
+      await storage.deleteProject(id);
+      res.status(204).end();
+    } catch (error) {
+      next(error);
+    }
+  });
+  
   // Get volunteers for a project (coordinator only)
   app.get("/api/projects/:projectId/volunteers", hasRole(["coordinator"]), async (req, res, next) => {
     try {
