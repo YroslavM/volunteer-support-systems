@@ -29,29 +29,29 @@ export function Header() {
   const [userRole, setUserRole] = useState<string | null>(null);
   const [username, setUsername] = useState<string | null>(null);
   
-  // Check if user is logged in - this is a mock implementation
+  // Check if user is logged in from sessionStorage
   useEffect(() => {
-    // Check if URL contains specific dashboard paths to simulate logged in state
-    if (location.includes('volunteer-dashboard')) {
+    // First check if there's auth data in sessionStorage
+    const isLoggedInStorage = sessionStorage.getItem('isLoggedIn') === 'true';
+    
+    if (isLoggedInStorage) {
       setIsLoggedIn(true);
-      setUserRole('volunteer');
-      setUsername('Волонтер');
-    } else if (location.includes('coordinator-dashboard')) {
-      setIsLoggedIn(true);
-      setUserRole('coordinator');
-      setUsername('Координатор');
-    } else if (location.includes('donor-dashboard')) {
-      setIsLoggedIn(true);
-      setUserRole('donor');
-      setUsername('Донор');
+      setUserRole(sessionStorage.getItem('userRole'));
+      setUsername(sessionStorage.getItem('username'));
     } else {
-      // On auth page, we can simulate logging in
-      const onAuthPage = location === '/auth';
-      
-      if (!onAuthPage && sessionStorage.getItem('isLoggedIn')) {
+      // Fallback to URL check for dashboard pages
+      if (location.includes('/dashboard/volunteer')) {
         setIsLoggedIn(true);
-        setUserRole(sessionStorage.getItem('userRole'));
-        setUsername(sessionStorage.getItem('username'));
+        setUserRole('volunteer');
+        setUsername('Волонтер');
+      } else if (location.includes('/dashboard/coordinator')) {
+        setIsLoggedIn(true);
+        setUserRole('coordinator');
+        setUsername('Координатор');
+      } else if (location.includes('/dashboard/donor')) {
+        setIsLoggedIn(true);
+        setUserRole('donor');
+        setUsername('Донор');
       }
     }
   }, [location]);
@@ -85,11 +85,11 @@ export function Header() {
     
     switch(userRole) {
       case 'volunteer':
-        return '/volunteer-dashboard';
+        return '/dashboard/volunteer';
       case 'coordinator':
-        return '/coordinator-dashboard';
+        return '/dashboard/coordinator';
       case 'donor':
-        return '/donor-dashboard';
+        return '/dashboard/donor';
       default:
         return '/';
     }

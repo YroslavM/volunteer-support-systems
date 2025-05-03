@@ -254,6 +254,12 @@
       "send": "Send Message"
     }
   },
+  "account": {
+    "welcome": "Welcome",
+    "dashboard": "Dashboard",
+    "profile": "Profile",
+    "logout": "Logout"
+  },
   "common": {
     "loading": "Loading...",
     "error": "Error",

@@ -69,53 +69,65 @@ export default function AuthPage() {
   const [location, navigate] = useLocation();
   // Mock auth data for debugging
   const user = null;
+  const [isLoggingIn, setIsLoggingIn] = useState(false);
+  const [isRegistering, setIsRegistering] = useState(false);
+  
   const loginMutation = {
     mutate: (credentials: any) => {
       console.log('Login mutation called', credentials);
+      setIsLoggingIn(true);
       
-      // Store auth info in sessionStorage
-      const userRole = credentials.email.includes('volunteer') 
-        ? 'volunteer' 
-        : credentials.email.includes('coordinator') 
-          ? 'coordinator' 
-          : 'donor';
-          
-      sessionStorage.setItem('isLoggedIn', 'true');
-      sessionStorage.setItem('userRole', userRole);
-      sessionStorage.setItem('username', credentials.email.split('@')[0]);
-      sessionStorage.setItem('userId', '1'); // Mock user ID
-      
-      // Redirect to the appropriate dashboard
-      if (userRole === 'volunteer') {
-        window.location.href = '/volunteer-dashboard';
-      } else if (userRole === 'coordinator') {
-        window.location.href = '/coordinator-dashboard';
-      } else {
-        window.location.href = '/donor-dashboard';
-      }
+      // Simulate network delay
+      setTimeout(() => {
+        // Store auth info in sessionStorage
+        const userRole = credentials.email.includes('volunteer') 
+          ? 'volunteer' 
+          : credentials.email.includes('coordinator') 
+            ? 'coordinator' 
+            : 'donor';
+            
+        sessionStorage.setItem('isLoggedIn', 'true');
+        sessionStorage.setItem('userRole', userRole);
+        sessionStorage.setItem('username', credentials.email.split('@')[0]);
+        sessionStorage.setItem('userId', '1'); // Mock user ID
+        
+        // Redirect to the appropriate dashboard
+        if (userRole === 'volunteer') {
+          window.location.href = '/dashboard/volunteer';
+        } else if (userRole === 'coordinator') {
+          window.location.href = '/dashboard/coordinator';
+        } else {
+          window.location.href = '/dashboard/donor';
+        }
+      }, 1000); // 1 second delay to show loading state
     },
-    isPending: false
+    isPending: isLoggingIn
   };
+  
   const registerMutation = {
     mutate: (data: any) => {
       console.log('Register mutation called', data);
+      setIsRegistering(true);
       
-      // Store auth info in sessionStorage
-      sessionStorage.setItem('isLoggedIn', 'true');
-      sessionStorage.setItem('userRole', data.role);
-      sessionStorage.setItem('username', data.username || data.email.split('@')[0]);
-      sessionStorage.setItem('userId', '1'); // Mock user ID
-      
-      // Redirect to the appropriate dashboard based on user role
-      if (data.role === 'volunteer') {
-        window.location.href = '/volunteer-dashboard';
-      } else if (data.role === 'coordinator') {
-        window.location.href = '/coordinator-dashboard';
-      } else if (data.role === 'donor') {
-        window.location.href = '/donor-dashboard';
-      }
+      // Simulate network delay
+      setTimeout(() => {
+        // Store auth info in sessionStorage
+        sessionStorage.setItem('isLoggedIn', 'true');
+        sessionStorage.setItem('userRole', data.role);
+        sessionStorage.setItem('username', data.username || data.email.split('@')[0]);
+        sessionStorage.setItem('userId', '1'); // Mock user ID
+        
+        // Redirect to the appropriate dashboard based on user role
+        if (data.role === 'volunteer') {
+          window.location.href = '/dashboard/volunteer';
+        } else if (data.role === 'coordinator') {
+          window.location.href = '/dashboard/coordinator';
+        } else if (data.role === 'donor') {
+          window.location.href = '/dashboard/donor';
+        }
+      }, 1000); // 1 second delay to show loading state
     },
-    isPending: false
+    isPending: isRegistering
   };
   const [activeTab, setActiveTab] = useState<string>("login");
 
