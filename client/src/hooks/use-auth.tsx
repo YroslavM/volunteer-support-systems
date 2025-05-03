@@ -245,7 +245,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           password: '',
           isVerified: true,
           verificationToken: null,
-          createdAt: new Date().toISOString(),
+          createdAt: new Date(),
           firstName: data.firstName || data.username || data.email.split('@')[0],
           lastName: data.lastName || '',
         };
