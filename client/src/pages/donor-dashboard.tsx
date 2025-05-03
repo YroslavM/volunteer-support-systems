@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Link } from "wouter";
 import { useTranslation } from "react-i18next";
 import { useQuery } from "@tanstack/react-query";
-import { useAuth } from "@/hooks/use-auth";
+// import { useAuth } from "@/hooks/use-auth";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -19,7 +19,17 @@ import { Loader2 } from "lucide-react";
 
 export default function DonorDashboard() {
   const { t } = useTranslation();
-  const { user } = useAuth();
+  // Mock auth data for debugging
+  const user = {
+    id: 3,
+    username: "donor_user",
+    firstName: "Донор",
+    lastName: "Тестовий",
+    email: "donor@example.com",
+    role: "donor",
+    verified: true,
+    createdAt: new Date().toISOString()
+  };
   const [activeTab, setActiveTab] = useState("my-donations");
 
   // Fetch donor's donations

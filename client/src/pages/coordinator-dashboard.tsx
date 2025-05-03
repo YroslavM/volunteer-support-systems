@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Link } from "wouter";
 import { useTranslation } from "react-i18next";
 import { useQuery } from "@tanstack/react-query";
-import { useAuth } from "@/hooks/use-auth";
+// import { useAuth } from "@/hooks/use-auth";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -24,7 +24,17 @@ import { useToast } from "@/hooks/use-toast";
 
 export default function CoordinatorDashboard() {
   const { t } = useTranslation();
-  const { user } = useAuth();
+  // Mock auth data for debugging
+  const user = {
+    id: 2,
+    username: "coordinator_user",
+    firstName: "Координатор",
+    lastName: "Тестовий",
+    email: "coordinator@example.com",
+    role: "coordinator",
+    verified: true,
+    createdAt: new Date().toISOString()
+  };
   const { toast } = useToast();
   const [activeTab, setActiveTab] = useState("my-projects");
 
