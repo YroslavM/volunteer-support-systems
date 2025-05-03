@@ -66,15 +66,15 @@ export default function HomePage() {
             </p>
             <div className="mt-12 flex flex-col sm:flex-row gap-6">
               <Link href="/auth">
-                <Button className="w-full sm:w-auto inline-flex items-center justify-center text-white bg-gradient-to-r from-secondary-500 to-secondary-600 hover:from-secondary-600 hover:to-secondary-700 shadow-lg hover:shadow-xl transition-all duration-300 font-medium px-8 py-4 text-lg rounded-xl">
+                <button className="w-full sm:w-auto inline-flex items-center justify-center rounded-xl bg-white text-primary-700 border-2 border-primary-700 hover:bg-primary-700 hover:text-white transition-all duration-300 font-medium px-8 py-3.5 text-lg mr-4 mb-4 sm:mb-0">
                   <span>{t('home.hero.joinButton')}</span>
                   <ArrowForward className="ml-2 h-5 w-5" />
-                </Button>
+                </button>
               </Link>
               <Link href="/projects">
-                <Button className="w-full sm:w-auto inline-flex items-center justify-center text-black border-black border-2 hover:bg-black hover:text-white transition-all duration-300 shadow-lg hover:shadow-xl font-medium px-8 py-4 text-lg rounded-xl">
+                <button className="w-full sm:w-auto inline-flex items-center justify-center text-black border-black border-2 hover:bg-black hover:text-white transition-all duration-300 font-medium px-8 py-3.5 text-lg rounded-xl">
                   <span>{t('home.hero.viewProjects')}</span>
-                </Button>
+                </button>
               </Link>
             </div>
           </div>
