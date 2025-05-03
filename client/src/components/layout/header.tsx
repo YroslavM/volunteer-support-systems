@@ -68,6 +68,7 @@ export function Header() {
     sessionStorage.removeItem('isLoggedIn');
     sessionStorage.removeItem('userRole');
     sessionStorage.removeItem('username');
+    sessionStorage.removeItem('userId');
     
     // Reset state
     setIsLoggedIn(false);
