@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link } from "wouter";
 import { useTranslation } from "react-i18next";
 import { ProjectCard } from "@/components/project-card";
@@ -12,6 +12,49 @@ import {
 } from "@mui/icons-material";
 import { SelectProject } from "@shared/schema";
 
+// Моковані проекти для демонстрації
+const mockProjects: SelectProject[] = [
+  {
+    id: 1,
+    name: "Допомога бездомним",
+    description: "Збір та роздача їжі, одягу і предметів першої необхідності для бездомних людей",
+    goal: 50000,
+    collectedAmount: 35000,
+    status: "funding",
+    location: "Київ",
+    imageUrl: "https://images.unsplash.com/photo-1593113646773-028c64a8f1b8?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1740&q=80",
+    coordinatorId: 2,
+    createdAt: new Date(),
+    updatedAt: new Date(),
+  },
+  {
+    id: 2,
+    name: "Екологічна акція 'Чисте місто'",
+    description: "Прибирання парків та скверів, встановлення сміттєвих баків та екологічна просвіта",
+    goal: 30000,
+    collectedAmount: 28000,
+    status: "in_progress",
+    location: "Львів",
+    imageUrl: "https://images.unsplash.com/photo-1567095761054-7a02e69e5c43?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1740&q=80",
+    coordinatorId: 3,
+    createdAt: new Date(),
+    updatedAt: new Date(),
+  },
+  {
+    id: 3,
+    name: "Підтримка дитячого будинку",
+    description: "Збір коштів на ремонт, іграшки та книги для дітей у дитячому будинку",
+    goal: 100000,
+    collectedAmount: 55000,
+    status: "funding",
+    location: "Одеса",
+    imageUrl: "https://images.unsplash.com/photo-1607453998774-d533f65dac99?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1662&q=80",
+    coordinatorId: 4,
+    createdAt: new Date(),
+    updatedAt: new Date(),
+  }
+];
+
 export default function HomePage() {
   const { t } = useTranslation();
   // const { user } = useAuth();
@@ -19,9 +62,20 @@ export default function HomePage() {
   const user = null; // Avoid auth issues by just using null
   const [activeTab, setActiveTab] = useState<"volunteer" | "coordinator" | "donor">("volunteer");
   
-  // Simplified implementation to avoid backend calls during debugging
-  const projects: SelectProject[] = [];
-  const projectsLoading = true;
+  // State for projects
+  const [projects, setProjects] = useState<SelectProject[]>([]);
+  const [projectsLoading, setProjectsLoading] = useState(true);
+  
+  // Mock API call to load projects
+  useEffect(() => {
+    // Simulate API delay
+    const timer = setTimeout(() => {
+      setProjects(mockProjects);
+      setProjectsLoading(false);
+    }, 1500);
+    
+    return () => clearTimeout(timer);
+  }, []);
 
   // Control dashboard tabs demonstration
   const handleTabChange = (tab: "volunteer" | "coordinator" | "donor") => {
@@ -49,12 +103,12 @@ export default function HomePage() {
           </p>
           <div className="mt-10 flex flex-col sm:flex-row gap-4">
             <Link href="/auth">
-              <Button className="inline-flex items-center justify-center text-white bg-secondary-500 hover:bg-secondary-600 transition-colors duration-200">
+              <Button className="inline-flex items-center justify-center text-white bg-secondary-600 hover:bg-secondary-700 shadow-md transition-colors duration-200">
                 {t('home.hero.joinButton')}
               </Button>
             </Link>
             <Link href="/projects">
-              <Button variant="outline" className="inline-flex items-center justify-center text-white bg-primary-600 bg-opacity-60 hover:bg-opacity-70 transition-colors duration-200">
+              <Button variant="outline" className="inline-flex items-center justify-center text-white border-white hover:bg-white hover:text-primary-700 transition-colors duration-200">
                 {t('home.hero.viewProjects')}
               </Button>
             </Link>
@@ -185,7 +239,7 @@ export default function HomePage() {
 
           <div className="mt-10 text-center">
             <Link href="/projects">
-              <Button variant="outline" className="inline-flex items-center px-4 py-2 text-primary-700 bg-primary-100 hover:bg-primary-200">
+              <Button className="inline-flex items-center px-6 py-2 text-white bg-primary-600 hover:bg-primary-700 shadow-sm">
                 {t('home.projects.seeAll')}
                 <ArrowForward className="ml-1 text-sm" />
               </Button>
