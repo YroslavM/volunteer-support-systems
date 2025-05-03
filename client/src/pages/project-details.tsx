@@ -43,7 +43,8 @@ import {
   Assignment, 
   Group, 
   CalendarToday, 
-  ArrowBack 
+  ArrowBack,
+  Edit
 } from "@mui/icons-material";
 import { Loader2 } from "lucide-react";
 
@@ -104,7 +105,7 @@ export default function ProjectDetails() {
   
   const { data: applications, isLoading: applicationsLoading } = useQuery<SelectApplication[]>({
     queryKey: [`/api/projects/${projectId}/applications`],
-    enabled: !!projectId && !!user && user.role === "coordinator" && project?.coordinatorId === user.id,
+    enabled: !!projectId && !!user && (user.role === "admin" || (user.role === "coordinator" && project?.coordinatorId === user.id)),
     queryFn: async () => {
       try {
         const res = await fetch(`/api/projects/${projectId}/applications`);
@@ -118,7 +119,7 @@ export default function ProjectDetails() {
   
   const { data: donations, isLoading: donationsLoading } = useQuery<SelectDonation[]>({
     queryKey: [`/api/projects/${projectId}/donations`],
-    enabled: !!projectId && !!user && user.role === "coordinator" && project?.coordinatorId === user.id,
+    enabled: !!projectId && !!user && (user.role === "admin" || (user.role === "coordinator" && project?.coordinatorId === user.id)),
     queryFn: async () => {
       try {
         const res = await fetch(`/api/projects/${projectId}/donations`);
@@ -316,6 +317,7 @@ export default function ProjectDetails() {
                       </Badge>
                     )}
                     
+                    {/* Coordinator controls */}
                     {user.role === 'coordinator' && project.coordinatorId === user.id && (
                       <>
                         <Link href={`/projects/${project.id}/tasks/create`}>
@@ -327,6 +329,24 @@ export default function ProjectDetails() {
                         <Link href={`/projects/${project.id}/edit`}>
                           <Button variant="outline" className="flex items-center">
                             Редагувати проєкт
+                          </Button>
+                        </Link>
+                      </>
+                    )}
+                    
+                    {/* Admin controls */}
+                    {user.role === 'admin' && (
+                      <>
+                        <Link href={`/projects/${project.id}/tasks/create`}>
+                          <Button variant="outline" className="flex items-center">
+                            <Assignment className="mr-2" />
+                            Додати завдання
+                          </Button>
+                        </Link>
+                        <Link href={`/projects/${project.id}/edit`}>
+                          <Button variant="outline" className="flex items-center bg-amber-100">
+                            <Edit className="mr-2 h-4 w-4" />
+                            Редагувати проєкт (Адмін)
                           </Button>
                         </Link>
                       </>
@@ -356,7 +376,7 @@ export default function ProjectDetails() {
                         <Group className="mr-2 h-4 w-4" />
                         {t('projects.details.volunteers')}
                       </TabsTrigger>
-                      {user.role === "coordinator" && project.coordinatorId === user.id && (
+                      {(user.role === "admin" || (user.role === "coordinator" && project.coordinatorId === user.id)) && (
                         <TabsTrigger value="donations" className="flex items-center">
                           <AttachMoney className="mr-2 h-4 w-4" />
                           {t('projects.details.donations')}
