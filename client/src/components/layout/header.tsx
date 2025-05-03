@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Link, useLocation } from "wouter";
 import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
-import { VolunteerActivism, Language, Menu } from "@mui/icons-material";
+import { VolunteerActivism, Language, Menu, Person } from "@mui/icons-material";
 
 // Basic header component without auth for debugging
 export function Header() {

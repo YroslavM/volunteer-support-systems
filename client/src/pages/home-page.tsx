@@ -1,11 +1,8 @@
 import { useState } from "react";
 import { Link } from "wouter";
 import { useTranslation } from "react-i18next";
-import { useQuery } from "@tanstack/react-query";
 import { ProjectCard } from "@/components/project-card";
 import { Button } from "@/components/ui/button";
-// Temporarily remove auth for debugging
-// import { useAuth } from "@/hooks/use-auth";
 import {
   VolunteerActivism,
   ManageAccounts,
@@ -18,7 +15,8 @@ import { SelectProject } from "@shared/schema";
 export default function HomePage() {
   const { t } = useTranslation();
   // const { user } = useAuth();
-  const user = null; // Temporarily use null for user while debugging
+  // Simple user object with role property for template rendering
+  const user = null; // Avoid auth issues by just using null
   const [activeTab, setActiveTab] = useState<"volunteer" | "coordinator" | "donor">("volunteer");
   
   // Simplified implementation to avoid backend calls during debugging
@@ -50,7 +48,7 @@ export default function HomePage() {
             {t('home.hero.subtitle')}
           </p>
           <div className="mt-10 flex flex-col sm:flex-row gap-4">
-            <Link href={user ? `/dashboard/${user.role}` : "/auth"}>
+            <Link href="/auth">
               <Button className="inline-flex items-center justify-center text-white bg-secondary-500 hover:bg-secondary-600 transition-colors duration-200">
                 {t('home.hero.joinButton')}
               </Button>
