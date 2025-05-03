@@ -12,72 +12,26 @@ import {
 } from "@mui/icons-material";
 import { SelectProject } from "@shared/schema";
 
-// Моковані проекти для демонстрації
-const mockProjects: SelectProject[] = [
-  {
-    id: 1,
-    name: "Допомога бездомним",
-    description: "Збір та роздача їжі, одягу і предметів першої необхідності для бездомних людей",
-    targetAmount: 50000,
-    collectedAmount: 35000,
-    status: "funding",
-    imageUrl: "https://images.unsplash.com/photo-1593113646773-028c64a8f1b8?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1740&q=80",
-    coordinatorId: 2,
-    bankDetails: "UA213223130000026007233566001",
-    createdAt: new Date(),
-    updatedAt: new Date(),
-  },
-  {
-    id: 2,
-    name: "Екологічна акція 'Чисте місто'",
-    description: "Прибирання парків та скверів, встановлення сміттєвих баків та екологічна просвіта",
-    targetAmount: 30000,
-    collectedAmount: 28000,
-    status: "in_progress",
-    imageUrl: "https://images.unsplash.com/photo-1567095761054-7a02e69e5c43?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1740&q=80",
-    coordinatorId: 3,
-    bankDetails: "UA213223130000026007233566002",
-    createdAt: new Date(),
-    updatedAt: new Date(),
-  },
-  {
-    id: 3,
-    name: "Підтримка дитячого будинку",
-    description: "Збір коштів на ремонт, іграшки та книги для дітей у дитячому будинку",
-    targetAmount: 100000,
-    collectedAmount: 55000,
-    status: "funding",
-    imageUrl: "https://images.unsplash.com/photo-1607453998774-d533f65dac99?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1662&q=80",
-    coordinatorId: 4,
-    bankDetails: "UA213223130000026007233566003",
-    createdAt: new Date(),
-    updatedAt: new Date(),
-  }
-];
-
 export default function HomePage() {
   const { t } = useTranslation();
-  // const { user } = useAuth();
-  // Simple user object with role property for template rendering
-  const user = null; // Avoid auth issues by just using null
-  const [activeTab, setActiveTab] = useState<"volunteer" | "coordinator" | "donor">("volunteer");
-  
-  // State for projects
   const [projects, setProjects] = useState<SelectProject[]>([]);
   const [projectsLoading, setProjectsLoading] = useState(true);
-  
-  // Mock API call to load projects
+  const [activeTab, setActiveTab] = useState<"volunteer" | "coordinator" | "donor">("volunteer");
+
   useEffect(() => {
-    // Simulate API delay
-    const timer = setTimeout(() => {
-      setProjects(mockProjects);
-      setProjectsLoading(false);
-    }, 1500);
-    
-    return () => clearTimeout(timer);
+    // Load projects
+    fetch("/api/projects?status=funding")
+      .then((res) => res.json())
+      .then((data) => {
+        setProjects(data);
+        setProjectsLoading(false);
+      })
+      .catch((error) => {
+        console.error("Error fetching projects:", error);
+        setProjectsLoading(false);
+      });
   }, []);
 
-  // Control dashboard tabs demonstration
   const handleTabChange = (tab: "volunteer" | "coordinator" | "donor") => {
     setActiveTab(tab);
   };
@@ -85,98 +39,92 @@ export default function HomePage() {
   return (
     <div>
       {/* Hero Section */}
-      <div className="relative bg-primary-700 min-h-screen flex items-center">
+      <div className="relative bg-primary-700">
         <div className="absolute inset-0">
           <img 
             className="w-full h-full object-cover" 
             src="https://images.unsplash.com/photo-1593113630400-ea4288922497?ixlib=rb-1.2.1&auto=format&fit=crop&w=1950&q=80" 
             alt="Volunteers helping" 
           />
-          <div className="absolute inset-0 bg-gradient-to-r from-primary-900/90 to-primary-700/70" aria-hidden="true"></div>
+          <div className="absolute inset-0 bg-primary-700 mix-blend-multiply" aria-hidden="true"></div>
         </div>
-        <div className="relative max-w-7xl mx-auto py-24 px-4 sm:py-32 sm:px-6 lg:px-8 z-10">
-          <div className="bg-white/10 backdrop-blur-md p-8 rounded-2xl shadow-2xl border border-white/20 max-w-3xl animate-in slide-in-from-left duration-700">
-            <h1 className="text-4xl font-extrabold tracking-tight sm:text-5xl lg:text-6xl font-heading bg-gradient-to-r from-yellow-200 via-yellow-100 to-white text-transparent bg-clip-text drop-shadow-sm">
-              {t('home.hero.title')}
-            </h1>
-            <div className="w-24 h-1 bg-gradient-to-r from-secondary-500 to-yellow-300 my-6 rounded-full"></div>
-            <p className="text-xl text-yellow-50 max-w-3xl font-medium">
-              {t('home.hero.subtitle')}
-            </p>
-            <div className="mt-10 flex flex-col sm:flex-row gap-4">
-              <Link href="/auth">
-                <Button className="inline-flex items-center justify-center text-white bg-gradient-to-r from-secondary-500 to-secondary-600 hover:from-secondary-600 hover:to-secondary-700 shadow-lg transition-all duration-200 font-medium px-6 py-6 text-lg rounded-full">
-                  {t('home.hero.joinButton')}
-                </Button>
-              </Link>
-              <Link href="/projects">
-                <Button variant="outline" className="inline-flex items-center justify-center text-black border-black border-2 hover:bg-white hover:text-primary-700 transition-all duration-200 shadow-lg font-medium px-6 py-6 text-lg rounded-full">
-                  {t('home.hero.viewProjects')}
-                </Button>
-              </Link>
-            </div>
+        <div className="relative max-w-7xl mx-auto py-24 px-4 sm:py-32 sm:px-6 lg:px-8">
+          <h1 className="text-4xl font-extrabold tracking-tight text-white sm:text-5xl lg:text-6xl font-heading">
+            {t('home.hero.title')}
+          </h1>
+          <p className="mt-6 text-xl text-gray-100 max-w-3xl">
+            {t('home.hero.subtitle')}
+          </p>
+          <div className="mt-10 flex flex-col sm:flex-row gap-4">
+            <Link href="/auth">
+              <Button className="inline-flex items-center justify-center text-white bg-secondary-600 hover:bg-secondary-700">
+                {t('home.hero.joinButton')}
+              </Button>
+            </Link>
+            <Link href="/projects">
+              <Button variant="outline" className="inline-flex items-center justify-center text-black border-black border-2 hover:bg-black hover:text-white">
+                {t('home.hero.viewProjects')}
+              </Button>
+            </Link>
           </div>
         </div>
-        
-        <div className="absolute bottom-0 left-0 right-0 h-20 bg-gradient-to-t from-white to-transparent"></div>
       </div>
 
       {/* How It Works Section */}
-      <div className="bg-white py-24">
+      <div className="bg-white py-16">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="lg:text-center mb-16">
-            <span className="inline-block px-3 py-1 text-sm font-medium bg-primary-100 text-primary-800 rounded-full mb-3">
+          <div className="lg:text-center">
+            <h2 className="text-base text-primary-600 font-semibold tracking-wide uppercase">
               {t('home.mission.title')}
-            </span>
-            <h2 className="text-3xl leading-8 font-extrabold tracking-tight text-gray-900 sm:text-4xl font-heading bg-clip-text text-transparent bg-gradient-to-r from-primary-700 to-primary-900">
-              {t('home.mission.subtitle')}
             </h2>
-            <div className="w-24 h-1 bg-gradient-to-r from-primary-500 to-secondary-500 mx-auto my-6 rounded-full"></div>
+            <p className="mt-2 text-3xl leading-8 font-extrabold tracking-tight text-gray-900 sm:text-4xl font-heading">
+              {t('home.mission.subtitle')}
+            </p>
             <p className="mt-4 max-w-2xl text-xl text-gray-500 lg:mx-auto">
               {t('home.mission.description')}
             </p>
           </div>
 
           <div className="mt-10">
-            <dl className="space-y-10 md:space-y-0 md:grid md:grid-cols-3 md:gap-8">
-              <div className="relative bg-white p-6 rounded-2xl shadow-lg transform transition-all duration-200 hover:scale-105 border border-gray-100">
+            <dl className="space-y-10 md:space-y-0 md:grid md:grid-cols-3 md:gap-x-8 md:gap-y-10">
+              <div className="relative">
                 <dt>
-                  <div className="absolute flex items-center justify-center h-16 w-16 rounded-xl bg-gradient-to-br from-primary-400 to-primary-600 text-white -top-8 shadow-lg">
-                    <VolunteerActivism className="h-8 w-8" />
+                  <div className="absolute flex items-center justify-center h-12 w-12 rounded-md bg-primary-500 text-white">
+                    <VolunteerActivism className="h-6 w-6" />
                   </div>
-                  <p className="mt-6 text-xl leading-6 font-bold text-gray-900 font-heading">
+                  <p className="ml-16 text-lg leading-6 font-medium text-gray-900 font-heading">
                     {t('home.roles.volunteer.title')}
                   </p>
                 </dt>
-                <dd className="mt-4 text-base text-gray-500">
+                <dd className="mt-2 ml-16 text-base text-gray-500">
                   {t('home.roles.volunteer.description')}
                 </dd>
               </div>
 
-              <div className="relative bg-white p-6 rounded-2xl shadow-lg transform transition-all duration-200 hover:scale-105 border border-gray-100">
+              <div className="relative">
                 <dt>
-                  <div className="absolute flex items-center justify-center h-16 w-16 rounded-xl bg-gradient-to-br from-secondary-400 to-secondary-600 text-white -top-8 shadow-lg">
-                    <ManageAccounts className="h-8 w-8" />
+                  <div className="absolute flex items-center justify-center h-12 w-12 rounded-md bg-primary-500 text-white">
+                    <ManageAccounts className="h-6 w-6" />
                   </div>
-                  <p className="mt-6 text-xl leading-6 font-bold text-gray-900 font-heading">
+                  <p className="ml-16 text-lg leading-6 font-medium text-gray-900 font-heading">
                     {t('home.roles.coordinator.title')}
                   </p>
                 </dt>
-                <dd className="mt-4 text-base text-gray-500">
+                <dd className="mt-2 ml-16 text-base text-gray-500">
                   {t('home.roles.coordinator.description')}
                 </dd>
               </div>
 
-              <div className="relative bg-white p-6 rounded-2xl shadow-lg transform transition-all duration-200 hover:scale-105 border border-gray-100">
+              <div className="relative">
                 <dt>
-                  <div className="absolute flex items-center justify-center h-16 w-16 rounded-xl bg-gradient-to-br from-yellow-400 to-yellow-600 text-white -top-8 shadow-lg">
-                    <Favorite className="h-8 w-8" />
+                  <div className="absolute flex items-center justify-center h-12 w-12 rounded-md bg-primary-500 text-white">
+                    <Favorite className="h-6 w-6" />
                   </div>
-                  <p className="mt-6 text-xl leading-6 font-bold text-gray-900 font-heading">
+                  <p className="ml-16 text-lg leading-6 font-medium text-gray-900 font-heading">
                     {t('home.roles.donor.title')}
                   </p>
                 </dt>
-                <dd className="mt-4 text-base text-gray-500">
+                <dd className="mt-2 ml-16 text-base text-gray-500">
                   {t('home.roles.donor.description')}
                 </dd>
               </div>
@@ -186,26 +134,22 @@ export default function HomePage() {
       </div>
 
       {/* Active Projects Section */}
-      <div className="bg-gray-50 py-24 relative" id="active-projects">
-        <div className="absolute inset-0 bg-gradient-to-b from-white to-gray-50 h-32"></div>
-        <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-white to-gray-50 h-32"></div>
-        
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
-          <div className="text-center mb-16">
-            <span className="inline-block px-3 py-1 text-sm font-medium bg-secondary-100 text-secondary-800 rounded-full mb-3">
+      <div className="bg-gray-50 py-16" id="active-projects">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="lg:text-center">
+            <h2 className="text-base text-primary-600 font-semibold tracking-wide uppercase">
               {t('home.projects.title')}
-            </span>
-            <h2 className="text-3xl font-extrabold text-gray-900 font-heading bg-clip-text text-transparent bg-gradient-to-r from-gray-900 to-gray-600">
-              {t('home.projects.subtitle')}
             </h2>
-            <div className="w-24 h-1 bg-gradient-to-r from-secondary-500 to-yellow-500 mx-auto my-6 rounded-full"></div>
+            <p className="mt-2 text-3xl leading-8 font-extrabold tracking-tight text-gray-900 sm:text-4xl font-heading">
+              {t('home.projects.subtitle')}
+            </p>
           </div>
 
-          <div className="mt-12 grid gap-8 max-w-lg mx-auto lg:grid-cols-3 lg:max-w-none">
+          <div className="mt-10 grid gap-5 max-w-lg mx-auto lg:grid-cols-3 lg:max-w-none">
             {projectsLoading ? (
               // Loading skeleton for projects
               Array(3).fill(0).map((_, index) => (
-                <div key={index} className="flex flex-col rounded-2xl shadow-xl overflow-hidden bg-white animate-pulse transform transition duration-200 hover:scale-105">
+                <div key={index} className="flex flex-col rounded-lg shadow-lg overflow-hidden bg-white animate-pulse">
                   <div className="flex-shrink-0 h-48 bg-gray-300"></div>
                   <div className="flex-1 p-6 flex flex-col justify-between">
                     <div className="flex-1">
@@ -220,22 +164,12 @@ export default function HomePage() {
                         <div className="h-3 bg-gray-300 rounded w-1/4"></div>
                       </div>
                     </div>
-                    <div className="mt-6 flex items-center justify-between">
-                      <div className="flex items-center">
-                        <div className="h-8 w-8 bg-gray-300 rounded-full"></div>
-                        <div className="ml-2">
-                          <div className="h-3 bg-gray-300 rounded w-20"></div>
-                          <div className="h-2 bg-gray-300 rounded w-16 mt-1"></div>
-                        </div>
-                      </div>
-                      <div className="h-8 w-20 bg-gray-300 rounded-full"></div>
-                    </div>
                   </div>
                 </div>
               ))
             ) : !projects || projects.length === 0 ? (
               <div className="col-span-3 text-center py-10">
-                <p className="text-gray-500">{t('common.loading')}</p>
+                <p className="text-gray-500">{t('common.noProjects')}</p>
               </div>
             ) : (
               projects.map((project) => (
@@ -247,9 +181,9 @@ export default function HomePage() {
             )}
           </div>
 
-          <div className="mt-16 text-center">
+          <div className="mt-12 text-center">
             <Link href="/projects">
-              <Button className="inline-flex items-center justify-center px-8 py-3 text-white bg-gradient-to-r from-primary-600 to-primary-700 hover:from-primary-700 hover:to-primary-800 shadow-lg rounded-full transition-all duration-200 font-medium">
+              <Button className="inline-flex items-center justify-center px-5 py-3 text-white bg-primary-600 hover:bg-primary-700">
                 {t('home.projects.seeAll')}
                 <ArrowForward className="ml-2" />
               </Button>
@@ -259,29 +193,26 @@ export default function HomePage() {
       </div>
 
       {/* Dashboard Preview Section */}
-      <div className="bg-white py-24 relative">
-        <div className="absolute inset-0 bg-gradient-to-b from-gray-50 to-white h-32"></div>
-        
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
-          <div className="text-center mb-16">
-            <span className="inline-block px-3 py-1 text-sm font-medium bg-primary-100 text-primary-800 rounded-full mb-3">
+      <div className="bg-white py-16">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="lg:text-center">
+            <h2 className="text-base text-primary-600 font-semibold tracking-wide uppercase">
               {t('home.dashboard.title')}
-            </span>
-            <h2 className="text-3xl font-extrabold bg-clip-text text-transparent bg-gradient-to-r from-primary-600 to-primary-800 font-heading">
-              {t('home.dashboard.subtitle')}
             </h2>
-            <div className="w-24 h-1 bg-gradient-to-r from-primary-500 to-primary-300 mx-auto my-6 rounded-full"></div>
+            <p className="mt-2 text-3xl leading-8 font-extrabold tracking-tight text-gray-900 sm:text-4xl font-heading">
+              {t('home.dashboard.subtitle')}
+            </p>
           </div>
 
-          <div className="mt-12">
-            <div className="lg:grid lg:grid-cols-3 lg:gap-8">
-              <div>
-                <ul className="flex flex-col space-y-1 border-l-4 border-r-0 border-primary-600 lg:border-l-0 lg:border-r-4">
+          <div className="mt-10">
+            <div className="lg:grid lg:grid-cols-12 lg:gap-8">
+              <div className="lg:col-span-3">
+                <ul className="space-y-2">
                   <li>
                     <button 
-                      className={`px-4 py-3 w-full text-left ${
+                      className={`w-full p-3 text-left ${
                         activeTab === "volunteer" 
-                          ? "text-primary-700 bg-primary-50 font-medium" 
+                          ? "bg-primary-50 text-primary-700 font-medium" 
                           : "text-gray-700 hover:bg-gray-50"
                       }`}
                       onClick={() => handleTabChange("volunteer")}
@@ -291,9 +222,9 @@ export default function HomePage() {
                   </li>
                   <li>
                     <button 
-                      className={`px-4 py-3 w-full text-left ${
+                      className={`w-full p-3 text-left ${
                         activeTab === "coordinator" 
-                          ? "text-primary-700 bg-primary-50 font-medium" 
+                          ? "bg-primary-50 text-primary-700 font-medium" 
                           : "text-gray-700 hover:bg-gray-50"
                       }`}
                       onClick={() => handleTabChange("coordinator")}
@@ -303,9 +234,9 @@ export default function HomePage() {
                   </li>
                   <li>
                     <button 
-                      className={`px-4 py-3 w-full text-left ${
+                      className={`w-full p-3 text-left ${
                         activeTab === "donor" 
-                          ? "text-primary-700 bg-primary-50 font-medium" 
+                          ? "bg-primary-50 text-primary-700 font-medium" 
                           : "text-gray-700 hover:bg-gray-50"
                       }`}
                       onClick={() => handleTabChange("donor")}
@@ -316,19 +247,19 @@ export default function HomePage() {
                 </ul>
               </div>
               
-              <div className="mt-10 lg:col-span-2 lg:mt-0">
+              <div className="mt-10 lg:col-span-9 lg:mt-0">
                 {/* Volunteer dashboard preview */}
                 {activeTab === "volunteer" && (
-                  <div className="bg-white rounded-lg shadow overflow-hidden transition-all duration-300 animate-in fade-in">
+                  <div className="bg-white rounded-lg shadow overflow-hidden">
                     <div className="bg-primary-700 px-4 py-5 sm:px-6">
                       <h3 className="text-lg leading-6 font-medium text-white font-heading">
                         {t('dashboard.volunteer.title')}
                       </h3>
                     </div>
                     <div className="border-t border-gray-200">
-                      <div className="bg-gray-50 px-4 py-3 sm:px-6">
-                        <div className="text-sm text-gray-700">
-                          <span className="font-medium">{t('dashboard.volunteer.currentTasks')}</span>
+                      <div className="bg-gray-50 px-4 py-5 sm:px-6">
+                        <div className="text-sm font-medium text-gray-500">
+                          {t('dashboard.volunteer.currentTasks')}
                         </div>
                       </div>
                       <ul className="divide-y divide-gray-200">
@@ -346,53 +277,10 @@ export default function HomePage() {
                           <div className="mt-2 sm:flex sm:justify-between">
                             <div className="sm:flex">
                               <p className="flex items-center text-sm text-gray-500">
-                                <span className="text-gray-400 text-sm mr-1">{/* Calendar icon */}</span>
                                 Термін: 25 жовтня 2023
                               </p>
                             </div>
                           </div>
-                        </li>
-                        <li className="px-4 py-4 sm:px-6">
-                          <div className="flex items-center justify-between">
-                            <p className="text-sm font-medium text-primary-600 truncate">
-                              Допомога в організації заходу
-                            </p>
-                            <div className="ml-2 flex-shrink-0 flex">
-                              <p className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">
-                                Готово до звіту
-                              </p>
-                            </div>
-                          </div>
-                          <div className="mt-2 sm:flex sm:justify-between">
-                            <div className="sm:flex">
-                              <p className="flex items-center text-sm text-gray-500">
-                                <span className="text-gray-400 text-sm mr-1">{/* Calendar icon */}</span>
-                                Термін: 20 жовтня 2023
-                              </p>
-                            </div>
-                          </div>
-                        </li>
-                      </ul>
-                      <div className="bg-gray-50 px-4 py-3 sm:px-6">
-                        <div className="text-sm text-gray-700">
-                          <span className="font-medium">{t('dashboard.volunteer.availableProjects')}</span>
-                        </div>
-                      </div>
-                      <ul className="divide-y divide-gray-200">
-                        <li className="px-4 py-4 sm:px-6">
-                          <div className="flex items-center justify-between">
-                            <p className="text-sm font-medium text-primary-600 truncate">
-                              Підтримка переселенців
-                            </p>
-                            <div className="ml-2 flex-shrink-0 flex">
-                              <button className="px-2 py-1 text-xs font-medium rounded bg-primary-600 text-white hover:bg-primary-700 shadow-sm">
-                                {t('dashboard.volunteer.applyButton')}
-                              </button>
-                            </div>
-                          </div>
-                          <p className="mt-1 text-sm text-gray-500">
-                            Потрібні волонтери для допомоги з розселенням.
-                          </p>
                         </li>
                       </ul>
                     </div>
@@ -401,19 +289,18 @@ export default function HomePage() {
 
                 {/* Coordinator dashboard preview */}
                 {activeTab === "coordinator" && (
-                  <div className="bg-white rounded-lg shadow overflow-hidden transition-all duration-300 animate-in fade-in">
+                  <div className="bg-white rounded-lg shadow overflow-hidden">
                     <div className="bg-primary-700 px-4 py-5 sm:px-6">
                       <h3 className="text-lg leading-6 font-medium text-white font-heading">
                         {t('dashboard.coordinator.title')}
                       </h3>
                     </div>
                     <div className="border-t border-gray-200">
-                      <div className="bg-gray-50 px-4 py-3 sm:px-6 flex justify-between items-center">
-                        <div className="text-sm text-gray-700">
-                          <span className="font-medium">{t('dashboard.coordinator.myProjects')}</span>
+                      <div className="bg-gray-50 px-4 py-5 sm:px-6 flex justify-between items-center">
+                        <div className="text-sm font-medium text-gray-500">
+                          {t('dashboard.coordinator.myProjects')}
                         </div>
-                        <button className="inline-flex items-center px-2 py-1 border border-transparent text-xs font-medium rounded shadow-sm text-white bg-secondary-600 hover:bg-secondary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-secondary-500">
-                          <span className="text-sm mr-1">+</span>
+                        <button className="inline-flex items-center px-3 py-1 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-primary-600 hover:bg-primary-700">
                           {t('dashboard.coordinator.createProjectButton')}
                         </button>
                       </div>
@@ -433,43 +320,7 @@ export default function HomePage() {
                             <p className="text-sm text-gray-500">
                               Збір коштів: 70 000 / 100 000 грн
                             </p>
-                            <div className="flex space-x-2">
-                              <button className="px-2 py-1 text-xs font-medium rounded bg-primary-600 text-white hover:bg-primary-700 shadow-sm">
-                                {t('dashboard.coordinator.volunteersButton')}
-                              </button>
-                              <button className="px-2 py-1 text-xs font-medium rounded bg-secondary-600 text-white hover:bg-secondary-700 shadow-sm">
-                                {t('dashboard.coordinator.tasksButton')}
-                              </button>
-                            </div>
                           </div>
-                        </li>
-                      </ul>
-                      <div className="bg-gray-50 px-4 py-3 sm:px-6">
-                        <div className="text-sm text-gray-700">
-                          <span className="font-medium">{t('dashboard.coordinator.volunteerApplications')}</span>
-                        </div>
-                      </div>
-                      <ul className="divide-y divide-gray-200">
-                        <li className="px-4 py-4 sm:px-6">
-                          <div className="flex items-center justify-between">
-                            <div className="flex items-center">
-                              <AccountCircle className="text-gray-400 mr-2" />
-                              <p className="text-sm font-medium text-gray-800">
-                                Андрій Мельник
-                              </p>
-                            </div>
-                            <div className="flex space-x-2">
-                              <button className="px-2 py-1 text-xs font-medium rounded bg-green-600 text-white hover:bg-green-700 shadow-sm">
-                                {t('dashboard.coordinator.approveButton')}
-                              </button>
-                              <button className="px-2 py-1 text-xs font-medium rounded bg-red-600 text-white hover:bg-red-700 shadow-sm">
-                                {t('dashboard.coordinator.rejectButton')}
-                              </button>
-                            </div>
-                          </div>
-                          <p className="mt-1 text-sm text-gray-500">
-                            Проєкт: Допомога вразливим групам населення
-                          </p>
                         </li>
                       </ul>
                     </div>
@@ -478,16 +329,16 @@ export default function HomePage() {
 
                 {/* Donor dashboard preview */}
                 {activeTab === "donor" && (
-                  <div className="bg-white rounded-lg shadow overflow-hidden transition-all duration-300 animate-in fade-in">
+                  <div className="bg-white rounded-lg shadow overflow-hidden">
                     <div className="bg-primary-700 px-4 py-5 sm:px-6">
                       <h3 className="text-lg leading-6 font-medium text-white font-heading">
                         {t('dashboard.donor.title')}
                       </h3>
                     </div>
                     <div className="border-t border-gray-200">
-                      <div className="bg-gray-50 px-4 py-3 sm:px-6">
-                        <div className="text-sm text-gray-700">
-                          <span className="font-medium">{t('dashboard.donor.myDonations')}</span>
+                      <div className="bg-gray-50 px-4 py-5 sm:px-6">
+                        <div className="text-sm font-medium text-gray-500">
+                          {t('dashboard.donor.myDonations')}
                         </div>
                       </div>
                       <ul className="divide-y divide-gray-200">
@@ -509,55 +360,7 @@ export default function HomePage() {
                                 Ваш внесок: 2000 грн
                               </p>
                             </div>
-                            <button className="mt-2 sm:mt-0 inline-flex items-center px-2 py-1 text-xs font-medium rounded bg-primary-600 text-white hover:bg-primary-700 shadow-sm">
-                              {t('dashboard.donor.projectDetails')}
-                            </button>
                           </div>
-                        </li>
-                        <li className="px-4 py-4 sm:px-6">
-                          <div className="flex items-center justify-between">
-                            <p className="text-sm font-medium text-primary-600 truncate">
-                              Підтримка переселенців
-                            </p>
-                            <div className="ml-2 flex-shrink-0 flex">
-                              <p className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">
-                                {t('projects.status.in_progress')}
-                              </p>
-                            </div>
-                          </div>
-                          <div className="mt-2 sm:flex sm:justify-between">
-                            <div className="sm:flex items-center">
-                              <p className="flex items-center text-sm text-gray-500">
-                                <Favorite className="text-secondary-500 text-sm mr-1" />
-                                Ваш внесок: 1500 грн
-                              </p>
-                            </div>
-                            <button className="mt-2 sm:mt-0 inline-flex items-center px-2 py-1 text-xs font-medium rounded bg-primary-600 text-white hover:bg-primary-700 shadow-sm">
-                              {t('dashboard.donor.projectDetails')}
-                            </button>
-                          </div>
-                        </li>
-                      </ul>
-                      <div className="bg-gray-50 px-4 py-3 sm:px-6">
-                        <div className="text-sm text-gray-700">
-                          <span className="font-medium">{t('dashboard.donor.recommendedProjects')}</span>
-                        </div>
-                      </div>
-                      <ul className="divide-y divide-gray-200">
-                        <li className="px-4 py-4 sm:px-6">
-                          <div className="flex items-center justify-between">
-                            <p className="text-sm font-medium text-primary-600 truncate">
-                              Допомога вразливим групам населення
-                            </p>
-                            <div className="ml-2 flex-shrink-0 flex">
-                              <button className="px-2 py-1 text-xs font-medium rounded bg-secondary-500 text-white hover:bg-secondary-600">
-                                {t('dashboard.donor.donateButton')}
-                              </button>
-                            </div>
-                          </div>
-                          <p className="mt-1 text-sm text-gray-500">
-                            Збір: 70 000 / 100 000 грн
-                          </p>
                         </li>
                       </ul>
                     </div>
