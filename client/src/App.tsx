@@ -16,6 +16,8 @@ import ProfilePage from "@/pages/profile-page";
 import CreateProject from "@/pages/create-project";
 import AboutPage from "@/pages/about-page";
 import ContactsPage from "@/pages/contacts-page";
+import PrivacyPage from "@/pages/privacy-page";
+import TermsPage from "@/pages/terms-page";
 import { ProtectedRoute } from "./lib/protected-route";
 
 function Router() {
@@ -29,6 +31,8 @@ function Router() {
       <Route path="/projects/:id/slider" component={ProjectSliderPage} />
       <Route path="/about" component={AboutPage} />
       <Route path="/contacts" component={ContactsPage} />
+      <Route path="/privacy" component={PrivacyPage} />
+      <Route path="/terms" component={TermsPage} />
       
       {/* Temporarily convert to regular routes for debugging */}
       <Route path="/dashboard/volunteer" component={VolunteerDashboard} />
