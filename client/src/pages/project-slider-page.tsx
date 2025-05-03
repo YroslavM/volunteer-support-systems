@@ -47,8 +47,10 @@ const DEMO_IMAGES = [
 ];
 
 export default function ProjectSliderPage() {
-  const [, params] = useLocation();
-  const projectId = params ? parseInt(params.split("/")[2]) : null;
+  const [location] = useLocation();
+  // В wouter location - це рядок шляху
+  const pathParts = location ? location.split("/") : [];
+  const projectId = pathParts.length > 2 ? parseInt(pathParts[2]) : null;
   const { t } = useTranslation();
   const { toast } = useToast();
   const [, navigate] = useLocation();
@@ -80,8 +82,8 @@ export default function ProjectSliderPage() {
     : 0;
   
   // Форматування дати
-  const formatDate = (dateString: string) => {
-    const date = new Date(dateString);
+  const formatDate = (dateString: string | Date) => {
+    const date = typeof dateString === 'string' ? new Date(dateString) : dateString;
     return date.toLocaleDateString('uk-UA');
   };
   

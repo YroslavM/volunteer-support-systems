@@ -48,8 +48,10 @@ import {
 import { Loader2 } from "lucide-react";
 
 export default function ProjectDetails() {
-  const [, params] = useLocation();
-  const projectId = params ? parseInt(params.split("/")[2]) : null;
+  const [location] = useLocation();
+  // В wouter location - це рядок шляху
+  const pathParts = location ? location.split("/") : [];
+  const projectId = pathParts.length > 2 ? parseInt(pathParts[2]) : null;
   const { t } = useTranslation();
   // Mocking user for debugging
   const user = null;
@@ -181,8 +183,8 @@ export default function ProjectDetails() {
     : 0;
   
   // Format date
-  const formatDate = (dateString: string) => {
-    const date = new Date(dateString);
+  const formatDate = (dateString: string | Date) => {
+    const date = typeof dateString === 'string' ? new Date(dateString) : dateString;
     return date.toLocaleDateString('uk-UA');
   };
   

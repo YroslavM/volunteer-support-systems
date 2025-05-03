@@ -44,14 +44,14 @@ export function ProjectCard({ project, coordinator }: ProjectCardProps) {
       <CardContent className="p-6 flex-1 flex flex-col justify-between">
         <div className="flex-1">
           <Link href={`/projects/${project.id}`}>
-            <a className="block mt-2 cursor-pointer">
+            <div className="block mt-2 cursor-pointer">
               <h3 className="text-xl font-semibold text-gray-900 font-heading">
                 {project.name}
               </h3>
               <p className="mt-3 text-base text-gray-500 line-clamp-3">
                 {project.description}
               </p>
-            </a>
+            </div>
           </Link>
         </div>
         <div className="mt-4">
