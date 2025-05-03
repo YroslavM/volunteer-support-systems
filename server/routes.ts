@@ -415,7 +415,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
   
   // Get applications for a project (coordinator only)
-  app.get("/api/projects/:projectId/applications", hasRole(["coordinator"]), async (req, res, next) => {
+  app.get("/api/projects/:projectId/applications", hasRole(["coordinator", "admin"]), async (req, res, next) => {
     try {
       const projectId = parseInt(req.params.projectId);
       if (isNaN(projectId)) {
@@ -427,8 +427,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ message: "Проєкт не знайдено" });
       }
       
-      // Check if user is the coordinator of this project
-      if (project.coordinatorId !== req.user!.id) {
+      // Check if user is the coordinator of this project or an admin
+      const userRole = getUserRole(req);
+      const userId = getUserId(req);
+      
+      if (userRole === "coordinator" && project.coordinatorId !== userId) {
         return res.status(403).json({ message: "Ви не є координатором цього проєкту" });
       }
       
@@ -440,7 +443,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
   
   // Update application status (coordinator only)
-  app.patch("/api/applications/:id/status", hasRole(["coordinator"]), async (req, res, next) => {
+  app.patch("/api/applications/:id/status", hasRole(["coordinator", "admin"]), async (req, res, next) => {
     try {
       const id = parseInt(req.params.id);
       if (isNaN(id)) {
@@ -461,8 +464,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ message: "Проєкт не знайдено" });
       }
       
-      // Check if user is the coordinator of this project
-      if (project.coordinatorId !== req.user!.id) {
+      // Check if user is the coordinator of this project or an admin
+      const userRole = getUserRole(req);
+      const userId = getUserId(req);
+      
+      if (userRole === "coordinator" && project.coordinatorId !== userId) {
         return res.status(403).json({ message: "Ви не є координатором цього проєкту" });
       }
       
@@ -521,7 +527,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
   
   // Get donations for a project (coordinator only)
-  app.get("/api/projects/:projectId/donations", hasRole(["coordinator"]), async (req, res, next) => {
+  app.get("/api/projects/:projectId/donations", hasRole(["coordinator", "admin"]), async (req, res, next) => {
     try {
       const projectId = parseInt(req.params.projectId);
       if (isNaN(projectId)) {
@@ -533,8 +539,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ message: "Проєкт не знайдено" });
       }
       
-      // Check if user is the coordinator of this project
-      if (project.coordinatorId !== req.user!.id) {
+      // Check if user is the coordinator of this project or an admin
+      const userRole = getUserRole(req);
+      const userId = getUserId(req);
+      
+      if (userRole === "coordinator" && project.coordinatorId !== userId) {
         return res.status(403).json({ message: "Ви не є координатором цього проєкту" });
       }
       
@@ -726,7 +735,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
   
   // Get volunteers for a project (coordinator only)
-  app.get("/api/projects/:projectId/volunteers", hasRole(["coordinator"]), async (req, res, next) => {
+  app.get("/api/projects/:projectId/volunteers", hasRole(["coordinator", "admin"]), async (req, res, next) => {
     try {
       const projectId = parseInt(req.params.projectId);
       if (isNaN(projectId)) {
@@ -738,8 +747,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ message: "Проєкт не знайдено" });
       }
       
-      // Check if user is the coordinator of this project
-      if (project.coordinatorId !== req.user!.id) {
+      // Check if user is the coordinator of this project or an admin
+      const userRole = getUserRole(req);
+      const userId = getUserId(req);
+      
+      if (userRole === "coordinator" && project.coordinatorId !== userId) {
         return res.status(403).json({ message: "Ви не є координатором цього проєкту" });
       }
       

@@ -37,22 +37,22 @@ function Router() {
       
       {/* Protected routes that require authentication */}
       <Route path="/dashboard/volunteer">
-        <ProtectedRoute component={VolunteerDashboard} />
+        <ProtectedRoute component={VolunteerDashboard} roles={["volunteer"]} />
       </Route>
       <Route path="/dashboard/coordinator">
-        <ProtectedRoute component={CoordinatorDashboard} />
+        <ProtectedRoute component={CoordinatorDashboard} roles={["coordinator"]} />
       </Route>
       <Route path="/dashboard/donor">
-        <ProtectedRoute component={DonorDashboard} />
+        <ProtectedRoute component={DonorDashboard} roles={["donor"]} />
       </Route>
       <Route path="/dashboard/admin">
-        <ProtectedRoute component={AdminDashboard} />
+        <ProtectedRoute component={AdminDashboard} roles={["admin"]} />
       </Route>
       <Route path="/profile">
         <ProtectedRoute component={ProfilePage} />
       </Route>
       <Route path="/create-project">
-        <ProtectedRoute component={CreateProject} />
+        <ProtectedRoute component={CreateProject} roles={["coordinator", "admin"]} />
       </Route>
       
       <Route component={NotFound} />
