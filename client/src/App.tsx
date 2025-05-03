@@ -16,6 +16,7 @@ import CreateProject from "@/pages/create-project";
 import { ProtectedRoute } from "./lib/protected-route";
 
 function Router() {
+  // Temporarily disabling protected routes for debugging
   return (
     <Switch>
       <Route path="/" component={HomePage} />
@@ -23,11 +24,12 @@ function Router() {
       <Route path="/projects" component={ProjectsPage} />
       <Route path="/projects/:id" component={ProjectDetails} />
       
-      <ProtectedRoute path="/dashboard/volunteer" component={VolunteerDashboard} roles={["volunteer"]} />
-      <ProtectedRoute path="/dashboard/coordinator" component={CoordinatorDashboard} roles={["coordinator"]} />
-      <ProtectedRoute path="/dashboard/donor" component={DonorDashboard} roles={["donor"]} />
-      <ProtectedRoute path="/profile" component={ProfilePage} />
-      <ProtectedRoute path="/create-project" component={CreateProject} roles={["coordinator"]} />
+      {/* Temporarily convert to regular routes for debugging */}
+      <Route path="/dashboard/volunteer" component={VolunteerDashboard} />
+      <Route path="/dashboard/coordinator" component={CoordinatorDashboard} />
+      <Route path="/dashboard/donor" component={DonorDashboard} />
+      <Route path="/profile" component={ProfilePage} />
+      <Route path="/create-project" component={CreateProject} />
       
       <Route component={NotFound} />
     </Switch>

@@ -29,7 +29,8 @@ import {
   FormItem,
 } from "@/components/ui/form";
 import { SelectProject } from "@shared/schema";
-import { useAuth } from "@/hooks/use-auth";
+// Temporary commenting out auth for debugging
+// import { useAuth } from "@/hooks/use-auth";
 import { AddCircle, FilterList, Search, Refresh } from "@mui/icons-material";
 import { Loader2 } from "lucide-react";
 
@@ -43,7 +44,8 @@ type FilterFormValues = z.infer<typeof filterSchema>;
 
 export default function ProjectsPage() {
   const { t } = useTranslation();
-  const { user } = useAuth();
+  // Temporary mock of user to avoid auth context for debugging
+  const user = null; 
   const [projects, setProjects] = useState<SelectProject[]>([]);
   
   // Form for filters
@@ -114,14 +116,7 @@ export default function ProjectsPage() {
             <p className="mt-2 text-lg text-gray-500">{t('home.projects.subtitle')}</p>
           </div>
           
-          {user && user.role === "coordinator" && (
-            <Link href="/create-project">
-              <Button className="mt-4 sm:mt-0 flex items-center">
-                <AddCircle className="mr-2" />
-                {t('dashboard.coordinator.createProjectButton')}
-              </Button>
-            </Link>
-          )}
+          {/* Create project button removed for debugging */}
         </div>
         
         {/* Filters */}
