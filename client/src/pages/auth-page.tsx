@@ -5,7 +5,7 @@ import { z } from "zod";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 // Temporarily commenting out auth for debugging
-import { useAuth } from "@/hooks/use-auth";
+// import { useAuth } from "@/hooks/use-auth";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -67,7 +67,36 @@ type RegisterFormValues = z.infer<typeof registerSchema>;
 export default function AuthPage() {
   const { t } = useTranslation();
   const [location, navigate] = useLocation();
-  const { user, loginMutation, registerMutation } = useAuth();
+  // Mock auth data for debugging
+  const user = null;
+  const loginMutation = {
+    mutate: (credentials: any) => {
+      console.log('Login mutation called', credentials);
+      // Redirect to the appropriate dashboard based on user role
+      if (credentials.email.includes('volunteer')) {
+        window.location.href = '/dashboard/volunteer';
+      } else if (credentials.email.includes('coordinator')) {
+        window.location.href = '/dashboard/coordinator';
+      } else {
+        window.location.href = '/dashboard/donor';
+      }
+    },
+    isPending: false
+  };
+  const registerMutation = {
+    mutate: (data: any) => {
+      console.log('Register mutation called', data);
+      // Redirect to the appropriate dashboard based on user role
+      if (data.role === 'volunteer') {
+        window.location.href = '/dashboard/volunteer';
+      } else if (data.role === 'coordinator') {
+        window.location.href = '/dashboard/coordinator';
+      } else if (data.role === 'donor') {
+        window.location.href = '/dashboard/donor';
+      }
+    },
+    isPending: false
+  };
   const [activeTab, setActiveTab] = useState<string>("login");
 
   // Redirect if already logged in
