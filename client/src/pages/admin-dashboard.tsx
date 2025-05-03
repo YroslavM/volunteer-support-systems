@@ -1,32 +1,32 @@
-import React, { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useState, useEffect } from "react";
 import { useTranslation } from "react-i18next";
-import { Link } from "wouter";
+import { useQuery, useMutation } from "@tanstack/react-query";
 import { useAuth } from "@/hooks/use-auth";
-import { format } from "date-fns";
-import { useIsMobile } from "@/hooks/use-mobile";
-import { User, Project, Donation } from "@shared/schema";
-
-// Components
+import { apiRequest, queryClient } from "@/lib/queryClient";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import {
   Card,
   CardContent,
   CardDescription,
-  CardFooter,
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Table,
   TableBody,
-  TableCaption,
   TableCell,
   TableHead,
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { useToast } from "@/hooks/use-toast";
+import { Badge } from "@/components/ui/badge";
+import { Progress } from "@/components/ui/progress";
+import { SelectProject, SelectUser } from "@shared/schema";
+import { Link } from "wouter";
+import { Loader2, Search, RefreshCw } from "lucide-react";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   BarChart,
   Bar,
@@ -34,495 +34,695 @@ import {
   YAxis,
   CartesianGrid,
   Tooltip,
-  Legend,
   ResponsiveContainer,
   PieChart,
   Pie,
   Cell,
 } from "recharts";
 import {
-  Users,
-  ClipboardList,
-  TrendingUp,
-  Calendar,
   Edit,
-  Trash2,
-  PlusCircle,
-  Eye,
-} from "lucide-react";
-import { Badge } from "@/components/ui/badge";
-import { Skeleton } from "@/components/ui/skeleton";
-import { ProjectCard } from "@/components/project-card";
+  Delete,
+  SupervisorAccount,
+  Assessment,
+  Dashboard,
+  Group,
+  Person,
+  Info,
+  ArrowUpward,
+  ArrowDownward,
+  FilterList,
+  Add,
+  VerifiedUser,
+  Block,
+  Money,
+  Assignment,
+  AttachMoney
+} from "@mui/icons-material";
 
 export default function AdminDashboard() {
-  const { t, i18n } = useTranslation();
+  const { t } = useTranslation();
   const { user } = useAuth();
-  const isMobile = useIsMobile();
-  const [activeTab, setActiveTab] = useState("projects");
+  const { toast } = useToast();
+  const [searchQuery, setSearchQuery] = useState("");
+  const [sortOrder, setSortOrder] = useState<"asc" | "desc">("asc");
+  const [sortField, setSortField] = useState<string>("name");
 
-  // Fetch all projects
-  const {
-    data: projects,
-    isLoading: isLoadingProjects,
-    error: projectsError,
-  } = useQuery<Project[]>({
+  // Get all projects
+  const { data: projects, isLoading: projectsLoading } = useQuery<SelectProject[]>({
     queryKey: ["/api/projects"],
-    enabled: !!user && user.role === "admin",
+    enabled: !!user,
   });
 
-  // Fetch all users
-  const {
-    data: users,
-    isLoading: isLoadingUsers,
-    error: usersError,
-  } = useQuery<User[]>({
-    queryKey: ["/api/admin/users"],
-    enabled: !!user && user.role === "admin",
+  // Get all users
+  const { data: users, isLoading: usersLoading } = useQuery<SelectUser[]>({
+    queryKey: ["/api/users"],
+    enabled: !!user,
   });
 
-  // Fetch all donations
-  const {
-    data: donations,
-    isLoading: isLoadingDonations,
-    error: donationsError,
-  } = useQuery<Donation[]>({
-    queryKey: ["/api/admin/donations"],
-    enabled: !!user && user.role === "admin",
+  // Filter and sort projects
+  const filteredProjects = projects
+    ? projects.filter(project => 
+        project.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
+        project.description.toLowerCase().includes(searchQuery.toLowerCase())
+      )
+    : [];
+
+  const sortedProjects = [...filteredProjects].sort((a, b) => {
+    if (sortField === "name") {
+      return sortOrder === "asc" 
+        ? a.name.localeCompare(b.name)
+        : b.name.localeCompare(a.name);
+    } else if (sortField === "status") {
+      return sortOrder === "asc" 
+        ? a.status.localeCompare(b.status) 
+        : b.status.localeCompare(a.status);
+    } else if (sortField === "collectedAmount") {
+      return sortOrder === "asc" 
+        ? a.collectedAmount - b.collectedAmount 
+        : b.collectedAmount - a.collectedAmount;
+    }
+    return 0;
   });
 
-  // Statistics
-  const totalProjects = projects?.length || 0;
-  const totalUsers = users?.length || 0;
-  const totalDonations = donations?.reduce((sum, donation) => sum + donation.amount, 0) || 0;
-  
-  // Projects by status data for pie chart
-  const projectsByStatus = [
-    {
-      name: t("projects.status.funding"),
-      value: projects?.filter((p) => p.status === "funding").length || 0,
-    },
-    {
-      name: t("projects.status.in_progress"),
-      value: projects?.filter((p) => p.status === "in_progress").length || 0,
-    },
-    {
-      name: t("projects.status.completed"),
-      value: projects?.filter((p) => p.status === "completed").length || 0,
-    },
-  ];
-  
-  // Users by role data for pie chart
-  const usersByRole = [
-    {
-      name: t("roles.volunteer"),
-      value: users?.filter((u) => u.role === "volunteer").length || 0,
-    },
-    {
-      name: t("roles.coordinator"),
-      value: users?.filter((u) => u.role === "coordinator").length || 0,
-    },
-    {
-      name: t("roles.donor"),
-      value: users?.filter((u) => u.role === "donor").length || 0,
-    },
-    {
-      name: t("roles.admin"),
-      value: users?.filter((u) => u.role === "admin").length || 0,
-    },
-  ];
-  
-  const COLORS = ["#0088FE", "#00C49F", "#FFBB28", "#FF8042"];
+  // Filter and sort users
+  const filteredUsers = users
+    ? users.filter(user => 
+        user.username.toLowerCase().includes(searchQuery.toLowerCase()) || 
+        (user.email && user.email.toLowerCase().includes(searchQuery.toLowerCase())) ||
+        (user.firstName && user.firstName.toLowerCase().includes(searchQuery.toLowerCase())) ||
+        (user.lastName && user.lastName.toLowerCase().includes(searchQuery.toLowerCase()))
+      )
+    : [];
 
-  if (!user || user.role !== "admin") {
+  const sortedUsers = [...filteredUsers].sort((a, b) => {
+    if (sortField === "username") {
+      return sortOrder === "asc" 
+        ? a.username.localeCompare(b.username)
+        : b.username.localeCompare(a.username);
+    } else if (sortField === "role") {
+      return sortOrder === "asc" 
+        ? a.role.localeCompare(b.role) 
+        : b.role.localeCompare(a.role);
+    } else if (sortField === "isVerified") {
+      return sortOrder === "asc" 
+        ? (a.isVerified ? 1 : 0) - (b.isVerified ? 1 : 0) 
+        : (b.isVerified ? 1 : 0) - (a.isVerified ? 1 : 0);
+    }
+    return 0;
+  });
+
+  // Calculate progress percentage
+  const calculateProgress = (project: SelectProject) => {
+    return Math.min(Math.round((project.collectedAmount / project.targetAmount) * 100), 100);
+  };
+
+  // Delete project mutation
+  const deleteProjectMutation = useMutation({
+    mutationFn: (projectId: number) => {
+      return apiRequest("DELETE", `/api/projects/${projectId}`);
+    },
+    onSuccess: () => {
+      toast({
+        title: "Проєкт видалено",
+        description: "Проєкт був успішно видалений.",
+      });
+      queryClient.invalidateQueries({ queryKey: ["/api/projects"] });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Помилка",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+
+  // Verify user mutation
+  const verifyUserMutation = useMutation({
+    mutationFn: (userId: number) => {
+      return apiRequest("POST", `/api/users/${userId}/verify`);
+    },
+    onSuccess: () => {
+      toast({
+        title: "Користувача верифіковано",
+        description: "Користувач був успішно верифікований.",
+      });
+      queryClient.invalidateQueries({ queryKey: ["/api/users"] });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Помилка",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+
+  // Block user mutation
+  const blockUserMutation = useMutation({
+    mutationFn: (userId: number) => {
+      return apiRequest("POST", `/api/users/${userId}/block`);
+    },
+    onSuccess: () => {
+      toast({
+        title: "Користувача заблоковано",
+        description: "Користувач був успішно заблокований.",
+      });
+      queryClient.invalidateQueries({ queryKey: ["/api/users"] });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Помилка",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+
+  // Handle sort toggle
+  const handleSort = (field: string) => {
+    if (sortField === field) {
+      setSortOrder(sortOrder === "asc" ? "desc" : "asc");
+    } else {
+      setSortField(field);
+      setSortOrder("asc");
+    }
+  };
+
+  // Handle delete project
+  const handleDeleteProject = (projectId: number) => {
+    if (window.confirm(t('dashboard.admin.confirmDeleteProject'))) {
+      deleteProjectMutation.mutate(projectId);
+    }
+  };
+
+  // Handle verify user
+  const handleVerifyUser = (userId: number) => {
+    verifyUserMutation.mutate(userId);
+  };
+
+  // Handle block user
+  const handleBlockUser = (userId: number) => {
+    if (window.confirm(t('dashboard.admin.confirmBlockUser'))) {
+      blockUserMutation.mutate(userId);
+    }
+  };
+
+  // Format date
+  const formatDate = (dateString: string | Date) => {
+    const date = typeof dateString === 'string' ? new Date(dateString) : dateString;
+    return date.toLocaleDateString('uk-UA');
+  };
+
+  // Get status badge color
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case 'funding':
+        return 'bg-blue-100 text-blue-800';
+      case 'in_progress':
+        return 'bg-yellow-100 text-yellow-800';
+      case 'completed':
+        return 'bg-green-100 text-green-800';
+      default:
+        return 'bg-gray-100 text-gray-800';
+    }
+  };
+
+  // Get role badge color
+  const getRoleColor = (role: string) => {
+    switch (role) {
+      case 'admin':
+        return 'bg-purple-100 text-purple-800';
+      case 'coordinator':
+        return 'bg-blue-100 text-blue-800';
+      case 'volunteer':
+        return 'bg-green-100 text-green-800';
+      case 'donor':
+        return 'bg-yellow-100 text-yellow-800';
+      default:
+        return 'bg-gray-100 text-gray-800';
+    }
+  };
+
+  // Statistics data for charts
+  const projectStatusData = projects
+    ? [
+        {
+          name: t('projects.status.funding'),
+          value: projects.filter(p => p.status === 'funding').length,
+          color: '#3b82f6',
+        },
+        {
+          name: t('projects.status.in_progress'),
+          value: projects.filter(p => p.status === 'in_progress').length,
+          color: '#eab308',
+        },
+        {
+          name: t('projects.status.completed'),
+          value: projects.filter(p => p.status === 'completed').length,
+          color: '#22c55e',
+        },
+      ]
+    : [];
+
+  const userRoleData = users
+    ? [
+        {
+          name: t('auth.roles.admin'),
+          value: users.filter(u => u.role === 'admin').length,
+          color: '#a855f7',
+        },
+        {
+          name: t('auth.roles.coordinator'),
+          value: users.filter(u => u.role === 'coordinator').length,
+          color: '#3b82f6',
+        },
+        {
+          name: t('auth.roles.volunteer'),
+          value: users.filter(u => u.role === 'volunteer').length,
+          color: '#22c55e',
+        },
+        {
+          name: t('auth.roles.donor'),
+          value: users.filter(u => u.role === 'donor').length,
+          color: '#eab308',
+        },
+      ]
+    : [];
+
+  // Loading state
+  if (!user) {
     return (
-      <div className="container max-w-7xl mx-auto py-10">
-        <h1 className="text-2xl font-bold mb-4">{t("common.error")}</h1>
-        <p>{t("common.error")}: {t("dashboard.admin.title")}</p>
+      <div className="flex justify-center items-center min-h-[60vh]">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
       </div>
     );
   }
 
   return (
-    <div className="container max-w-7xl mx-auto py-10">
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6">
+    <div className="container mx-auto py-8 px-4">
+      <div className="flex items-center justify-between mb-8">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">
-            {t("dashboard.admin.title")}
-          </h1>
-          <p className="text-muted-foreground">
-            {t("account.welcome")}, {user.firstName || user.username}!
+          <h1 className="text-3xl font-bold text-gray-900">{t('dashboard.admin.title')}</h1>
+          <p className="text-gray-600 mt-1">
+            {t('dashboard.admin.subtitle')}
           </p>
         </div>
+        <div className="flex items-center gap-4">
+          <div className="flex items-center bg-white rounded-full shadow-sm px-4 py-2">
+            <Badge className={getRoleColor("admin")}>
+              {t('auth.roles.admin')}
+            </Badge>
+            <span className="mx-2">|</span>
+            <div className="flex items-center">
+              <Person className="text-gray-500 mr-1" />
+              <span className="font-medium">{user.username}</span>
+            </div>
+          </div>
+        </div>
       </div>
-
-      {/* Stats Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-8">
+      
+      <div className="mb-8">
         <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium">
-              {t("dashboard.admin.totalProjects")}
-            </CardTitle>
+          <CardHeader>
+            <CardTitle>{t('dashboard.admin.statistics')}</CardTitle>
+            <CardDescription>{t('dashboard.admin.statisticsSubtitle')}</CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{totalProjects}</div>
-            <div className="flex items-center mt-2">
-              <ClipboardList className="h-4 w-4 text-muted-foreground mr-1" />
-              <p className="text-xs text-muted-foreground">
-                {projectsByStatus[0].value} {t("projects.status.funding").toLowerCase()}
-              </p>
-            </div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium">
-              {t("dashboard.admin.totalUsers")}
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{totalUsers}</div>
-            <div className="flex items-center mt-2">
-              <Users className="h-4 w-4 text-muted-foreground mr-1" />
-              <p className="text-xs text-muted-foreground">
-                {usersByRole[0].value} {t("roles.volunteer").toLowerCase()}
-              </p>
-            </div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium">
-              {t("dashboard.admin.totalDonations")}
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">
-              ${totalDonations.toLocaleString(i18n.language, {
-                minimumFractionDigits: 2,
-                maximumFractionDigits: 2,
-              })}
-            </div>
-            <div className="flex items-center mt-2">
-              <TrendingUp className="h-4 w-4 text-muted-foreground mr-1" />
-              <p className="text-xs text-muted-foreground">
-                {donations?.length || 0} {t("dashboard.donor.myDonations").toLowerCase()}
-              </p>
+            <div className="grid md:grid-cols-2 gap-8">
+              <div>
+                <h3 className="text-lg font-medium mb-4">{t('dashboard.admin.projectStatus')}</h3>
+                <ResponsiveContainer width="100%" height={300}>
+                  <PieChart>
+                    <Pie
+                      data={projectStatusData}
+                      cx="50%"
+                      cy="50%"
+                      labelLine={true}
+                      outerRadius={100}
+                      fill="#8884d8"
+                      dataKey="value"
+                      label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
+                    >
+                      {projectStatusData.map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={entry.color} />
+                      ))}
+                    </Pie>
+                    <Tooltip 
+                      formatter={(value) => [value, t('dashboard.admin.projectCount')]} 
+                    />
+                  </PieChart>
+                </ResponsiveContainer>
+              </div>
+              <div>
+                <h3 className="text-lg font-medium mb-4">{t('dashboard.admin.userRole')}</h3>
+                <ResponsiveContainer width="100%" height={300}>
+                  <PieChart>
+                    <Pie
+                      data={userRoleData}
+                      cx="50%"
+                      cy="50%"
+                      labelLine={true}
+                      outerRadius={100}
+                      fill="#8884d8"
+                      dataKey="value"
+                      label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
+                    >
+                      {userRoleData.map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={entry.color} />
+                      ))}
+                    </Pie>
+                    <Tooltip 
+                      formatter={(value) => [value, t('dashboard.admin.userCount')]} 
+                    />
+                  </PieChart>
+                </ResponsiveContainer>
+              </div>
             </div>
           </CardContent>
         </Card>
       </div>
-
-      {/* Main Content */}
-      <Tabs defaultValue="projects" className="w-full" onValueChange={setActiveTab}>
-        <TabsList className="grid grid-cols-3 w-full md:w-[400px] mb-8">
-          <TabsTrigger value="projects">{t("dashboard.admin.allProjects")}</TabsTrigger>
-          <TabsTrigger value="users">{t("dashboard.admin.allUsers")}</TabsTrigger>
-          <TabsTrigger value="statistics">{t("dashboard.admin.systemStatistics")}</TabsTrigger>
+      
+      <Tabs defaultValue="projects" className="w-full">
+        <TabsList className="mb-8 mx-auto flex w-full max-w-md">
+          <TabsTrigger value="projects" className="flex-1">
+            <Assignment className="mr-2 h-5 w-5" />
+            {t('dashboard.admin.projectsTab')}
+          </TabsTrigger>
+          <TabsTrigger value="users" className="flex-1">
+            <Group className="mr-2 h-5 w-5" />
+            {t('dashboard.admin.usersTab')}
+          </TabsTrigger>
         </TabsList>
-
+        
         {/* Projects Tab */}
         <TabsContent value="projects">
-          <div className="flex justify-between items-center mb-6">
-            <h2 className="text-2xl font-bold">{t("dashboard.admin.allProjects")}</h2>
-            <Link href="/projects/create">
-              <Button>
-                <PlusCircle className="mr-2 h-4 w-4" />
-                {t("dashboard.admin.createProjectButton")}
+          <div className="flex justify-between mb-4">
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+              <Input
+                type="text"
+                placeholder={t('dashboard.admin.searchProjects')}
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="pl-10 w-80"
+              />
+            </div>
+            <div className="flex gap-2">
+              <Button
+                variant="outline"
+                onClick={() => queryClient.invalidateQueries({ queryKey: ["/api/projects"] })}
+                className="flex items-center"
+              >
+                <RefreshCw className="mr-2 h-4 w-4" />
+                {t('common.refresh')}
               </Button>
-            </Link>
-          </div>
-
-          {isLoadingProjects ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {[...Array(6)].map((_, i) => (
-                <Card key={i} className="overflow-hidden">
-                  <div className="aspect-video w-full bg-muted">
-                    <Skeleton className="h-full w-full" />
-                  </div>
-                  <CardHeader>
-                    <Skeleton className="h-6 w-3/4 mb-2" />
-                    <Skeleton className="h-4 w-1/2" />
-                  </CardHeader>
-                  <CardContent>
-                    <Skeleton className="h-20 w-full mb-4" />
-                    <div className="flex justify-between">
-                      <Skeleton className="h-4 w-1/3" />
-                      <Skeleton className="h-4 w-1/3" />
-                    </div>
-                  </CardContent>
-                  <CardFooter>
-                    <div className="flex justify-between w-full">
-                      <Skeleton className="h-9 w-28" />
-                      <Skeleton className="h-9 w-28" />
-                    </div>
-                  </CardFooter>
-                </Card>
-              ))}
-            </div>
-          ) : projectsError ? (
-            <div className="text-center p-6 bg-red-50 rounded-lg">
-              <p className="text-red-600">
-                {t("common.error")}: {(projectsError as Error).message}
-              </p>
-            </div>
-          ) : projects && projects.length > 0 ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {projects.map((project) => (
-                <ProjectCard key={project.id} project={project} />
-              ))}
-            </div>
-          ) : (
-            <div className="text-center p-8 border rounded-lg">
-              <h3 className="text-lg font-medium mb-2">{t("common.noProjects")}</h3>
-              <p className="text-muted-foreground mb-4">
-                {t("common.checkBackLater")}
-              </p>
               <Link href="/projects/create">
-                <Button>
-                  <PlusCircle className="mr-2 h-4 w-4" />
-                  {t("dashboard.admin.createProjectButton")}
+                <Button className="flex items-center">
+                  <Add className="mr-2 h-4 w-4" />
+                  {t('dashboard.admin.createProject')}
                 </Button>
               </Link>
             </div>
-          )}
-        </TabsContent>
-
-        {/* Users Tab */}
-        <TabsContent value="users">
-          <div className="flex justify-between items-center mb-6">
-            <h2 className="text-2xl font-bold">{t("dashboard.admin.allUsers")}</h2>
           </div>
-
-          {isLoadingUsers ? (
-            <div className="w-full">
-              <Card>
-                <CardContent className="p-0">
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>ID</TableHead>
-                        <TableHead>{t("auth.username")}</TableHead>
-                        <TableHead>{t("auth.email")}</TableHead>
-                        <TableHead>{t("auth.role")}</TableHead>
-                        <TableHead>{t("common.edit")}</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {[...Array(5)].map((_, i) => (
-                        <TableRow key={i}>
-                          <TableCell><Skeleton className="h-4 w-8" /></TableCell>
-                          <TableCell><Skeleton className="h-4 w-24" /></TableCell>
-                          <TableCell><Skeleton className="h-4 w-40" /></TableCell>
-                          <TableCell><Skeleton className="h-4 w-20" /></TableCell>
-                          <TableCell><Skeleton className="h-8 w-16" /></TableCell>
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
-                </CardContent>
-              </Card>
+          
+          {projectsLoading ? (
+            <div className="flex justify-center items-center min-h-[400px]">
+              <Loader2 className="h-8 w-8 animate-spin text-primary" />
             </div>
-          ) : usersError ? (
-            <div className="text-center p-6 bg-red-50 rounded-lg">
-              <p className="text-red-600">
-                {t("common.error")}: {(usersError as Error).message}
+          ) : sortedProjects.length === 0 ? (
+            <div className="text-center py-12 bg-gray-50 rounded-lg">
+              <Assignment className="mx-auto h-12 w-12 text-gray-400" />
+              <h3 className="mt-2 text-lg font-medium text-gray-900">
+                {t('dashboard.admin.noProjects')}
+              </h3>
+              <p className="mt-1 text-gray-500">
+                {t('dashboard.admin.createProjectPrompt')}
               </p>
-            </div>
-          ) : users && users.length > 0 ? (
-            <div className="w-full">
-              <Card>
-                <CardContent className="p-0">
-                  <Table>
-                    <TableCaption>{t("dashboard.admin.allUsers")}</TableCaption>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>ID</TableHead>
-                        <TableHead>{t("auth.username")}</TableHead>
-                        <TableHead>{t("auth.email")}</TableHead>
-                        <TableHead>{t("auth.role")}</TableHead>
-                        <TableHead>{t("common.edit")}</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {users.map((user) => (
-                        <TableRow key={user.id}>
-                          <TableCell>{user.id}</TableCell>
-                          <TableCell>{user.username}</TableCell>
-                          <TableCell>{user.email}</TableCell>
-                          <TableCell>
-                            <Badge variant={
-                              user.role === "admin" 
-                                ? "destructive" 
-                                : user.role === "coordinator" 
-                                  ? "default" 
-                                  : user.role === "volunteer" 
-                                    ? "secondary" 
-                                    : "outline"
-                            }>
-                              {t(`roles.${user.role}`)}
-                            </Badge>
-                          </TableCell>
-                          <TableCell>
-                            <Button size="sm" variant="ghost">
-                              <Eye className="h-4 w-4" />
-                            </Button>
-                          </TableCell>
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
-                </CardContent>
-              </Card>
+              <div className="mt-6">
+                <Link href="/projects/create">
+                  <Button>
+                    {t('dashboard.admin.createProject')}
+                  </Button>
+                </Link>
+              </div>
             </div>
           ) : (
-            <div className="text-center p-8 border rounded-lg">
-              <h3 className="text-lg font-medium mb-2">{t("common.error")}</h3>
-              <p className="text-muted-foreground mb-4">
-                {t("common.error")}
-              </p>
-            </div>
+            <Card>
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead
+                      className="cursor-pointer"
+                      onClick={() => handleSort("name")}
+                    >
+                      <div className="flex items-center">
+                        {t('dashboard.admin.projectName')}
+                        {sortField === "name" && (
+                          sortOrder === "asc" ? 
+                          <ArrowUpward className="ml-1 h-4 w-4" /> : 
+                          <ArrowDownward className="ml-1 h-4 w-4" />
+                        )}
+                      </div>
+                    </TableHead>
+                    <TableHead
+                      className="cursor-pointer"
+                      onClick={() => handleSort("status")}
+                    >
+                      <div className="flex items-center">
+                        {t('dashboard.admin.status')}
+                        {sortField === "status" && (
+                          sortOrder === "asc" ? 
+                          <ArrowUpward className="ml-1 h-4 w-4" /> : 
+                          <ArrowDownward className="ml-1 h-4 w-4" />
+                        )}
+                      </div>
+                    </TableHead>
+                    <TableHead>
+                      {t('dashboard.admin.coordinator')}
+                    </TableHead>
+                    <TableHead
+                      className="cursor-pointer"
+                      onClick={() => handleSort("collectedAmount")}
+                    >
+                      <div className="flex items-center">
+                        {t('dashboard.admin.funding')}
+                        {sortField === "collectedAmount" && (
+                          sortOrder === "asc" ? 
+                          <ArrowUpward className="ml-1 h-4 w-4" /> : 
+                          <ArrowDownward className="ml-1 h-4 w-4" />
+                        )}
+                      </div>
+                    </TableHead>
+                    <TableHead className="text-right">
+                      {t('common.actions')}
+                    </TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {sortedProjects.map((project) => (
+                    <TableRow key={project.id}>
+                      <TableCell className="font-medium">{project.name}</TableCell>
+                      <TableCell>
+                        <Badge className={getStatusColor(project.status)}>
+                          {t(`projects.status.${project.status}`)}
+                        </Badge>
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex items-center">
+                          <SupervisorAccount className="mr-1 text-primary-600 h-4 w-4" />
+                          <span>ID: {project.coordinatorId}</span>
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        {project.status === 'funding' ? (
+                          <div>
+                            <div className="flex justify-between mb-1 text-xs">
+                              <span>{project.collectedAmount.toLocaleString('uk-UA')} ₴</span>
+                              <span>{project.targetAmount.toLocaleString('uk-UA')} ₴</span>
+                            </div>
+                            <Progress value={calculateProgress(project)} className="h-2" />
+                          </div>
+                        ) : (
+                          <span className="text-gray-500">-</span>
+                        )}
+                      </TableCell>
+                      <TableCell className="text-right">
+                        <div className="flex justify-end gap-2">
+                          <Link href={`/projects/${project.id}`}>
+                            <Button size="sm" variant="outline">
+                              <Info className="h-4 w-4" />
+                            </Button>
+                          </Link>
+                          <Link href={`/projects/${project.id}/edit`}>
+                            <Button size="sm" variant="outline" className="bg-amber-50">
+                              <Edit className="h-4 w-4" />
+                            </Button>
+                          </Link>
+                          <Button 
+                            size="sm" 
+                            variant="outline" 
+                            className="text-red-600 hover:text-red-700 border-red-200 hover:bg-red-50"
+                            onClick={() => handleDeleteProject(project.id)}
+                          >
+                            <Delete className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </Card>
           )}
         </TabsContent>
-
-        {/* Statistics Tab */}
-        <TabsContent value="statistics">
-          <div className="flex justify-between items-center mb-6">
-            <h2 className="text-2xl font-bold">{t("dashboard.admin.systemStatistics")}</h2>
+        
+        {/* Users Tab */}
+        <TabsContent value="users">
+          <div className="flex justify-between mb-4">
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+              <Input
+                type="text"
+                placeholder={t('dashboard.admin.searchUsers')}
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="pl-10 w-80"
+              />
+            </div>
+            <Button
+              variant="outline"
+              onClick={() => queryClient.invalidateQueries({ queryKey: ["/api/users"] })}
+              className="flex items-center"
+            >
+              <RefreshCw className="mr-2 h-4 w-4" />
+              {t('common.refresh')}
+            </Button>
           </div>
-
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
-            {/* Projects by Status */}
+          
+          {usersLoading ? (
+            <div className="flex justify-center items-center min-h-[400px]">
+              <Loader2 className="h-8 w-8 animate-spin text-primary" />
+            </div>
+          ) : sortedUsers.length === 0 ? (
+            <div className="text-center py-12 bg-gray-50 rounded-lg">
+              <Group className="mx-auto h-12 w-12 text-gray-400" />
+              <h3 className="mt-2 text-lg font-medium text-gray-900">
+                {t('dashboard.admin.noUsers')}
+              </h3>
+            </div>
+          ) : (
             <Card>
-              <CardHeader>
-                <CardTitle>{t("projects.status.title")}</CardTitle>
-                <CardDescription>
-                  {t("dashboard.admin.totalProjects")}: {totalProjects}
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="h-80">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <PieChart>
-                      <Pie
-                        data={projectsByStatus}
-                        cx="50%"
-                        cy="50%"
-                        labelLine={true}
-                        label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
-                        outerRadius={80}
-                        fill="#8884d8"
-                        dataKey="value"
-                      >
-                        {projectsByStatus.map((entry, index) => (
-                          <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                        ))}
-                      </Pie>
-                      <Tooltip />
-                      <Legend />
-                    </PieChart>
-                  </ResponsiveContainer>
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Users by Role */}
-            <Card>
-              <CardHeader>
-                <CardTitle>{t("auth.role")}</CardTitle>
-                <CardDescription>
-                  {t("dashboard.admin.totalUsers")}: {totalUsers}
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="h-80">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <PieChart>
-                      <Pie
-                        data={usersByRole}
-                        cx="50%"
-                        cy="50%"
-                        labelLine={true}
-                        label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
-                        outerRadius={80}
-                        fill="#8884d8"
-                        dataKey="value"
-                      >
-                        {usersByRole.map((entry, index) => (
-                          <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                        ))}
-                      </Pie>
-                      <Tooltip />
-                      <Legend />
-                    </PieChart>
-                  </ResponsiveContainer>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-
-          {/* Donations Statistics */}
-          <Card>
-            <CardHeader>
-              <CardTitle>{t("dashboard.donor.myDonations")}</CardTitle>
-              <CardDescription>
-                {t("dashboard.admin.totalDonations")}: ${totalDonations.toLocaleString(i18n.language, {
-                  minimumFractionDigits: 2,
-                  maximumFractionDigits: 2,
-                })}
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="h-80">
-                {isLoadingDonations ? (
-                  <div className="flex items-center justify-center h-full">
-                    <Skeleton className="h-full w-full" />
-                  </div>
-                ) : donations && donations.length > 0 ? (
-                  <ResponsiveContainer width="100%" height="100%">
-                    <BarChart
-                      data={
-                        projects
-                          ?.filter(project => 
-                            donations?.some(donation => donation.projectId === project.id)
-                          )
-                          .map(project => ({
-                            name: project.name,
-                            amount: donations
-                              ?.filter(donation => donation.projectId === project.id)
-                              .reduce((sum, donation) => sum + donation.amount, 0) || 0
-                          })) || []
-                      }
-                      margin={{
-                        top: 5,
-                        right: 30,
-                        left: 20,
-                        bottom: 100,
-                      }}
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead
+                      className="cursor-pointer"
+                      onClick={() => handleSort("username")}
                     >
-                      <CartesianGrid strokeDasharray="3 3" />
-                      <XAxis 
-                        dataKey="name" 
-                        angle={-45} 
-                        textAnchor="end"
-                        height={100}
-                        interval={0}
-                      />
-                      <YAxis />
-                      <Tooltip />
-                      <Legend />
-                      <Bar dataKey="amount" name={t("donate.amount")} fill="#8884d8" />
-                    </BarChart>
-                  </ResponsiveContainer>
-                ) : (
-                  <div className="flex items-center justify-center h-full">
-                    <p className="text-muted-foreground">
-                      {t("common.noProjects")}
-                    </p>
-                  </div>
-                )}
-              </div>
-            </CardContent>
-          </Card>
+                      <div className="flex items-center">
+                        {t('dashboard.admin.username')}
+                        {sortField === "username" && (
+                          sortOrder === "asc" ? 
+                          <ArrowUpward className="ml-1 h-4 w-4" /> : 
+                          <ArrowDownward className="ml-1 h-4 w-4" />
+                        )}
+                      </div>
+                    </TableHead>
+                    <TableHead>
+                      {t('dashboard.admin.email')}
+                    </TableHead>
+                    <TableHead>
+                      {t('dashboard.admin.name')}
+                    </TableHead>
+                    <TableHead
+                      className="cursor-pointer"
+                      onClick={() => handleSort("role")}
+                    >
+                      <div className="flex items-center">
+                        {t('dashboard.admin.role')}
+                        {sortField === "role" && (
+                          sortOrder === "asc" ? 
+                          <ArrowUpward className="ml-1 h-4 w-4" /> : 
+                          <ArrowDownward className="ml-1 h-4 w-4" />
+                        )}
+                      </div>
+                    </TableHead>
+                    <TableHead
+                      className="cursor-pointer"
+                      onClick={() => handleSort("isVerified")}
+                    >
+                      <div className="flex items-center">
+                        {t('dashboard.admin.status')}
+                        {sortField === "isVerified" && (
+                          sortOrder === "asc" ? 
+                          <ArrowUpward className="ml-1 h-4 w-4" /> : 
+                          <ArrowDownward className="ml-1 h-4 w-4" />
+                        )}
+                      </div>
+                    </TableHead>
+                    <TableHead className="text-right">
+                      {t('common.actions')}
+                    </TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {sortedUsers.map((user) => (
+                    <TableRow key={user.id}>
+                      <TableCell className="font-medium">{user.username}</TableCell>
+                      <TableCell>{user.email}</TableCell>
+                      <TableCell>
+                        {user.firstName && user.lastName 
+                          ? `${user.firstName} ${user.lastName}`
+                          : user.firstName || user.lastName || "-"
+                        }
+                      </TableCell>
+                      <TableCell>
+                        <Badge className={getRoleColor(user.role)}>
+                          {t(`auth.roles.${user.role}`)}
+                        </Badge>
+                      </TableCell>
+                      <TableCell>
+                        {user.isVerified ? (
+                          <Badge className="bg-green-100 text-green-800">
+                            {t('dashboard.admin.verified')}
+                          </Badge>
+                        ) : (
+                          <Badge className="bg-yellow-100 text-yellow-800">
+                            {t('dashboard.admin.notVerified')}
+                          </Badge>
+                        )}
+                      </TableCell>
+                      <TableCell className="text-right">
+                        <div className="flex justify-end gap-2">
+                          {!user.isVerified && (
+                            <Button 
+                              size="sm" 
+                              variant="outline" 
+                              className="bg-green-50 text-green-700 hover:bg-green-100 border-green-200"
+                              onClick={() => handleVerifyUser(user.id)}
+                            >
+                              <VerifiedUser className="h-4 w-4" />
+                            </Button>
+                          )}
+                          {user.role !== 'admin' && (
+                            <Button 
+                              size="sm" 
+                              variant="outline" 
+                              className="text-red-600 hover:text-red-700 border-red-200 hover:bg-red-50"
+                              onClick={() => handleBlockUser(user.id)}
+                            >
+                              <Block className="h-4 w-4" />
+                            </Button>
+                          )}
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </Card>
+          )}
         </TabsContent>
       </Tabs>
     </div>

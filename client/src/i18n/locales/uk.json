@@ -27,7 +27,13 @@
     "noAccount": "Немає акаунту?",
     "hasAccount": "Вже є акаунт?",
     "verifyEmail": "Перевірте вашу електронну пошту",
-    "verificationSent": "Лист з посиланням для підтвердження надіслано на вашу пошту"
+    "verificationSent": "Лист з посиланням для підтвердження надіслано на вашу пошту",
+    "roles": {
+      "volunteer": "Волонтер",
+      "coordinator": "Координатор",
+      "donor": "Донор",
+      "admin": "Адміністратор"
+    }
   },
   "roles": {
     "volunteer": "Волонтер",
@@ -165,12 +171,38 @@
     },
     "admin": {
       "title": "Панель адміністратора",
+      "subtitle": "Керування проєктами та користувачами",
+      "statistics": "Загальна статистика",
+      "statisticsSubtitle": "Огляд активностей на платформі",
+      "projectsTab": "Проєкти",
+      "usersTab": "Користувачі",
       "allProjects": "Всі проєкти",
       "allUsers": "Всі користувачі",
       "systemStatistics": "Статистика системи",
-      "createProjectButton": "Новий проєкт",
+      "createProject": "Новий проєкт",
       "editButton": "Редагувати",
       "deleteButton": "Видалити",
+      "searchProjects": "Шукати проєкти...",
+      "searchUsers": "Шукати користувачів...",
+      "noProjects": "Проєктів не знайдено",
+      "noUsers": "Користувачів не знайдено",
+      "createProjectPrompt": "Створіть новий проєкт, щоб розпочати",
+      "projectName": "Назва проєкту",
+      "status": "Статус",
+      "coordinator": "Координатор",
+      "funding": "Фінансування",
+      "username": "Користувач",
+      "email": "Email",
+      "name": "Ім'я",
+      "role": "Роль",
+      "verified": "Верифікований",
+      "notVerified": "Не верифікований",
+      "projectStatus": "Статус проєктів",
+      "userRole": "Ролі користувачів",
+      "projectCount": "Кількість проєктів",
+      "userCount": "Кількість користувачів",
+      "confirmDeleteProject": "Ви впевнені, що хочете видалити цей проєкт?",
+      "confirmBlockUser": "Ви впевнені, що хочете заблокувати цього користувача?",
       "totalProjects": "Всього проєктів",
       "totalUsers": "Всього користувачів",
       "totalDonations": "Всього пожертвувань"
@@ -306,6 +338,8 @@
     "back": "Назад",
     "learnMore": "Дізнатися більше",
     "noProjects": "Проєкти не знайдено",
-    "checkBackLater": "Перевірте пізніше або створіть новий проєкт."
+    "checkBackLater": "Перевірте пізніше або створіть новий проєкт.",
+    "actions": "Дії",
+    "refresh": "Оновити"
   }
 }
