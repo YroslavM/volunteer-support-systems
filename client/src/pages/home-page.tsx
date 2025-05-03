@@ -85,92 +85,98 @@ export default function HomePage() {
   return (
     <div>
       {/* Hero Section */}
-      <div className="relative bg-primary-700">
+      <div className="relative bg-primary-700 min-h-screen flex items-center">
         <div className="absolute inset-0">
           <img 
             className="w-full h-full object-cover" 
             src="https://images.unsplash.com/photo-1593113630400-ea4288922497?ixlib=rb-1.2.1&auto=format&fit=crop&w=1950&q=80" 
             alt="Volunteers helping" 
           />
-          <div className="absolute inset-0 bg-primary-700 mix-blend-multiply" aria-hidden="true"></div>
+          <div className="absolute inset-0 bg-gradient-to-r from-primary-900/90 to-primary-700/70" aria-hidden="true"></div>
         </div>
-        <div className="relative max-w-7xl mx-auto py-24 px-4 sm:py-32 sm:px-6 lg:px-8">
-          <h1 className="text-4xl font-extrabold tracking-tight text-white sm:text-5xl lg:text-6xl font-heading bg-gradient-to-r from-yellow-200 to-yellow-50 text-transparent bg-clip-text drop-shadow-sm">
-            {t('home.hero.title')}
-          </h1>
-          <p className="mt-6 text-xl text-yellow-50 max-w-3xl font-medium">
-            {t('home.hero.subtitle')}
-          </p>
-          <div className="mt-10 flex flex-col sm:flex-row gap-4">
-            <Link href="/auth">
-              <Button className="inline-flex items-center justify-center text-white bg-gradient-to-r from-secondary-500 to-secondary-600 hover:from-secondary-600 hover:to-secondary-700 shadow-lg transition-all duration-200 font-medium px-6 py-6 text-lg">
-                {t('home.hero.joinButton')}
-              </Button>
-            </Link>
-            <Link href="/projects">
-              <Button variant="outline" className="inline-flex items-center justify-center text-black border-black border-2 hover:bg-yellow-50 hover:text-primary-700 transition-all duration-200 shadow-lg font-medium px-6 py-6 text-lg">
-                {t('home.hero.viewProjects')}
-              </Button>
-            </Link>
+        <div className="relative max-w-7xl mx-auto py-24 px-4 sm:py-32 sm:px-6 lg:px-8 z-10">
+          <div className="bg-white/10 backdrop-blur-md p-8 rounded-2xl shadow-2xl border border-white/20 max-w-3xl animate-in slide-in-from-left duration-700">
+            <h1 className="text-4xl font-extrabold tracking-tight sm:text-5xl lg:text-6xl font-heading bg-gradient-to-r from-yellow-200 via-yellow-100 to-white text-transparent bg-clip-text drop-shadow-sm">
+              {t('home.hero.title')}
+            </h1>
+            <div className="w-24 h-1 bg-gradient-to-r from-secondary-500 to-yellow-300 my-6 rounded-full"></div>
+            <p className="text-xl text-yellow-50 max-w-3xl font-medium">
+              {t('home.hero.subtitle')}
+            </p>
+            <div className="mt-10 flex flex-col sm:flex-row gap-4">
+              <Link href="/auth">
+                <Button className="inline-flex items-center justify-center text-white bg-gradient-to-r from-secondary-500 to-secondary-600 hover:from-secondary-600 hover:to-secondary-700 shadow-lg transition-all duration-200 font-medium px-6 py-6 text-lg rounded-full">
+                  {t('home.hero.joinButton')}
+                </Button>
+              </Link>
+              <Link href="/projects">
+                <Button variant="outline" className="inline-flex items-center justify-center text-black border-black border-2 hover:bg-white hover:text-primary-700 transition-all duration-200 shadow-lg font-medium px-6 py-6 text-lg rounded-full">
+                  {t('home.hero.viewProjects')}
+                </Button>
+              </Link>
+            </div>
           </div>
         </div>
+        
+        <div className="absolute bottom-0 left-0 right-0 h-20 bg-gradient-to-t from-white to-transparent"></div>
       </div>
 
       {/* How It Works Section */}
-      <div className="bg-white py-12">
+      <div className="bg-white py-24">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="lg:text-center">
-            <h2 className="text-base text-primary-600 font-semibold tracking-wide uppercase">
+          <div className="lg:text-center mb-16">
+            <span className="inline-block px-3 py-1 text-sm font-medium bg-primary-100 text-primary-800 rounded-full mb-3">
               {t('home.mission.title')}
-            </h2>
-            <p className="mt-2 text-3xl leading-8 font-extrabold tracking-tight text-gray-900 sm:text-4xl font-heading">
+            </span>
+            <h2 className="text-3xl leading-8 font-extrabold tracking-tight text-gray-900 sm:text-4xl font-heading bg-clip-text text-transparent bg-gradient-to-r from-primary-700 to-primary-900">
               {t('home.mission.subtitle')}
-            </p>
+            </h2>
+            <div className="w-24 h-1 bg-gradient-to-r from-primary-500 to-secondary-500 mx-auto my-6 rounded-full"></div>
             <p className="mt-4 max-w-2xl text-xl text-gray-500 lg:mx-auto">
               {t('home.mission.description')}
             </p>
           </div>
 
           <div className="mt-10">
-            <dl className="space-y-10 md:space-y-0 md:grid md:grid-cols-3 md:gap-x-8 md:gap-y-10">
-              <div className="relative">
+            <dl className="space-y-10 md:space-y-0 md:grid md:grid-cols-3 md:gap-8">
+              <div className="relative bg-white p-6 rounded-2xl shadow-lg transform transition-all duration-200 hover:scale-105 border border-gray-100">
                 <dt>
-                  <div className="absolute flex items-center justify-center h-12 w-12 rounded-md bg-primary-500 text-white">
-                    <VolunteerActivism />
+                  <div className="absolute flex items-center justify-center h-16 w-16 rounded-xl bg-gradient-to-br from-primary-400 to-primary-600 text-white -top-8 shadow-lg">
+                    <VolunteerActivism className="h-8 w-8" />
                   </div>
-                  <p className="ml-16 text-lg leading-6 font-medium text-gray-900 font-heading">
+                  <p className="mt-6 text-xl leading-6 font-bold text-gray-900 font-heading">
                     {t('home.roles.volunteer.title')}
                   </p>
                 </dt>
-                <dd className="mt-2 ml-16 text-base text-gray-500">
+                <dd className="mt-4 text-base text-gray-500">
                   {t('home.roles.volunteer.description')}
                 </dd>
               </div>
 
-              <div className="relative">
+              <div className="relative bg-white p-6 rounded-2xl shadow-lg transform transition-all duration-200 hover:scale-105 border border-gray-100">
                 <dt>
-                  <div className="absolute flex items-center justify-center h-12 w-12 rounded-md bg-primary-500 text-white">
-                    <ManageAccounts />
+                  <div className="absolute flex items-center justify-center h-16 w-16 rounded-xl bg-gradient-to-br from-secondary-400 to-secondary-600 text-white -top-8 shadow-lg">
+                    <ManageAccounts className="h-8 w-8" />
                   </div>
-                  <p className="ml-16 text-lg leading-6 font-medium text-gray-900 font-heading">
+                  <p className="mt-6 text-xl leading-6 font-bold text-gray-900 font-heading">
                     {t('home.roles.coordinator.title')}
                   </p>
                 </dt>
-                <dd className="mt-2 ml-16 text-base text-gray-500">
+                <dd className="mt-4 text-base text-gray-500">
                   {t('home.roles.coordinator.description')}
                 </dd>
               </div>
 
-              <div className="relative">
+              <div className="relative bg-white p-6 rounded-2xl shadow-lg transform transition-all duration-200 hover:scale-105 border border-gray-100">
                 <dt>
-                  <div className="absolute flex items-center justify-center h-12 w-12 rounded-md bg-primary-500 text-white">
-                    <Favorite />
+                  <div className="absolute flex items-center justify-center h-16 w-16 rounded-xl bg-gradient-to-br from-yellow-400 to-yellow-600 text-white -top-8 shadow-lg">
+                    <Favorite className="h-8 w-8" />
                   </div>
-                  <p className="ml-16 text-lg leading-6 font-medium text-gray-900 font-heading">
+                  <p className="mt-6 text-xl leading-6 font-bold text-gray-900 font-heading">
                     {t('home.roles.donor.title')}
                   </p>
                 </dt>
-                <dd className="mt-2 ml-16 text-base text-gray-500">
+                <dd className="mt-4 text-base text-gray-500">
                   {t('home.roles.donor.description')}
                 </dd>
               </div>
@@ -180,26 +186,30 @@ export default function HomePage() {
       </div>
 
       {/* Active Projects Section */}
-      <div className="bg-gray-50 py-16" id="active-projects">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center">
-            <h2 className="text-3xl font-extrabold text-gray-900 font-heading">
+      <div className="bg-gray-50 py-24 relative" id="active-projects">
+        <div className="absolute inset-0 bg-gradient-to-b from-white to-gray-50 h-32"></div>
+        <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-white to-gray-50 h-32"></div>
+        
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+          <div className="text-center mb-16">
+            <span className="inline-block px-3 py-1 text-sm font-medium bg-secondary-100 text-secondary-800 rounded-full mb-3">
               {t('home.projects.title')}
-            </h2>
-            <p className="mt-3 max-w-2xl mx-auto text-xl text-gray-500 sm:mt-4">
+            </span>
+            <h2 className="text-3xl font-extrabold text-gray-900 font-heading bg-clip-text text-transparent bg-gradient-to-r from-gray-900 to-gray-600">
               {t('home.projects.subtitle')}
-            </p>
+            </h2>
+            <div className="w-24 h-1 bg-gradient-to-r from-secondary-500 to-yellow-500 mx-auto my-6 rounded-full"></div>
           </div>
 
-          <div className="mt-12 grid gap-5 max-w-lg mx-auto lg:grid-cols-3 lg:max-w-none">
+          <div className="mt-12 grid gap-8 max-w-lg mx-auto lg:grid-cols-3 lg:max-w-none">
             {projectsLoading ? (
               // Loading skeleton for projects
               Array(3).fill(0).map((_, index) => (
-                <div key={index} className="flex flex-col rounded-lg shadow-lg overflow-hidden bg-white animate-pulse">
+                <div key={index} className="flex flex-col rounded-2xl shadow-xl overflow-hidden bg-white animate-pulse transform transition duration-200 hover:scale-105">
                   <div className="flex-shrink-0 h-48 bg-gray-300"></div>
                   <div className="flex-1 p-6 flex flex-col justify-between">
                     <div className="flex-1">
-                      <div className="h-4 bg-gray-300 rounded w-3/4 mb-3"></div>
+                      <div className="h-5 bg-gray-300 rounded w-3/4 mb-3"></div>
                       <div className="h-3 bg-gray-300 rounded w-full mb-2"></div>
                       <div className="h-3 bg-gray-300 rounded w-5/6"></div>
                     </div>
@@ -218,7 +228,7 @@ export default function HomePage() {
                           <div className="h-2 bg-gray-300 rounded w-16 mt-1"></div>
                         </div>
                       </div>
-                      <div className="h-8 w-20 bg-gray-300 rounded"></div>
+                      <div className="h-8 w-20 bg-gray-300 rounded-full"></div>
                     </div>
                   </div>
                 </div>
@@ -237,11 +247,11 @@ export default function HomePage() {
             )}
           </div>
 
-          <div className="mt-10 text-center">
+          <div className="mt-16 text-center">
             <Link href="/projects">
-              <Button className="inline-flex items-center px-6 py-2 text-white bg-primary-600 hover:bg-primary-700 shadow-sm">
+              <Button className="inline-flex items-center justify-center px-8 py-3 text-white bg-gradient-to-r from-primary-600 to-primary-700 hover:from-primary-700 hover:to-primary-800 shadow-lg rounded-full transition-all duration-200 font-medium">
                 {t('home.projects.seeAll')}
-                <ArrowForward className="ml-1 text-sm" />
+                <ArrowForward className="ml-2" />
               </Button>
             </Link>
           </div>
@@ -249,15 +259,18 @@ export default function HomePage() {
       </div>
 
       {/* Dashboard Preview Section */}
-      <div className="bg-white py-16">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center">
-            <h2 className="text-3xl font-extrabold text-gray-900 font-heading">
+      <div className="bg-white py-24 relative">
+        <div className="absolute inset-0 bg-gradient-to-b from-gray-50 to-white h-32"></div>
+        
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+          <div className="text-center mb-16">
+            <span className="inline-block px-3 py-1 text-sm font-medium bg-primary-100 text-primary-800 rounded-full mb-3">
               {t('home.dashboard.title')}
-            </h2>
-            <p className="mt-3 max-w-2xl mx-auto text-xl text-gray-500 sm:mt-4">
+            </span>
+            <h2 className="text-3xl font-extrabold bg-clip-text text-transparent bg-gradient-to-r from-primary-600 to-primary-800 font-heading">
               {t('home.dashboard.subtitle')}
-            </p>
+            </h2>
+            <div className="w-24 h-1 bg-gradient-to-r from-primary-500 to-primary-300 mx-auto my-6 rounded-full"></div>
           </div>
 
           <div className="mt-12">
