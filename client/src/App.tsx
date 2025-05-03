@@ -23,7 +23,6 @@ import TermsPage from "@/pages/terms-page";
 import { ProtectedRoute } from "./lib/protected-route";
 
 function Router() {
-  // Temporarily disabling protected routes for debugging
   return (
     <Switch>
       <Route path="/" component={HomePage} />
@@ -36,13 +35,25 @@ function Router() {
       <Route path="/privacy" component={PrivacyPage} />
       <Route path="/terms" component={TermsPage} />
       
-      {/* Temporarily convert to regular routes for debugging */}
-      <Route path="/dashboard/volunteer" component={VolunteerDashboard} />
-      <Route path="/dashboard/coordinator" component={CoordinatorDashboard} />
-      <Route path="/dashboard/donor" component={DonorDashboard} />
-      <Route path="/dashboard/admin" component={AdminDashboard} />
-      <Route path="/profile" component={ProfilePage} />
-      <Route path="/create-project" component={CreateProject} />
+      {/* Protected routes that require authentication */}
+      <Route path="/dashboard/volunteer">
+        <ProtectedRoute component={VolunteerDashboard} />
+      </Route>
+      <Route path="/dashboard/coordinator">
+        <ProtectedRoute component={CoordinatorDashboard} />
+      </Route>
+      <Route path="/dashboard/donor">
+        <ProtectedRoute component={DonorDashboard} />
+      </Route>
+      <Route path="/dashboard/admin">
+        <ProtectedRoute component={AdminDashboard} />
+      </Route>
+      <Route path="/profile">
+        <ProtectedRoute component={ProfilePage} />
+      </Route>
+      <Route path="/create-project">
+        <ProtectedRoute component={CreateProject} />
+      </Route>
       
       <Route component={NotFound} />
     </Switch>

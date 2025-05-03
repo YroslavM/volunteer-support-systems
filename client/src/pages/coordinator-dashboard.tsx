@@ -73,7 +73,7 @@ export default function CoordinatorDashboard() {
       });
       
       // Invalidate applications query to refresh the list
-      queryClient.invalidateQueries({ queryKey: ["/api/coordinator/applications"] });
+      queryClient.invalidateQueries({ queryKey: [`/api/coordinator/${user?.id}/applications`] });
     } catch (error) {
       toast({
         title: "Помилка",
@@ -84,8 +84,8 @@ export default function CoordinatorDashboard() {
   };
 
   // Format date
-  const formatDate = (dateString: string) => {
-    const date = new Date(dateString);
+  const formatDate = (dateString: string | Date) => {
+    const date = typeof dateString === 'string' ? new Date(dateString) : dateString;
     return date.toLocaleDateString("uk-UA");
   };
 

@@ -780,6 +780,64 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Get projects for a specific coordinator (allows coordinator to get own projects and admin to get any coordinator's projects)
+  app.get("/api/projects/coordinator/:id", isAuthenticated, async (req, res, next) => {
+    try {
+      const coordinatorId = parseInt(req.params.id);
+      if (isNaN(coordinatorId)) {
+        return res.status(400).json({ message: "Некоректний ID координатора" });
+      }
+      
+      // Check if user is the coordinator or an admin
+      const userRole = getUserRole(req);
+      const userId = getUserId(req);
+      
+      if (userRole !== "admin" && coordinatorId !== userId) {
+        return res.status(403).json({ message: "Ви можете переглядати тільки власні проєкти" });
+      }
+      
+      const projects = await storage.getProjectsByCoordinatorId(coordinatorId);
+      res.json(projects);
+    } catch (error) {
+      next(error);
+    }
+  });
+
+  // Get applications for a specific coordinator
+  app.get("/api/coordinator/:id/applications", isAuthenticated, async (req, res, next) => {
+    try {
+      const coordinatorId = parseInt(req.params.id);
+      if (isNaN(coordinatorId)) {
+        return res.status(400).json({ message: "Некоректний ID координатора" });
+      }
+      
+      // Check if user is the coordinator or an admin
+      const userRole = getUserRole(req);
+      const userId = getUserId(req);
+      
+      if (userRole !== "admin" && coordinatorId !== userId) {
+        return res.status(403).json({ message: "Ви можете переглядати тільки власні заявки" });
+      }
+      
+      // Get coordinator's projects first
+      const projects = await storage.getProjectsByCoordinatorId(coordinatorId);
+      if (!projects.length) {
+        return res.json([]);
+      }
+      
+      // Collect all applications for all projects
+      const applications = [];
+      for (const project of projects) {
+        const projectApplications = await storage.getApplicationsByProjectId(project.id);
+        applications.push(...projectApplications);
+      }
+      
+      res.json(applications);
+    } catch (error) {
+      next(error);
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }
