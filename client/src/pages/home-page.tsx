@@ -399,7 +399,7 @@ export default function HomePage() {
                         <div className="text-sm text-gray-700">
                           <span className="font-medium">{t('dashboard.coordinator.myProjects')}</span>
                         </div>
-                        <button className="inline-flex items-center px-2 py-1 border border-transparent text-xs font-medium rounded shadow-sm text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500">
+                        <button className="inline-flex items-center px-2 py-1 border border-transparent text-xs font-medium rounded shadow-sm text-white bg-secondary-600 hover:bg-secondary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-secondary-500">
                           <span className="text-sm mr-1">+</span>
                           {t('dashboard.coordinator.createProjectButton')}
                         </button>
@@ -446,10 +446,10 @@ export default function HomePage() {
                               </p>
                             </div>
                             <div className="flex space-x-2">
-                              <button className="px-2 py-1 text-xs font-medium rounded bg-green-100 text-green-700 hover:bg-green-200">
+                              <button className="px-2 py-1 text-xs font-medium rounded bg-green-600 text-white hover:bg-green-700 shadow-sm">
                                 {t('dashboard.coordinator.approveButton')}
                               </button>
-                              <button className="px-2 py-1 text-xs font-medium rounded bg-red-100 text-red-700 hover:bg-red-200">
+                              <button className="px-2 py-1 text-xs font-medium rounded bg-red-600 text-white hover:bg-red-700 shadow-sm">
                                 {t('dashboard.coordinator.rejectButton')}
                               </button>
                             </div>
@@ -519,7 +519,7 @@ export default function HomePage() {
                                 Ваш внесок: 1500 грн
                               </p>
                             </div>
-                            <button className="mt-2 sm:mt-0 inline-flex items-center px-2 py-1 border border-transparent text-xs font-medium rounded bg-primary-100 text-primary-700 hover:bg-primary-200">
+                            <button className="mt-2 sm:mt-0 inline-flex items-center px-2 py-1 text-xs font-medium rounded bg-primary-600 text-white hover:bg-primary-700 shadow-sm">
                               {t('dashboard.donor.projectDetails')}
                             </button>
                           </div>
