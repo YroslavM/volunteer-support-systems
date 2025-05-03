@@ -32,7 +32,8 @@
   "roles": {
     "volunteer": "Volunteer",
     "coordinator": "Coordinator",
-    "donor": "Donor"
+    "donor": "Donor",
+    "admin": "Administrator"
   },
   "home": {
     "hero": {
@@ -161,6 +162,18 @@
       "projectsSupported": "Projects Supported",
       "lastDonation": "Last Donation",
       "supportedProjects": "Supported Projects"
+    },
+    "admin": {
+      "title": "Administrator Dashboard",
+      "allProjects": "All Projects",
+      "allUsers": "All Users",
+      "systemStatistics": "System Statistics",
+      "createProjectButton": "New Project",
+      "editButton": "Edit",
+      "deleteButton": "Delete",
+      "totalProjects": "Total Projects",
+      "totalUsers": "Total Users",
+      "totalDonations": "Total Donations"
     }
   },
   "tasks": {

@@ -13,6 +13,7 @@ import ProjectSliderPage from "@/pages/project-slider-page";
 import VolunteerDashboard from "@/pages/volunteer-dashboard";
 import CoordinatorDashboard from "@/pages/coordinator-dashboard";
 import DonorDashboard from "@/pages/donor-dashboard";
+import AdminDashboard from "@/pages/admin-dashboard";
 import ProfilePage from "@/pages/profile-page";
 import CreateProject from "@/pages/create-project";
 import AboutPage from "@/pages/about-page";
@@ -39,6 +40,7 @@ function Router() {
       <Route path="/dashboard/volunteer" component={VolunteerDashboard} />
       <Route path="/dashboard/coordinator" component={CoordinatorDashboard} />
       <Route path="/dashboard/donor" component={DonorDashboard} />
+      <Route path="/dashboard/admin" component={AdminDashboard} />
       <Route path="/profile" component={ProfilePage} />
       <Route path="/create-project" component={CreateProject} />
       

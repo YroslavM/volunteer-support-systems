@@ -4,7 +4,7 @@ import { z } from "zod";
 import { relations } from "drizzle-orm";
 
 // Enum for user roles
-export const userRoleEnum = pgEnum('user_role', ['volunteer', 'coordinator', 'donor']);
+export const userRoleEnum = pgEnum('user_role', ['volunteer', 'coordinator', 'donor', 'admin']);
 
 // Enum for project status
 export const projectStatusEnum = pgEnum('project_status', ['funding', 'in_progress', 'completed']);

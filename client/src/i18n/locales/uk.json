@@ -32,7 +32,8 @@
   "roles": {
     "volunteer": "Волонтер",
     "coordinator": "Координатор",
-    "donor": "Донор"
+    "donor": "Донор",
+    "admin": "Адміністратор"
   },
   "home": {
     "hero": {
@@ -161,6 +162,18 @@
       "projectsSupported": "Підтримані проєкти",
       "lastDonation": "Останнє пожертвування",
       "supportedProjects": "Підтримані проєкти"
+    },
+    "admin": {
+      "title": "Панель адміністратора",
+      "allProjects": "Всі проєкти",
+      "allUsers": "Всі користувачі",
+      "systemStatistics": "Статистика системи",
+      "createProjectButton": "Новий проєкт",
+      "editButton": "Редагувати",
+      "deleteButton": "Видалити",
+      "totalProjects": "Всього проєктів",
+      "totalUsers": "Всього користувачів",
+      "totalDonations": "Всього пожертвувань"
     }
   },
   "tasks": {
