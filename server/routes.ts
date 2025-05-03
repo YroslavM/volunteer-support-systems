@@ -652,7 +652,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
   
   // Update project (admin only)
-  app.put("/api/projects/:id", hasRole(["admin"]), async (req, res, next) => {
+  app.put("/api/projects/:id", hasRole(["coordinator", "admin"]), async (req, res, next) => {
     try {
       const id = parseInt(req.params.id);
       if (isNaN(id)) {
@@ -664,11 +664,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ message: "Проєкт не знайдено" });
       }
       
+      // Координатори можуть редагувати тільки свої проєкти, адміни - будь-які
+      const userRole = getUserRole(req);
+      const userId = getUserId(req);
+      
+      if (userRole === "coordinator" && project.coordinatorId !== userId) {
+        return res.status(403).json({ message: "Ви можете редагувати тільки власні проєкти" });
+      }
+      
       const data = insertProjectSchema.extend({
         status: z.enum(projectStatusEnum.enumValues).optional(),
         collectedAmount: z.number().optional(),
         coordinatorId: z.number().optional()
       }).parse(req.body);
+      
+      // Тільки адміністратор може змінювати координатора проєкту
+      if (data.coordinatorId && userRole !== "admin") {
+        return res.status(403).json({ message: "Тільки адміністратор може змінювати координатора проєкту" });
+      }
       
       if (data.coordinatorId) {
         const coordinator = await storage.getUser(data.coordinatorId);
@@ -684,8 +697,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
-  // Delete project (admin only)
-  app.delete("/api/projects/:id", hasRole(["admin"]), async (req, res, next) => {
+  // Delete project (coordinator can delete own project, admin can delete any)
+  app.delete("/api/projects/:id", hasRole(["coordinator", "admin"]), async (req, res, next) => {
     try {
       const id = parseInt(req.params.id);
       if (isNaN(id)) {
@@ -695,6 +708,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const project = await storage.getProjectById(id);
       if (!project) {
         return res.status(404).json({ message: "Проєкт не знайдено" });
+      }
+      
+      // Перевірка прав: Координатор може видаляти тільки свої проєкти
+      const userRole = getUserRole(req);
+      const userId = getUserId(req);
+      
+      if (userRole === "coordinator" && project.coordinatorId !== userId) {
+        return res.status(403).json({ message: "Ви можете видаляти тільки власні проєкти" });
       }
       
       await storage.deleteProject(id);
