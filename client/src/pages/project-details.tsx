@@ -2,8 +2,7 @@ import { useState, useEffect } from "react";
 import { useLocation, Link } from "wouter";
 import { useTranslation } from "react-i18next";
 import { useQuery, useMutation } from "@tanstack/react-query";
-// Temporarily commenting out auth for debugging
-// import { useAuth } from "@/hooks/use-auth";
+import { useAuth } from "@/hooks/use-auth";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { Button } from "@/components/ui/button";
 import {
@@ -44,9 +43,11 @@ import {
   Group, 
   CalendarToday, 
   ArrowBack,
-  Edit
+  Edit,
+  Delete,
+  Warning
 } from "@mui/icons-material";
-import { Loader2 } from "lucide-react";
+import { Loader2, AlertTriangle } from "lucide-react";
 
 export default function ProjectDetails() {
   const [location] = useLocation();
@@ -54,8 +55,7 @@ export default function ProjectDetails() {
   const pathParts = location ? location.split("/") : [];
   const projectId = pathParts.length > 2 ? parseInt(pathParts[2]) : null;
   const { t } = useTranslation();
-  // Mocking user for debugging
-  const user = null;
+  const { user } = useAuth();
   const { toast } = useToast();
   const [, navigate] = useLocation();
   
@@ -168,6 +168,34 @@ export default function ProjectDetails() {
     }
   });
   
+  // Delete project mutation
+  const deleteMutation = useMutation({
+    mutationFn: async () => {
+      return apiRequest("DELETE", `/api/projects/${projectId}`);
+    },
+    onSuccess: () => {
+      toast({
+        title: "Проєкт видалено",
+        description: "Проєкт було успішно видалено.",
+      });
+      // Перенаправлення на сторінку проєктів або на дашборд координатора
+      setTimeout(() => {
+        if (user?.role === 'coordinator') {
+          navigate("/dashboard/coordinator");
+        } else {
+          navigate("/projects");
+        }
+      }, 1500);
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Помилка видалення",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+  
   // Apply to project
   const handleApply = () => {
     if (!user) {
@@ -176,6 +204,19 @@ export default function ProjectDetails() {
     }
     
     applyMutation.mutate("");
+  };
+  
+  // Delete project
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  
+  const handleDelete = () => {
+    if (showDeleteConfirm) {
+      deleteMutation.mutate();
+    } else {
+      setShowDeleteConfirm(true);
+      // Авто-закриття діалогу підтвердження через 5 секунд
+      setTimeout(() => setShowDeleteConfirm(false), 5000);
+    }
   };
   
   // Calculate progress percentage
@@ -328,9 +369,33 @@ export default function ProjectDetails() {
                         </Link>
                         <Link href={`/projects/${project.id}/edit`}>
                           <Button variant="outline" className="flex items-center">
+                            <Edit className="mr-2 h-4 w-4" />
                             Редагувати проєкт
                           </Button>
                         </Link>
+                        <Button 
+                          variant="destructive" 
+                          className="flex items-center"
+                          onClick={handleDelete}
+                          disabled={deleteMutation.isPending}
+                        >
+                          {deleteMutation.isPending ? (
+                            <>
+                              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                              Видалення...
+                            </>
+                          ) : showDeleteConfirm ? (
+                            <>
+                              <AlertTriangle className="mr-2 h-4 w-4" />
+                              Підтвердити видалення
+                            </>
+                          ) : (
+                            <>
+                              <Delete className="mr-2 h-4 w-4" />
+                              Видалити проєкт
+                            </>
+                          )}
+                        </Button>
                       </>
                     )}
                     
@@ -349,6 +414,29 @@ export default function ProjectDetails() {
                             Редагувати проєкт (Адмін)
                           </Button>
                         </Link>
+                        <Button 
+                          variant="destructive" 
+                          className="flex items-center"
+                          onClick={handleDelete}
+                          disabled={deleteMutation.isPending}
+                        >
+                          {deleteMutation.isPending ? (
+                            <>
+                              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                              Видалення...
+                            </>
+                          ) : showDeleteConfirm ? (
+                            <>
+                              <AlertTriangle className="mr-2 h-4 w-4" />
+                              Підтвердити видалення (Адмін)
+                            </>
+                          ) : (
+                            <>
+                              <Delete className="mr-2 h-4 w-4" />
+                              Видалити проєкт (Адмін)
+                            </>
+                          )}
+                        </Button>
                       </>
                     )}
                   </div>
