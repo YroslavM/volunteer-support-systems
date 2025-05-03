@@ -95,20 +95,20 @@ export default function HomePage() {
           <div className="absolute inset-0 bg-primary-700 mix-blend-multiply" aria-hidden="true"></div>
         </div>
         <div className="relative max-w-7xl mx-auto py-24 px-4 sm:py-32 sm:px-6 lg:px-8">
-          <h1 className="text-4xl font-extrabold tracking-tight text-white sm:text-5xl lg:text-6xl font-heading">
+          <h1 className="text-4xl font-extrabold tracking-tight text-white sm:text-5xl lg:text-6xl font-heading bg-gradient-to-r from-yellow-200 to-yellow-50 text-transparent bg-clip-text drop-shadow-sm">
             {t('home.hero.title')}
           </h1>
-          <p className="mt-6 text-xl text-gray-100 max-w-3xl">
+          <p className="mt-6 text-xl text-yellow-50 max-w-3xl font-medium">
             {t('home.hero.subtitle')}
           </p>
           <div className="mt-10 flex flex-col sm:flex-row gap-4">
             <Link href="/auth">
-              <Button className="inline-flex items-center justify-center text-white bg-secondary-600 hover:bg-secondary-700 shadow-md transition-colors duration-200">
+              <Button className="inline-flex items-center justify-center text-white bg-gradient-to-r from-secondary-500 to-secondary-600 hover:from-secondary-600 hover:to-secondary-700 shadow-lg transition-all duration-200 font-medium px-6 py-6 text-lg">
                 {t('home.hero.joinButton')}
               </Button>
             </Link>
             <Link href="/projects">
-              <Button variant="outline" className="inline-flex items-center justify-center text-white border-white hover:bg-white hover:text-primary-700 transition-colors duration-200">
+              <Button variant="outline" className="inline-flex items-center justify-center text-yellow-50 border-yellow-100 hover:bg-yellow-50 hover:text-primary-700 transition-all duration-200 shadow-lg font-medium px-6 py-6 text-lg">
                 {t('home.hero.viewProjects')}
               </Button>
             </Link>
