@@ -372,7 +372,7 @@ export default function HomePage() {
                               Підтримка переселенців
                             </p>
                             <div className="ml-2 flex-shrink-0 flex">
-                              <button className="px-2 py-1 text-xs font-medium rounded bg-primary-100 text-primary-700 hover:bg-primary-200">
+                              <button className="px-2 py-1 text-xs font-medium rounded bg-primary-600 text-white hover:bg-primary-700 shadow-sm">
                                 {t('dashboard.volunteer.applyButton')}
                               </button>
                             </div>
@@ -421,10 +421,10 @@ export default function HomePage() {
                               Збір коштів: 70 000 / 100 000 грн
                             </p>
                             <div className="flex space-x-2">
-                              <button className="px-2 py-1 text-xs font-medium rounded bg-primary-100 text-primary-700 hover:bg-primary-200">
+                              <button className="px-2 py-1 text-xs font-medium rounded bg-primary-600 text-white hover:bg-primary-700 shadow-sm">
                                 {t('dashboard.coordinator.volunteersButton')}
                               </button>
-                              <button className="px-2 py-1 text-xs font-medium rounded bg-primary-100 text-primary-700 hover:bg-primary-200">
+                              <button className="px-2 py-1 text-xs font-medium rounded bg-secondary-600 text-white hover:bg-secondary-700 shadow-sm">
                                 {t('dashboard.coordinator.tasksButton')}
                               </button>
                             </div>
@@ -496,7 +496,7 @@ export default function HomePage() {
                                 Ваш внесок: 2000 грн
                               </p>
                             </div>
-                            <button className="mt-2 sm:mt-0 inline-flex items-center px-2 py-1 border border-transparent text-xs font-medium rounded bg-primary-100 text-primary-700 hover:bg-primary-200">
+                            <button className="mt-2 sm:mt-0 inline-flex items-center px-2 py-1 text-xs font-medium rounded bg-primary-600 text-white hover:bg-primary-700 shadow-sm">
                               {t('dashboard.donor.projectDetails')}
                             </button>
                           </div>
