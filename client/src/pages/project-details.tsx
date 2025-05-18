@@ -321,16 +321,18 @@ export default function ProjectDetails() {
                   </div>
                 )}
                 
-                {user && (
-                  <div className="mt-6 flex flex-wrap gap-3">
-                    {user.role === 'donor' && project.status === 'funding' && (
-                      <Link href={`/donate/${project.id}`}>
-                        <Button className="bg-green-600 hover:bg-green-700 text-white flex items-center">
-                          <AttachMoney className="mr-2" />
-                          Підтримати
-                        </Button>
-                      </Link>
-                    )}
+                <div className="mt-6 flex flex-wrap gap-3">
+                  {project.status === 'funding' && (
+                    <Link href={`/donate/${project.id}`}>
+                      <Button className="bg-green-600 hover:bg-green-700 text-white flex items-center">
+                        <AttachMoney className="mr-2" />
+                        Підтримати
+                      </Button>
+                    </Link>
+                  )}
+                  
+                  {user && (
+                  <>
                     
                     {user.role === 'volunteer' && project.status === 'in_progress' && !hasApplied && (
                       <Button 
