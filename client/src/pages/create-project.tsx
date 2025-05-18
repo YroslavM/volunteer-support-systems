@@ -420,7 +420,7 @@ export default function CreateProject() {
                                   </Button>
                                 </div>
                                 <p className="mt-2 text-sm text-gray-500">
-                                  {selectedFile?.name} ({Math.round(selectedFile?.size / 1024)} KB)
+                                  {selectedFile?.name} ({selectedFile && selectedFile.size ? Math.round(selectedFile.size / 1024) : 0} KB)
                                 </p>
                               </>
                             ) : (
