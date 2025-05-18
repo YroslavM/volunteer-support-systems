@@ -69,8 +69,8 @@ export default function DonatePage() {
   const [donationType, setDonationType] = useState<"onetime" | "regular">("onetime");
   
   // Отримуємо ID проекту з URL
-  const [, projectId] = useLocation();
-  const id = projectId.split("/")[2];
+  const [location] = useLocation();
+  const id = location.split("/")[2];
   
   // Отримуємо дані проекту
   const { data: project, isLoading: isLoadingProject } = useQuery({
