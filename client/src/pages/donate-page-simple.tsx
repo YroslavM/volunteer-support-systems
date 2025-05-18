@@ -27,8 +27,9 @@ import { useToast } from "@/hooks/use-toast";
 import { Loader2, CreditCard, ArrowLeft, HeartHandshake } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useQuery } from "@tanstack/react-query";
+import { insertDonationSchema } from "@shared/schema";
 
-// Базова схема валідації для пожертви
+// Розширена схема валідації для пожертви
 const donationSchema = z.object({
   projectId: z.number(),
   amount: z.number().min(1, { message: "Сума має бути більше 0" }),
