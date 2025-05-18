@@ -17,7 +17,7 @@ import { Progress } from "@/components/ui/progress";
 import { useToast } from "@/hooks/use-toast";
 import { 
   SelectProject, 
-  SelectUser
+  SelectUser 
 } from "@shared/schema";
 import { 
   AttachMoney, 
@@ -237,7 +237,7 @@ export default function ProjectDetails() {
                   )}
                   
                   {/* Кнопки для волонтерів */}
-                  {user && user.role === 'volunteer' && project.status === 'in_progress' && hasApplied === false && (
+                  {user && user.role === 'volunteer' && project.status === 'in_progress' && !hasApplied && (
                     <Button 
                       onClick={handleApply} 
                       disabled={applyMutation.isPending}
@@ -412,15 +412,18 @@ export default function ProjectDetails() {
                 <CardDescription>Розповісти про проєкт</CardDescription>
               </CardHeader>
               <CardContent>
-                <div className="flex space-x-2 justify-center">
+                <div className="flex space-x-2">
                   <Button variant="outline" size="icon" className="w-9 h-9 rounded-full">
-                    <span className="text-lg">F</span>
+                    <i className="ri-facebook-fill"></i>
                   </Button>
                   <Button variant="outline" size="icon" className="w-9 h-9 rounded-full">
-                    <span className="text-lg">T</span>
+                    <i className="ri-twitter-fill"></i>
                   </Button>
                   <Button variant="outline" size="icon" className="w-9 h-9 rounded-full">
-                    <span className="text-lg">TG</span>
+                    <i className="ri-telegram-fill"></i>
+                  </Button>
+                  <Button variant="outline" size="icon" className="w-9 h-9 rounded-full">
+                    <i className="ri-link"></i>
                   </Button>
                 </div>
                 
