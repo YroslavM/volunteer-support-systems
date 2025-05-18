@@ -131,6 +131,15 @@ export default function AuthPage() {
   };
   const [activeTab, setActiveTab] = useState<string>("login");
 
+  // Check URL parameter for active tab and set it accordingly
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const tabParam = params.get('tab');
+    if (tabParam && (tabParam === 'login' || tabParam === 'register')) {
+      setActiveTab(tabParam);
+    }
+  }, []);
+
   // Redirect if already logged in
   useEffect(() => {
     if (user) {

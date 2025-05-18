@@ -190,12 +190,12 @@ export function Header() {
               </div>
             ) : (
               <div className="flex space-x-2">
-                <Link href="/auth">
+                <Link href="/auth?tab=login">
                   <Button variant="outline">
                     {t('auth.login')}
                   </Button>
                 </Link>
-                <Link href="/auth">
+                <Link href="/auth?tab=register">
                   <Button>
                     {t('auth.register')}
                   </Button>
