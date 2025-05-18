@@ -211,7 +211,7 @@ export class DatabaseStorage implements IStorage {
     return approvedProjects.map(row => row.project);
   }
   
-  async createProject(insertProject: InsertProject): Promise<Project> {
+  async createProject(insertProject: InsertProject & { coordinatorId: number; status?: string; collectedAmount?: number }): Promise<Project> {
     const [project] = await db
       .insert(projects)
       .values(insertProject)

@@ -14,7 +14,8 @@ import {
   insertReportSchema,
   projectStatusEnum,
   taskStatusEnum,
-  applicationStatusEnum
+  applicationStatusEnum,
+  projects
 } from "@shared/schema";
 
 // Режим тестового середовища (для демонстрації)
@@ -167,7 +168,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         // Create project
         const project = await storage.createProject({
           ...validatedData,
-          coordinatorId,
+          coordinatorId: coordinatorId,
+          status: "funding",
+          collectedAmount: 0
         });
         
         res.status(201).json(project);
