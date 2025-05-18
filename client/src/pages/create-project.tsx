@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { useTranslation } from "react-i18next";
 import { useLocation } from "wouter";
 import { z } from "zod";
@@ -22,11 +22,17 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form";
+import {
+  Tabs,
+  TabsContent,
+  TabsList,
+  TabsTrigger,
+} from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Link } from "wouter";
 import { useToast } from "@/hooks/use-toast";
-import { ArrowBack, CloudUpload } from "@mui/icons-material";
+import { ArrowBack, CloudUpload, Image } from "@mui/icons-material";
 import { Loader2 } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
 
@@ -35,6 +41,14 @@ const createProjectSchema = z.object({
   name: z.string().min(5, { message: "Назва проєкту має містити мінімум 5 символів" }),
   description: z.string().min(20, { message: "Опис проєкту має містити мінімум 20 символів" }),
   imageUrl: z.string().url({ message: "Введіть коректний URL зображення" }).optional().or(z.literal("")),
+  targetAmount: z.coerce.number().positive({ message: "Сума має бути більшою за нуль" }),
+  bankDetails: z.string().min(5, { message: "Введіть реквізити для збору коштів" }),
+});
+
+// For file upload form
+const createProjectWithFileSchema = z.object({
+  name: z.string().min(5, { message: "Назва проєкту має містити мінімум 5 символів" }),
+  description: z.string().min(20, { message: "Опис проєкту має містити мінімум 20 символів" }),
   targetAmount: z.coerce.number().positive({ message: "Сума має бути більшою за нуль" }),
   bankDetails: z.string().min(5, { message: "Введіть реквізити для збору коштів" }),
 });

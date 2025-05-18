@@ -1,8 +1,11 @@
-import type { Express, Request, Response } from "express";
+import type { Express, Request, Response, NextFunction } from "express";
+import express from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { setupAuth } from "./auth";
 import { z } from "zod";
+import path from "path";
+import { projectImageUpload } from "./middleware/upload";
 import { 
   insertProjectSchema, 
   insertTaskSchema, 
@@ -65,6 +68,9 @@ function hasRole(roles: string[]) {
 export async function registerRoutes(app: Express): Promise<Server> {
   // Setup authentication
   setupAuth(app);
+  
+  // Serve uploaded files
+  app.use('/uploads', express.static(path.join(process.cwd(), 'uploads')));
 
   // =========================
   // Project Routes
@@ -125,6 +131,42 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       next(error);
     }
+  });
+  
+  // Create new project with image upload (only for coordinators)
+  app.post("/api/projects/with-image", hasRole(["coordinator"]), (req, res, next) => {
+    projectImageUpload(req, res, async (err) => {
+      if (err) {
+        return res.status(400).json({ message: err.message });
+      }
+      
+      try {
+        // Get form data
+        const projectData = {
+          name: req.body.name,
+          description: req.body.description,
+          targetAmount: parseFloat(req.body.targetAmount),
+          bankDetails: req.body.bankDetails,
+          imageUrl: req.file ? `/uploads/projects/${path.basename(req.file.path)}` : null,
+        };
+        
+        // Validate data
+        const validatedData = insertProjectSchema.parse(projectData);
+        
+        // Get coordinator ID
+        const coordinatorId = getUserId(req);
+        
+        // Create project
+        const project = await storage.createProject({
+          ...validatedData,
+          coordinatorId,
+        });
+        
+        res.status(201).json(project);
+      } catch (error) {
+        next(error);
+      }
+    });
   });
   
   // Update project status (only for coordinators)
