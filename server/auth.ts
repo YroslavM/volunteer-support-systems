@@ -85,9 +85,14 @@ export function setupAuth(app: Express) {
     try {
       const registerSchema = insertUserSchema.extend({
         confirmPassword: z.string()
-      }).refine(data => data.password === data.confirmPassword, {
+      })
+      .refine(data => data.password === data.confirmPassword, {
         message: "Паролі не співпадають",
         path: ["confirmPassword"],
+      })
+      .refine(data => ["volunteer", "coordinator", "donor"].includes(data.role), {
+        message: "Вибрана роль недоступна для реєстрації",
+        path: ["role"],
       });
 
       const validatedData = registerSchema.parse(req.body);
