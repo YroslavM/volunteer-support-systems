@@ -57,7 +57,9 @@ export function setupAuth(app: Express) {
       { usernameField: 'email' },
       async (email, password, done) => {
         try {
-          const user = await storage.getUserByEmail(email);
+          // Normalize email to lowercase for consistency
+          const normalizedEmail = email.toLowerCase();
+          const user = await storage.getUserByEmail(normalizedEmail);
           if (!user || !(await comparePasswords(password, user.password))) {
             return done(null, false, { message: "Невірний email або пароль" });
           }
@@ -98,11 +100,15 @@ export function setupAuth(app: Express) {
       const validatedData = registerSchema.parse(req.body);
       const { confirmPassword, ...userData } = validatedData;
       
-      // Check if user with this email already exists
-      const existingUser = await storage.getUserByEmail(userData.email);
+      // Check if user with this email already exists (case insensitive)
+      const normalizedEmail = userData.email.toLowerCase();
+      const existingUser = await storage.getUserByEmail(normalizedEmail);
       if (existingUser) {
         return res.status(400).json({ message: "Користувач з таким email вже існує" });
       }
+      
+      // Normalize email to lowercase for consistency
+      userData.email = normalizedEmail;
 
       // Check if username is taken
       const existingUsername = await storage.getUserByUsername(userData.username);
