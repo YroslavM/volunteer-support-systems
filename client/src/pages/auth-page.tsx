@@ -222,9 +222,15 @@ export default function AuthPage() {
                         name="email"
                         render={({ field }) => (
                           <FormItem>
-                            <FormLabel>{t('auth.email')}</FormLabel>
+                            <FormLabel htmlFor="login-email">{t('auth.email')}</FormLabel>
                             <FormControl>
-                              <Input placeholder="email@example.com" {...field} />
+                              <Input 
+                                id="login-email"
+                                type="email" 
+                                placeholder="email@example.com" 
+                                autoComplete="email" 
+                                {...field} 
+                              />
                             </FormControl>
                             <FormMessage />
                           </FormItem>
@@ -235,9 +241,14 @@ export default function AuthPage() {
                         name="password"
                         render={({ field }) => (
                           <FormItem>
-                            <FormLabel>{t('auth.password')}</FormLabel>
+                            <FormLabel htmlFor="login-password">{t('auth.password')}</FormLabel>
                             <FormControl>
-                              <Input type="password" {...field} />
+                              <Input 
+                                id="login-password"
+                                type="password" 
+                                autoComplete="current-password" 
+                                {...field} 
+                              />
                             </FormControl>
                             <FormMessage />
                           </FormItem>
@@ -293,9 +304,15 @@ export default function AuthPage() {
                         name="email"
                         render={({ field }) => (
                           <FormItem>
-                            <FormLabel>{t('auth.email')}</FormLabel>
+                            <FormLabel htmlFor="register-email">{t('auth.email')}</FormLabel>
                             <FormControl>
-                              <Input placeholder="email@example.com" {...field} />
+                              <Input 
+                                id="register-email"
+                                type="email" 
+                                placeholder="email@example.com" 
+                                autoComplete="email" 
+                                {...field} 
+                              />
                             </FormControl>
                             <FormMessage />
                           </FormItem>
@@ -306,9 +323,14 @@ export default function AuthPage() {
                         name="username"
                         render={({ field }) => (
                           <FormItem>
-                            <FormLabel>{t('auth.username')}</FormLabel>
+                            <FormLabel htmlFor="register-username">{t('auth.username')}</FormLabel>
                             <FormControl>
-                              <Input placeholder={t('auth.username')} {...field} />
+                              <Input 
+                                id="register-username"
+                                placeholder={t('auth.username')} 
+                                autoComplete="username" 
+                                {...field} 
+                              />
                             </FormControl>
                             <FormMessage />
                           </FormItem>
