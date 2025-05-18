@@ -324,10 +324,10 @@ export default function ProjectDetails() {
                 {user && (
                   <div className="mt-6 flex flex-wrap gap-3">
                     {user.role === 'donor' && project.status === 'funding' && (
-                      <Link href={`/projects/${project.id}/donate`}>
-                        <Button className="bg-secondary-500 hover:bg-secondary-600 flex items-center">
+                      <Link href={`/donate/${project.id}`}>
+                        <Button className="bg-green-600 hover:bg-green-700 text-white flex items-center">
                           <AttachMoney className="mr-2" />
-                          {t('projects.details.donateButton')}
+                          Підтримати
                         </Button>
                       </Link>
                     )}
