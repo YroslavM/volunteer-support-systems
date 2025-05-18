@@ -331,28 +331,25 @@ export default function ProjectDetails() {
                     </Link>
                   )}
                   
-                  {user && (
-                  <>
-                    
-                    {user.role === 'volunteer' && project.status === 'in_progress' && !hasApplied && (
-                      <Button 
-                        onClick={handleApply} 
-                        disabled={applyMutation.isPending}
-                        className="flex items-center"
-                      >
-                        {applyMutation.isPending ? (
-                          <>
-                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                            {t('common.loading')}
-                          </>
-                        ) : (
-                          <>
-                            <Group className="mr-2" />
-                            {t('projects.details.applyButton')}
-                          </>
-                        )}
-                      </Button>
-                    )}
+                  {user && user.role === 'volunteer' && project.status === 'in_progress' && !hasApplied && (
+                    <Button 
+                      onClick={handleApply} 
+                      disabled={applyMutation.isPending}
+                      className="flex items-center"
+                    >
+                      {applyMutation.isPending ? (
+                        <>
+                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                          {t('common.loading')}
+                        </>
+                      ) : (
+                        <>
+                          <Group className="mr-2" />
+                          {t('projects.details.applyButton')}
+                        </>
+                      )}
+                    </Button>
+                  )}
                     
                     {user.role === 'volunteer' && hasApplied && (
                       <Badge variant="outline" className="py-2 px-3">
