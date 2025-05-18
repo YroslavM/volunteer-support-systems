@@ -86,9 +86,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
         offset: z.coerce.number().optional(),
       }).optional();
       
-      const { status, search, limit = 20, offset = 0 } = querySchema.parse(req.query);
+      const parsedQuery = querySchema.parse(req.query);
+      const options = parsedQuery ? {
+        status: parsedQuery.status,
+        search: parsedQuery.search,
+        limit: parsedQuery.limit !== undefined ? parsedQuery.limit : 20,
+        offset: parsedQuery.offset !== undefined ? parsedQuery.offset : 0
+      } : { limit: 20, offset: 0 };
       
-      const projects = await storage.getProjects({ status, search, limit, offset });
+      const projects = await storage.getProjects(options);
       res.json(projects);
     } catch (error) {
       next(error);
@@ -125,6 +131,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const project = await storage.createProject({
         ...data,
         coordinatorId,
+        status: "funding", // Set initial status
+        collectedAmount: 0, // Set initial collected amount
       });
       
       res.status(201).json(project);
@@ -133,7 +141,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
-  // Create new project with image upload (only for coordinators)
+  // Create project with file upload (only for coordinators)
   app.post("/api/projects/with-image", hasRole(["coordinator"]), (req, res, next) => {
     projectImageUpload(req, res, async (err) => {
       if (err) {
