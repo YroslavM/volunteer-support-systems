@@ -369,9 +369,14 @@ export default function AuthPage() {
                         name="password"
                         render={({ field }) => (
                           <FormItem>
-                            <FormLabel>{t('auth.password')}</FormLabel>
+                            <FormLabel htmlFor="register-password">{t('auth.password')}</FormLabel>
                             <FormControl>
-                              <Input type="password" {...field} />
+                              <Input 
+                                id="register-password"
+                                type="password" 
+                                autoComplete="new-password" 
+                                {...field} 
+                              />
                             </FormControl>
                             <FormMessage />
                           </FormItem>
@@ -382,9 +387,14 @@ export default function AuthPage() {
                         name="confirmPassword"
                         render={({ field }) => (
                           <FormItem>
-                            <FormLabel>{t('auth.confirmPassword')}</FormLabel>
+                            <FormLabel htmlFor="confirm-password">{t('auth.confirmPassword')}</FormLabel>
                             <FormControl>
-                              <Input type="password" {...field} />
+                              <Input 
+                                id="confirm-password"
+                                type="password" 
+                                autoComplete="new-password" 
+                                {...field} 
+                              />
                             </FormControl>
                             <FormMessage />
                           </FormItem>
