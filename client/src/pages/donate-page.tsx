@@ -23,9 +23,8 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, CreditCard, Mail, Edit3, Check, ArrowLeft, Info } from "lucide-react";
+import { Loader2, CreditCard, ArrowLeft, HeartHandshake } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
@@ -43,7 +42,6 @@ import {
 } from "@/components/ui/tabs";
 import { useQuery } from "@tanstack/react-query";
 import { insertDonationSchema } from "@shared/schema";
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
 // Розширена схема валідації для пожертви
 const donationSchema = insertDonationSchema.extend({
@@ -92,7 +90,7 @@ export default function DonatePage() {
     resolver: zodResolver(donationSchema),
     defaultValues: {
       projectId: parseInt(id),
-      amount: 0,
+      amount: 100,
       donorId: user?.id,
       comment: "",
       email: user?.email || "",
@@ -172,7 +170,7 @@ export default function DonatePage() {
   }
 
   return (
-    <div className="bg-gray-50 py-10">
+    <div className="bg-gradient-to-b from-emerald-50 to-white py-10">
       <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
         <Link href={`/projects/${id}`}>
           <Button variant="ghost" className="mb-6 flex items-center">
@@ -182,7 +180,8 @@ export default function DonatePage() {
         </Link>
         
         <div className="mb-8 text-center">
-          <h1 className="text-3xl font-heading font-bold mb-2">Допомога {project.name}</h1>
+          <h1 className="text-3xl font-heading font-bold mb-2">Допомога проекту</h1>
+          <h2 className="text-2xl text-emerald-700 font-semibold mb-4">{project.name}</h2>
           <p className="text-slate-600">
             Залишилось зібрати, грн
           </p>
@@ -191,243 +190,157 @@ export default function DonatePage() {
           </div>
         </div>
         
-        <Tabs defaultValue="onetime" value={donationType} onValueChange={(value) => setDonationType(value as "onetime" | "regular")}>
-          <TabsList className="grid w-full grid-cols-2 mb-8">
-            <TabsTrigger value="onetime" onClick={() => form.setValue("donationType", "onetime")}>РАЗОВА ДОПОМОГА</TabsTrigger>
-            <TabsTrigger value="regular" onClick={() => form.setValue("donationType", "regular")}>РЕГУЛЯРНА ДОПОМОГА</TabsTrigger>
-          </TabsList>
-          
-          <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div>
-                  <FormField
-                    control={form.control}
-                    name="paymentMethod"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Вибір валюти оплати</FormLabel>
-                        <Select 
-                          onValueChange={field.onChange} 
-                          defaultValue={field.value}
-                        >
-                          <FormControl>
-                            <SelectTrigger>
-                              <SelectValue placeholder="Виберіть валюту" />
-                            </SelectTrigger>
-                          </FormControl>
-                          <SelectContent>
-                            <SelectItem value="card">Українська гривня</SelectItem>
-                          </SelectContent>
-                        </Select>
-                        <FormDescription>
-                          Ваш внесок автоматично конвертується та зараховується на рахунок у UAH по курсу платіжних систем.
-                        </FormDescription>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                </div>
-                
-                <div>
-                  <FormField
-                    control={form.control}
-                    name="amount"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Сума внеску</FormLabel>
-                        <FormControl>
-                          <div className="relative">
-                            <Input
-                              type="number"
-                              placeholder="0"
-                              {...field}
-                              onChange={(e) => field.onChange(parseFloat(e.target.value))}
-                              min="0"
-                              step="10"
-                            />
-                            <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
-                              <span className="text-gray-500">₴</span>
-                            </div>
-                          </div>
-                        </FormControl>
-                        <FormDescription>
-                          Сума внеску не має перевищувати залишок
-                        </FormDescription>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                </div>
-              </div>
-              
-              {donationType === "regular" && (
-                <div className="bg-blue-50 p-4 rounded-md">
-                  <div className="flex items-start">
-                    <div className="mr-4">
-                      <FormLabel>Підтримати Dobrodziy (за бажанням)</FormLabel>
+        <Card className="border-emerald-100 shadow-lg">
+          <CardHeader className="bg-emerald-50 border-b border-emerald-100">
+            <CardTitle className="flex items-center text-emerald-700">
+              <HeartHandshake className="mr-2 h-5 w-5" />
+              Зробити внесок
+            </CardTitle>
+            <CardDescription>
+              Ваша допомога важлива для реалізації цього проекту
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="pt-6">
+            <Form {...form}>
+              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+                <FormField
+                  control={form.control}
+                  name="amount"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Сума внеску</FormLabel>
                       <FormControl>
                         <div className="relative">
                           <Input
                             type="number"
-                            placeholder="0.00"
-                            disabled
-                            value="0.00"
-                            className="bg-blue-100 border-blue-200"
+                            placeholder="100"
+                            {...field}
+                            onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
+                            min="1"
+                            step="10"
+                            className="text-lg pr-8"
                           />
                           <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
                             <span className="text-gray-500">₴</span>
                           </div>
                         </div>
                       </FormControl>
-                    </div>
-                    <div className="mt-7 text-sm text-blue-600">
-                      Інша сума
-                    </div>
-                  </div>
-                  <p className="mt-2 text-sm text-blue-600">
-                    Це ваш внесок в існування нашої благодійної платформи
-                  </p>
-                </div>
-              )}
-              
-              <FormField
-                control={form.control}
-                name="paymentMethod"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Спосіб оплати</FormLabel>
-                    <Select 
-                      onValueChange={field.onChange} 
-                      defaultValue={field.value}
-                    >
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Виберіть спосіб оплати" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        <SelectItem value="card">Visa, Master Card / Приват24</SelectItem>
-                        <SelectItem value="bank">Банківський переказ</SelectItem>
-                      </SelectContent>
-                    </Select>
-                    <FormDescription>
-                      Розмір банківської комісії та комісії платіжних систем за здійснення платежу залежить від обраного Вами способу оплати
-                    </FormDescription>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <FormField
-                  control={form.control}
-                  name="email"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Email</FormLabel>
-                      <FormControl>
-                        <Input placeholder="your.email@example.com" {...field} />
-                      </FormControl>
                       <FormDescription>
-                        Email не відображається на сайті та використовується лише для сповіщення про новини в проектах.
+                        Сума внеску не має перевищувати залишок {Math.max(0, project.targetAmount - project.collectedAmount).toLocaleString()} грн
                       </FormDescription>
                       <FormMessage />
                     </FormItem>
                   )}
                 />
                 
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <FormField
+                    control={form.control}
+                    name="email"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Email</FormLabel>
+                        <FormControl>
+                          <Input placeholder="your.email@example.com" {...field} />
+                        </FormControl>
+                        <FormDescription>
+                          Email не відображається публічно
+                        </FormDescription>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  
+                  <FormField
+                    control={form.control}
+                    name="comment"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Ваш коментар</FormLabel>
+                        <FormControl>
+                          <Input placeholder="Ваше побажання або коментар" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+                
                 <FormField
                   control={form.control}
-                  name="comment"
+                  name="anonymous"
                   render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Ваш підпис (побажання)</FormLabel>
+                    <FormItem className="flex flex-row items-start space-x-3 space-y-0">
                       <FormControl>
-                        <Input placeholder="Ваше побажання" {...field} />
+                        <Checkbox
+                          checked={field.value}
+                          onCheckedChange={field.onChange}
+                        />
                       </FormControl>
-                      <FormMessage />
+                      <div className="space-y-1 leading-none">
+                        <FormLabel>Анонімний внесок</FormLabel>
+                        <FormDescription>
+                          Ваше ім'я не буде відображатись у списку донорів
+                        </FormDescription>
+                      </div>
                     </FormItem>
                   )}
                 />
-              </div>
-              
-              <FormField
-                control={form.control}
-                name="anonymous"
-                render={({ field }) => (
-                  <FormItem className="flex flex-row items-start space-x-3 space-y-0">
-                    <FormControl>
-                      <Checkbox
-                        checked={field.value}
-                        onCheckedChange={field.onChange}
-                      />
-                    </FormControl>
-                    <div className="space-y-1 leading-none">
-                      <FormLabel>Анонімний платіж</FormLabel>
-                      <FormDescription>
-                        Зробити платіж анонімним (Ваші дані, окрім підпису, не будуть відображатись у переліку донорів)
-                      </FormDescription>
-                    </div>
-                  </FormItem>
-                )}
-              />
-              
-              <div className="border-t border-gray-200 pt-6">
-                <div className="flex justify-between mb-2">
-                  <span className="text-lg font-medium">Всього до сплати:</span>
-                  <span className="text-lg font-bold">{form.watch("amount")} грн</span>
+                
+                <div className="border-t border-gray-200 pt-6">
+                  <div className="flex justify-between mb-4">
+                    <span className="text-lg font-medium">Всього до сплати:</span>
+                    <span className="text-xl font-bold text-emerald-600">{form.watch("amount")} грн</span>
+                  </div>
                 </div>
-                <div className="text-sm text-gray-500 mb-4">
-                  Комісія банку за обробку онлайн платежу: 0.00
-                </div>
-                <div className="text-sm text-gray-500 mb-6">
-                  Комісія з платежів власників карт Visa та MasterCard – 0%.
-                  Зверніть увагу, що при оплаті карткою не українського банку, фактична сума платежу у валюті, може бути більше на суму банківської комісії вашого банку за конвертацію.
-                  Робота Dobrodziy підтримується за рахунок щорічного гранту Фонду Віктора Пінчука та добровільних пожертв донорів.
-                </div>
-              </div>
-              
-              <FormField
-                control={form.control}
-                name="consentToRules"
-                render={({ field }) => (
-                  <FormItem className="flex flex-row items-start space-x-3 space-y-0">
-                    <FormControl>
-                      <Checkbox
-                        checked={field.value}
-                        onCheckedChange={field.onChange}
-                      />
-                    </FormControl>
-                    <div className="space-y-1 leading-none">
-                      <FormLabel>
-                        Я прочитав і погоджуюсь з{" "}
-                        <Link href="/terms" className="text-blue-600 hover:underline">
-                          Правилами перерахування коштів
-                        </Link>{" "}
-                        на Dobrodziy від БО МБФ «Українська Біржа Благодійності»
-                      </FormLabel>
-                      <FormMessage />
-                    </div>
-                  </FormItem>
-                )}
-              />
-              
-              <div className="flex justify-end">
-                <Button type="submit" className="px-12 py-6 text-lg" disabled={isSubmitting}>
-                  {isSubmitting ? (
-                    <>
-                      <Loader2 className="mr-2 h-5 w-5 animate-spin" />
-                      Обробка...
-                    </>
-                  ) : (
-                    "Сплатити"
+                
+                <FormField
+                  control={form.control}
+                  name="consentToRules"
+                  render={({ field }) => (
+                    <FormItem className="flex flex-row items-start space-x-3 space-y-0">
+                      <FormControl>
+                        <Checkbox
+                          checked={field.value}
+                          onCheckedChange={field.onChange}
+                        />
+                      </FormControl>
+                      <div className="space-y-1 leading-none">
+                        <FormLabel>
+                          Я прочитав і погоджуюсь з{" "}
+                          <Link href="/terms" className="text-emerald-600 hover:underline">
+                            Правилами перерахування коштів
+                          </Link>
+                        </FormLabel>
+                        <FormMessage />
+                      </div>
+                    </FormItem>
                   )}
-                </Button>
-              </div>
-            </form>
-          </Form>
-        </Tabs>
+                />
+                
+                <div className="flex justify-center">
+                  <Button 
+                    type="submit" 
+                    className="bg-emerald-600 hover:bg-emerald-700 text-white px-12 py-6 text-lg w-full md:w-auto" 
+                    disabled={isSubmitting}
+                  >
+                    {isSubmitting ? (
+                      <>
+                        <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+                        Обробка...
+                      </>
+                    ) : (
+                      <>
+                        <CreditCard className="mr-2 h-5 w-5" />
+                        Надіслати допомогу
+                      </>
+                    )}
+                  </Button>
+                </div>
+              </form>
+            </Form>
+          </CardContent>
+        </Card>
       </div>
     </div>
   );

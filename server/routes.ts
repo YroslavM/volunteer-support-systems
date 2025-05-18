@@ -616,6 +616,43 @@ export async function registerRoutes(app: Express): Promise<Server> {
       next(error);
     }
   });
+  
+  // Create donation
+  app.post("/api/donations", async (req, res, next) => {
+    try {
+      const donationData = insertDonationSchema.parse(req.body);
+      
+      // Get project to update collected amount
+      const project = await storage.getProjectById(donationData.projectId);
+      if (!project) {
+        return res.status(404).json({ message: "Проєкт не знайдено" });
+      }
+      
+      // Check if project is in funding status
+      if (project.status !== "funding") {
+        return res.status(400).json({ message: "Збір коштів для цього проєкту завершено" });
+      }
+      
+      // Set donor ID if authenticated
+      let donorId = null;
+      if (req.isAuthenticated() && req.user?.role === "donor") {
+        donorId = req.user.id;
+      }
+      
+      // Create donation
+      const donation = await storage.createDonation({
+        ...donationData,
+        donorId: donorId || donationData.donorId
+      });
+      
+      // Update project collected amount
+      await storage.updateProjectCollectedAmount(donationData.projectId, project.collectedAmount + donationData.amount);
+      
+      res.status(201).json(donation);
+    } catch (error) {
+      next(error);
+    }
+  });
 
   // =========================
   // User Routes
