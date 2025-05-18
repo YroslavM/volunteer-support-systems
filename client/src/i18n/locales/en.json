@@ -44,14 +44,14 @@
   "home": {
     "hero": {
       "title": "Together we change the world",
-      "subtitle": "VolunteerHub unites volunteers, coordinators, and donors to work together on socially important projects.",
+      "subtitle": "Dobrodiy unites volunteers, coordinators, and donors to work together on socially important projects.",
       "joinButton": "Join",
       "viewProjects": "View Projects",
       "badge": "Volunteering changes the world"
     },
     "mission": {
       "title": "Our Mission",
-      "subtitle": "How VolunteerHub Works",
+      "subtitle": "How Dobrodiy Works",
       "description": "Our platform is designed for effective interaction between volunteers, coordinators, and donors."
     },
     "roles": {
@@ -88,7 +88,7 @@
     },
     "cta": {
       "title": "Ready to start?",
-      "subtitle": "Join VolunteerHub today."
+      "subtitle": "Join Dobrodiy today."
     }
   },
   "projects": {
