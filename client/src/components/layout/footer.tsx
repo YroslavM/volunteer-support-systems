@@ -68,7 +68,7 @@ export function Footer() {
           </a>
         </div>
         <p className="mt-8 text-center text-base text-gray-400">
-          &copy; {currentYear} VolunteerHub. {t('footer.rights')}
+          &copy; {currentYear} Dobrodiy. {t('footer.rights')}
         </p>
       </div>
     </footer>
