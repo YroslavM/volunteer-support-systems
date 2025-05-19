@@ -161,7 +161,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           try {
             const { rows: dbModerations } = await pool.query(`
               SELECT id, project_id, moderator_id, status, comment, created_at 
-              FROM project_moderations 
+              FROM project_moderation_status 
               WHERE project_id = $1 
               ORDER BY created_at DESC
             `, [project.id]);
@@ -1183,7 +1183,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         // Видаляємо старі записи модерації з бази даних для цього проекту
         try {
           await pool.query(`
-            DELETE FROM project_moderations 
+            DELETE FROM project_moderation_status 
             WHERE project_id = $1
           `, [projectId]);
           
@@ -1195,7 +1195,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         // Зберігаємо нову модерацію в базі даних SQL для довгострокового збереження
         try {
           await pool.query(`
-            INSERT INTO project_moderations 
+            INSERT INTO project_moderation_status 
             (project_id, moderator_id, status, comment, created_at) 
             VALUES 
             ($1, $2, $3, $4, $5)
