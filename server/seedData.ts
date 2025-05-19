@@ -1,6 +1,7 @@
 import { storage } from "./storage";
 import { db } from "./db";
 import { projects, users } from "@shared/schema";
+import { hashPassword } from "./auth";
 
 export async function seedDatabase() {
   console.log("Seeding database with initial data...");
@@ -13,7 +14,7 @@ export async function seedDatabase() {
   if (!hiddenAdminExists) {
     console.log("Creating hidden admin user...");
     // Використовуємо функцію для хеширования пароля з auth.ts
-    const hashedPassword = await require('./auth').hashPassword("123456");
+    const hashedPassword = await hashPassword("123456");
     await storage.createUser({
       email: "admin@gmail.com",
       username: "admin",
@@ -29,7 +30,7 @@ export async function seedDatabase() {
   if (!moderatorExists) {
     console.log("Creating moderator user...");
     // Використовуємо функцію для хеширования пароля з auth.ts
-    const hashedPassword = await require('./auth').hashPassword("123456");
+    const hashedPassword = await hashPassword("123456");
     await storage.createUser({
       email: "moderator@example.com",
       username: "moderator",
