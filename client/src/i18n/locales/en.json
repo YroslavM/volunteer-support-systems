@@ -97,11 +97,6 @@
       "in_progress": "In Progress",
       "completed": "Completed"
     },
-    "moderationStatus": {
-      "pending": "Pending Review",
-      "approved": "Approved",
-      "rejected": "Rejected"
-    },
     "filter": {
       "title": "Filters",
       "status": "Status",
@@ -134,6 +129,13 @@
     },
     "funded": "Funded",
     "learnMore": "Learn More"
+  },
+  "moderation": {
+    "status": {
+      "pending": "Pending Review",
+      "approved": "Approved",
+      "rejected": "Rejected"
+    }
   },
   "dashboard": {
     "choose": "Choose view mode",

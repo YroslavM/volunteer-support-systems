@@ -97,11 +97,6 @@
       "in_progress": "У процесі",
       "completed": "Завершено"
     },
-    "moderationStatus": {
-      "pending": "На розгляді",
-      "approved": "Затверджено",
-      "rejected": "Відхилено"
-    },
     "filter": {
       "title": "Фільтри",
       "status": "Статус",
@@ -134,6 +129,13 @@
     },
     "funded": "Профінансовано",
     "learnMore": "Дізнатися більше"
+  },
+  "moderation": {
+    "status": {
+      "pending": "На розгляді",
+      "approved": "Затверджено",
+      "rejected": "Відхилено"
+    }
   },
   "dashboard": {
     "choose": "Виберіть режим перегляду",
