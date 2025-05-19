@@ -102,6 +102,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
+  // Get projects by coordinator ID
+  app.get("/api/projects/coordinator/:id", async (req, res, next) => {
+    try {
+      const coordinatorId = parseInt(req.params.id);
+      if (isNaN(coordinatorId)) {
+        return res.status(400).json({ message: "Некоректний ID координатора" });
+      }
+      
+      const projects = await storage.getProjectsByCoordinatorId(coordinatorId);
+      res.json(projects);
+    } catch (error) {
+      next(error);
+    }
+  });
+  
   // Get project by ID
   app.get("/api/projects/:id", async (req, res, next) => {
     try {
