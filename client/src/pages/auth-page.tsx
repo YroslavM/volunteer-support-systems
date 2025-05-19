@@ -177,17 +177,11 @@ export default function AuthPage() {
         // Покращене відображення помилок
         const errorMessage = error instanceof Error ? error.message : 'Помилка реєстрації';
         
-        // Імпортуємо toast зі сторінки, якщо доступно
-        const { toast } = window as any;
-        if (typeof toast === 'function') {
-          toast({
-            title: "Помилка реєстрації",
-            description: errorMessage,
-            variant: "destructive"
-          });
-        } else {
-          alert(errorMessage);
-        }
+        toast({
+          title: "Помилка реєстрації",
+          description: errorMessage,
+          variant: "destructive"
+        });
       } finally {
         setIsRegistering(false);
       }
