@@ -158,11 +158,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
         } else {
           // Якщо немає записів в MemStorage, спробуємо отримати з бази даних
           try {
-            const dbModerations = await db
-              .select()
-              .from(projectModerations)
-              .where(eq(projectModerations.projectId, project.id))
-              .orderBy(desc(projectModerations.createdAt));
+            const { rows: dbModerations } = await db.pool.query(`
+              SELECT id, project_id, moderator_id, status, comment, created_at 
+              FROM project_moderations 
+              WHERE project_id = $1 
+              ORDER BY created_at DESC
+            `, [project.id]);
               
             if (dbModerations.length > 0) {
               // Якщо знайдено записи в базі даних, використовуємо останній за часом
@@ -1180,12 +1181,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
         
         // Зберігаємо модерацію також у базі даних SQL для довгострокового збереження
         try {
-          await db.insert(projectModerations).values({
-            projectId,
-            moderatorId: getUserId(req),
-            status,
-            comment: comment || null,
-          });
+          await db.pool.query(`
+            INSERT INTO project_moderations 
+            (project_id, moderator_id, status, comment, created_at) 
+            VALUES 
+            ($1, $2, $3, $4, $5)
+          `, [
+            projectId, 
+            getUserId(req), 
+            status, 
+            comment || null, 
+            new Date()
+          ]);
           console.log(`Додано модерацію проекту ${projectId} в базу даних зі статусом ${status}`);
         } catch (dbError) {
           console.error("Помилка при збереженні в базу даних:", dbError);
