@@ -298,12 +298,39 @@ export class DatabaseStorage implements IStorage {
     } catch (error) {
       console.error('Error creating project moderation:', error);
       // Якщо таблиця ще не створена, повертаємо об'єкт як ніби запис був створений
-      return {
-        id: Date.now(),
-        ...moderation,
-        createdAt: new Date(),
-        updatedAt: new Date()
-      };
+    }
+  }
+  
+  async getProjectsForModeration(): Promise<Project[]> {
+    try {
+      // Отримуємо всі проєкти
+      const allProjects = await db
+        .select()
+        .from(projects);
+      
+      // Для кожного проєкту перевіряємо останній статус модерації
+      const result: Project[] = [];
+      
+      for (const project of allProjects) {
+        // Отримуємо записи модерації для проєкту, сортовані за датою створення (новіші спочатку)
+        const moderations = await db
+          .select()
+          .from(projectModerations)
+          .where(eq(projectModerations.projectId, project.id))
+          .orderBy(desc(projectModerations.createdAt));
+        
+        // Якщо немає модерацій або останній статус "pending"/"rejected", додаємо до результату
+        if (moderations.length === 0 || 
+            moderations[0].status === "pending" || 
+            moderations[0].status === "rejected") {
+          result.push(project);
+        }
+      }
+      
+      return result;
+    } catch (error) {
+      console.error('Error getting projects for moderation:', error);
+      return [];
     }
   }
   
@@ -965,5 +992,5 @@ export class MemStorage implements IStorage {
   }
 }
 
-// Switch to MemStorage for development to avoid database connectivity issues
+// Використовуємо MemStorage для розробки
 export const storage = new MemStorage();
