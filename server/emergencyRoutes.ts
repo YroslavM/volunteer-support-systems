@@ -161,6 +161,20 @@ export function setupEmergencyRoutes(app: Express) {
     const donations = staticDonations.filter(d => d.projectId === projectId);
     res.json(donations);
   });
+  
+  // GET /api/projects/:id/applications - заявки на проєкт
+  app.get("/api/projects/:id/applications", (req, res) => {
+    const projectId = parseInt(req.params.id);
+    const applications = staticApplications.filter(a => a.projectId === projectId);
+    res.json(applications);
+  });
+  
+  // GET /api/projects/:id/tasks - задачі проєкту
+  app.get("/api/projects/:id/tasks", (req, res) => {
+    const projectId = parseInt(req.params.id);
+    const tasks = staticTasks.filter(t => t.projectId === projectId);
+    res.json(tasks);
+  });
 
   // Для всіх інших маршрутів, які не реалізовані
   app.all("/api/*", (req, res, next) => {
