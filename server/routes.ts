@@ -139,8 +139,67 @@ export async function registerRoutes(app: Express): Promise<Server> {
         offset: parsedQuery.offset !== undefined ? parsedQuery.offset : 0
       } : { limit: 20, offset: 0 };
       
-      const projects = await storage.getProjects(options);
-      res.json(projects);
+      // Отримуємо всі проєкти
+      const allProjects = await storage.getProjects(options);
+      
+      // Якщо користувач не автентифікований або не має спеціальних ролей,
+      // повертаємо тільки опубліковані проєкти (які пройшли модерацію)
+      if (!req.isAuthenticated() || !req.user) {
+        // Для неавторизованих користувачів показуємо лише проєкти, схвалені модераторами
+        const approvedProjects = [];
+        
+        for (const project of allProjects) {
+          const moderations = await storage.getProjectModerations(project.id);
+          if (moderations.length > 0 && moderations[0].status === "approved") {
+            approvedProjects.push(project);
+          }
+        }
+        
+        return res.json(approvedProjects);
+      }
+      
+      // Перевіряємо роль користувача
+      const userRole = getUserRole(req);
+      const userId = getUserId(req);
+      
+      // Модератори та адміни бачать всі проєкти
+      if (userRole === "moderator" || userRole === "admin") {
+        return res.json(allProjects);
+      }
+      
+      // Координатори бачать власні проєкти та опубліковані проєкти
+      if (userRole === "coordinator") {
+        const filteredProjects = [];
+        
+        for (const project of allProjects) {
+          // Додаємо власні проєкти координатора
+          if (project.coordinatorId === userId) {
+            filteredProjects.push(project);
+            continue;
+          }
+          
+          // Додаємо схвалені проєкти
+          const moderations = await storage.getProjectModerations(project.id);
+          if (moderations.length > 0 && moderations[0].status === "approved") {
+            filteredProjects.push(project);
+          }
+        }
+        
+        return res.json(filteredProjects);
+      }
+      
+      // Для всіх інших авторизованих користувачів (донори, волонтери)
+      // повертаємо тільки опубліковані проєкти
+      const approvedProjects = [];
+      
+      for (const project of allProjects) {
+        const moderations = await storage.getProjectModerations(project.id);
+        if (moderations.length > 0 && moderations[0].status === "approved") {
+          approvedProjects.push(project);
+        }
+      }
+      
+      res.json(approvedProjects);
     } catch (error) {
       next(error);
     }
