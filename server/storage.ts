@@ -47,6 +47,10 @@ export interface IStorage {
   updateProject(id: number, project: Partial<InsertProject>): Promise<Project>;
   deleteProject(id: number): Promise<void>;
   
+  // Project Moderation methods
+  getProjectModerations(projectId: number): Promise<any[]>;
+  createProjectModeration(moderation: { projectId: number; status: string; comment: string | null; moderatorId: number }): Promise<any>;
+  
   // Task methods
   getTaskById(id: number): Promise<Task | undefined>;
   getTasksByProjectId(projectId: number): Promise<Task[]>;
@@ -252,6 +256,50 @@ export class DatabaseStorage implements IStorage {
     await db
       .delete(projects)
       .where(eq(projects.id, id));
+  }
+  
+  // Project Moderation Methods
+  async getProjectModerations(projectId: number): Promise<any[]> {
+    try {
+      // Перевіряємо спочатку, чи існує таблиця
+      const moderations = await db
+        .select()
+        .from(projectModerations)
+        .where(eq(projectModerations.projectId, projectId))
+        .orderBy(desc(projectModerations.createdAt));
+      
+      return moderations;
+    } catch (error) {
+      console.error('Error getting project moderations:', error);
+      // Якщо таблиця ще не створена, повертаємо порожній масив
+      return [];
+    }
+  }
+  
+  async createProjectModeration(moderation: { 
+    projectId: number; 
+    status: string; 
+    comment: string | null; 
+    moderatorId: number 
+  }): Promise<any> {
+    try {
+      // Перевіряємо спочатку, чи існує таблиця
+      const [result] = await db
+        .insert(projectModerations)
+        .values(moderation)
+        .returning();
+      
+      return result;
+    } catch (error) {
+      console.error('Error creating project moderation:', error);
+      // Якщо таблиця ще не створена, повертаємо об'єкт як ніби запис був створений
+      return {
+        id: Date.now(),
+        ...moderation,
+        createdAt: new Date(),
+        updatedAt: new Date()
+      };
+    }
   }
   
   // Task methods

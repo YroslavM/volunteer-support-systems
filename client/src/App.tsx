@@ -15,6 +15,7 @@ import VolunteerDashboard from "@/pages/volunteer-dashboard";
 import CoordinatorDashboard from "@/pages/coordinator-dashboard";
 import DonorDashboard from "@/pages/donor-dashboard";
 import AdminDashboard from "@/pages/admin-dashboard";
+import ModeratorDashboard from "@/pages/moderator-dashboard";
 import ProfilePage from "@/pages/profile-page";
 import CreateProject from "@/pages/create-project";
 import AboutPage from "@/pages/about-page";
@@ -49,6 +50,9 @@ function Router() {
       </Route>
       <Route path="/dashboard/admin">
         <ProtectedRoute component={AdminDashboard} roles={["admin"]} />
+      </Route>
+      <Route path="/dashboard/moderator">
+        <ProtectedRoute component={ModeratorDashboard} roles={["moderator", "admin"]} />
       </Route>
       <Route path="/profile">
         <ProtectedRoute component={ProfilePage} />
