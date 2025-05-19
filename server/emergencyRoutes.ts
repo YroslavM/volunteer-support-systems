@@ -216,6 +216,54 @@ export function setupEmergencyRoutes(app: Express) {
     
     res.status(200).json({ message: "Проєкт успішно видалено" });
   });
+  
+  // Функція для створення нового унікального ID
+  function getNextId(array: any[]): number {
+    const maxId = array.reduce((max, item) => Math.max(max, item.id), 0);
+    return maxId + 1;
+  }
+  
+  // POST /api/projects/with-image - створення проєкту з зображенням
+  app.post("/api/projects/with-image", (req, res) => {
+    try {
+      // В аварійному режимі ми не обробляємо зображення, але імітуємо успішне завантаження
+      const projectData = req.body;
+      
+      // Якщо немає тіла запиту
+      if (!projectData) {
+        return res.status(400).json({ message: "Відсутні дані проєкту" });
+      }
+      
+      // Генеруємо новий ID для проєкту
+      const newProjectId = getNextId(staticProjects);
+      
+      // Створюємо новий проєкт
+      const newProject = {
+        id: newProjectId,
+        name: projectData.name || "Новий проєкт",
+        description: projectData.description || "Опис проєкту",
+        targetAmount: projectData.targetAmount || 10000,
+        collectedAmount: 0,
+        imageUrl: "/uploads/placeholder.jpg", // Імітація шляху до зображення
+        status: "funding", // Початковий статус - збір коштів
+        coordinatorId: req.user?.id || 6, // За замовчуванням використовуємо ID = 6
+        createdAt: new Date(),
+        updatedAt: new Date(),
+        bankDetails: projectData.bankDetails || null,
+        location: projectData.location || "Україна",
+        startDate: projectData.startDate ? new Date(projectData.startDate) : new Date(),
+        endDate: projectData.endDate ? new Date(projectData.endDate) : new Date(Date.now() + 90 * 24 * 60 * 60 * 1000) // +90 днів
+      };
+      
+      // Додаємо проєкт до списку
+      staticProjects.push(newProject);
+      
+      res.status(201).json(newProject);
+    } catch (error) {
+      console.error("Помилка при створенні проєкту:", error);
+      res.status(500).json({ message: "Внутрішня помилка сервера" });
+    }
+  });
 
   // Для всіх інших маршрутів, які не реалізовані
   app.all("/api/*", (req, res, next) => {
