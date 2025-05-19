@@ -38,13 +38,8 @@ app.use((req, res, next) => {
 });
 
 (async () => {
-  // Temporarily disable database seeding to allow server to start
-  // try {
-  //   await seedDatabase();
-  // } catch (error) {
-  //   console.error("Error seeding database:", error);
-  // }
-  console.log("Database seeding skipped.");
+  // Запуск без спроби ініціалізації бази даних
+  console.log("Database seeding completely disabled.");
   
   const server = await registerRoutes(app);
 

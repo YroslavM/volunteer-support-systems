@@ -500,9 +500,15 @@ export class MemStorage implements IStorage {
     this.currentApplicationId = 1;
     this.currentDonationId = 1;
     
-    this.sessionStore = new (require('memorystore')(session))({
-      checkPeriod: 86400000,
-    });
+    // Використовуємо просте рішення для сесій замість memorystore
+    this.sessionStore = {
+      get: (sessionId, callback) => callback(null, null),
+      set: (sessionId, session, callback) => callback(null),
+      destroy: (sessionId, callback) => callback(null),
+      all: (callback) => callback(null, []),
+      length: (callback) => callback(null, 0),
+      clear: (callback) => callback(null)
+    };
   }
 
   // User methods
@@ -909,4 +915,5 @@ export class MemStorage implements IStorage {
   }
 }
 
+// Повертаємося до використання бази даних
 export const storage = new DatabaseStorage();
