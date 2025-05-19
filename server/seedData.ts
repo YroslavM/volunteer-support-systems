@@ -30,12 +30,12 @@ export async function seedDatabase() {
       email: "moderator@example.com",
       username: "moderator",
       password: "$2b$10$iuiwkSOomtYOpVVgWLUBtOBa.1yWCVn0EnSA8EEMN0dTMK/5SPgXK", // password: 123456
-      role: "moderator",
+      role: "admin", // Using admin role since moderator role is not available in database
       firstName: "Модератор",
       lastName: "Проєктів",
       isVerified: true
     });
-    console.log("Moderator user created");
+    console.log("Moderator user created (with admin role)");
   }
   
   if (!adminExists) {

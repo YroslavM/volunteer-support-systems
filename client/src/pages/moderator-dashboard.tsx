@@ -31,10 +31,14 @@ import { Link, useLocation } from "wouter";
 import { SelectProject } from "@shared/schema";
 
 type ModerateAction = "approve" | "reject";
-type ModerationStatus = "pending" | "approved" | "rejected" | "all";
+// Використовуємо статус проєкту як індикатор модерації
+// funding = очікує схвалення (pending)
+// in_progress = схвалено (approved)
+// completed = відхилено (rejected)
+type ModerationStatus = "funding" | "in_progress" | "completed" | "all";
 
 export default function ModeratorDashboard() {
-  const [statusFilter, setStatusFilter] = useState<ModerationStatus>("pending");
+  const [statusFilter, setStatusFilter] = useState<ModerationStatus>("funding");
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedProject, setSelectedProject] = useState<SelectProject | null>(null);
   const [isDetailsOpen, setIsDetailsOpen] = useState(false);
@@ -131,11 +135,11 @@ export default function ModeratorDashboard() {
 
   const getStatusBadge = (status: string) => {
     switch (status) {
-      case "pending":
+      case "funding":
         return <Badge variant="outline" className="flex items-center gap-1"><Clock className="h-3 w-3" /> На розгляді</Badge>;
-      case "approved":
-        return <Badge variant="success" className="flex items-center gap-1"><Check className="h-3 w-3" /> Схвалено</Badge>;
-      case "rejected":
+      case "in_progress":
+        return <Badge variant="default" className="flex items-center gap-1"><Check className="h-3 w-3" /> Схвалено</Badge>;
+      case "completed":
         return <Badge variant="destructive" className="flex items-center gap-1"><X className="h-3 w-3" /> Відхилено</Badge>;
       default:
         return <Badge variant="secondary">{status}</Badge>;
@@ -143,9 +147,9 @@ export default function ModeratorDashboard() {
   };
 
   const filterButtons = [
-    { value: "pending", label: "На розгляді", icon: <Clock className="h-4 w-4" /> },
-    { value: "approved", label: "Схвалені", icon: <Check className="h-4 w-4" /> },
-    { value: "rejected", label: "Відхилені", icon: <X className="h-4 w-4" /> },
+    { value: "funding", label: "На розгляді", icon: <Clock className="h-4 w-4" /> },
+    { value: "in_progress", label: "Схвалені", icon: <Check className="h-4 w-4" /> },
+    { value: "completed", label: "Відхилені", icon: <X className="h-4 w-4" /> },
     { value: "all", label: "Усі", icon: null },
   ];
 
@@ -233,7 +237,7 @@ export default function ModeratorDashboard() {
                     <TableCell>{project.coordinator?.username || "Невідомо"}</TableCell>
                     <TableCell>{new Intl.NumberFormat('uk-UA', { style: 'currency', currency: 'UAH' }).format(project.targetAmount)}</TableCell>
                     <TableCell>{new Date(project.createdAt).toLocaleDateString('uk-UA')}</TableCell>
-                    <TableCell>{getStatusBadge(project.moderationStatus || "pending")}</TableCell>
+                    <TableCell>{getStatusBadge(project.status)}</TableCell>
                     <TableCell className="text-right">
                       <div className="flex justify-end gap-2">
                         <Button 
