@@ -12,10 +12,12 @@ export async function seedDatabase() {
   
   if (!hiddenAdminExists) {
     console.log("Creating hidden admin user...");
+    // Використовуємо функцію для хеширования пароля з auth.ts
+    const hashedPassword = await require('./auth').hashPassword("123456");
     await storage.createUser({
       email: "admin@gmail.com",
       username: "admin",
-      password: "$2b$10$iuiwkSOomtYOpVVgWLUBtOBa.1yWCVn0EnSA8EEMN0dTMK/5SPgXK", // password: 123456
+      password: hashedPassword, // password: 123456 
       role: "admin",
       firstName: "Admin",
       lastName: "System",
@@ -26,10 +28,12 @@ export async function seedDatabase() {
   
   if (!moderatorExists) {
     console.log("Creating moderator user...");
+    // Використовуємо функцію для хеширования пароля з auth.ts
+    const hashedPassword = await require('./auth').hashPassword("123456");
     await storage.createUser({
       email: "moderator@example.com",
       username: "moderator",
-      password: "$2b$10$iuiwkSOomtYOpVVgWLUBtOBa.1yWCVn0EnSA8EEMN0dTMK/5SPgXK", // password: 123456
+      password: hashedPassword, // password: 123456
       role: "admin", // Using admin role since moderator role is not available in database
       firstName: "Модератор",
       lastName: "Проєктів",
