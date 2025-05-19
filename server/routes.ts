@@ -96,25 +96,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Project Routes
   // =========================
   
-  // Get all projects for moderation (повинно бути перед GET /api/projects/:id)
+  // Get all projects for moderation
   app.get("/api/projects/moderation", isAuthenticated, isModeratorMiddleware, async (req, res, next) => {
     try {
-      const querySchema = z.object({
-        status: z.enum(projectStatusEnum.enumValues).optional(),
-        search: z.string().optional(),
-        limit: z.coerce.number().optional(),
-        offset: z.coerce.number().optional(),
-      }).optional();
-      
-      const parsedQuery = querySchema.parse(req.query);
-      const options = parsedQuery ? {
-        status: parsedQuery.status,
-        search: parsedQuery.search,
-        limit: parsedQuery.limit !== undefined ? parsedQuery.limit : 20,
-        offset: parsedQuery.offset !== undefined ? parsedQuery.offset : 0
-      } : { limit: 20, offset: 0 };
-      
-      const projects = await storage.getProjects(options);
+      const projects = await storage.getProjects();
       res.json(projects);
     } catch (error) {
       next(error);
@@ -139,43 +124,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
         offset: parsedQuery.offset !== undefined ? parsedQuery.offset : 0
       } : { limit: 20, offset: 0 };
       
-      // Визначаємо, хто зробив запит
-      const isAdmin = req.isAuthenticated() && getUserRole(req) === 'admin';
-      const isMod = req.isAuthenticated() && isModerator(req);
-      const isCoordinator = req.isAuthenticated() && getUserRole(req) === 'coordinator';
-      
-      let projects;
-      
-      // Якщо це адміністратор або модератор - показуємо всі проєкти
-      if (isAdmin || isMod) {
-        projects = await storage.getProjects(options);
-      }
-      // Якщо це координатор - показуємо всі затверджені проєкти + його власні проєкти
-      else if (isCoordinator) {
-        // Отримуємо всі затверджені проєкти
-        const approvedProjects = await storage.getProjects({
-          ...options,
-          status: "in_progress"
-        });
-        
-        // Отримуємо всі проєкти координатора
-        const coordinatorProjects = await storage.getProjectsByCoordinatorId(getUserId(req));
-        
-        // Об'єднуємо два списки, видаляючи дублікати
-        const coordinatorProjectIds = new Set(coordinatorProjects.map(p => p.id));
-        projects = [
-          ...coordinatorProjects,
-          ...approvedProjects.filter(p => !coordinatorProjectIds.has(p.id))
-        ];
-      }
-      // Для всіх інших користувачів (волонтери, донори, неавторизовані) - показуємо тільки затверджені проєкти
-      else {
-        projects = await storage.getProjects({
-          ...options,
-          status: "in_progress"
-        });
+      // Для волонтерів та неавторизованих користувачів показуємо тільки затверджені проєкти
+      if (!req.isAuthenticated() || (getUserRole(req) !== 'admin' && getUserRole(req) !== 'coordinator' && !isModerator(req))) {
+        options.status = "in_progress";
       }
       
+      const projects = await storage.getProjects(options);
       res.json(projects);
     } catch (error) {
       next(error);
