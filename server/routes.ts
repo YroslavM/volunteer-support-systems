@@ -840,11 +840,36 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // User Routes
   // =========================
   
-  // Get all users (admin only)
+  // Get all users (admin only) - тимчасове статичне рішення
   app.get("/api/users", hasRole(["admin"]), async (req, res, next) => {
     try {
-      const users = await storage.getAllUsers();
-      res.json(users);
+      // Повертаємо статичні дані
+      res.json([
+        {
+          id: 1,
+          username: "admin",
+          email: "admin@gmail.com",
+          role: "admin",
+          firstName: "Admin",
+          lastName: "User",
+          isVerified: true,
+          isBlocked: false,
+          createdAt: new Date(),
+          verificationToken: null
+        },
+        {
+          id: 6,
+          username: "Yaroslav3",
+          email: "ipz22-3@kpi.ua",
+          role: "coordinator",
+          firstName: "Yaroslav",
+          lastName: "Korotetskyi",
+          isVerified: true,
+          isBlocked: false,
+          createdAt: new Date(),
+          verificationToken: null
+        }
+      ]);
     } catch (error) {
       next(error);
     }
