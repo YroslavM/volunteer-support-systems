@@ -4,6 +4,7 @@ import { useTranslation } from "react-i18next";
 import { z } from "zod";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { useToast } from "@/hooks/use-toast";
 // Temporarily commenting out auth for debugging
 // import { useAuth } from "@/hooks/use-auth";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -67,6 +68,7 @@ type RegisterFormValues = z.infer<typeof registerSchema>;
 export default function AuthPage() {
   const { t } = useTranslation();
   const [location, navigate] = useLocation();
+  const { toast } = useToast();
   // Mock auth data for debugging
   const user = null;
   const [isLoggingIn, setIsLoggingIn] = useState(false);
@@ -115,7 +117,13 @@ export default function AuthPage() {
         }
       } catch (error) {
         console.error('Login error:', error);
-        alert(error instanceof Error ? error.message : 'Помилка входу');
+        const errorMessage = error instanceof Error ? error.message : 'Помилка входу';
+        
+        toast({
+          title: "Помилка входу",
+          description: errorMessage,
+          variant: "destructive"
+        });
       } finally {
         setIsLoggingIn(false);
       }
@@ -124,27 +132,65 @@ export default function AuthPage() {
   };
   
   const registerMutation = {
-    mutate: (data: any) => {
+    mutate: async (data: any) => {
       console.log('Register mutation called', data);
       setIsRegistering(true);
       
-      // Simulate network delay
-      setTimeout(() => {
-        // Store auth info in sessionStorage
-        sessionStorage.setItem('isLoggedIn', 'true');
-        sessionStorage.setItem('userRole', data.role);
-        sessionStorage.setItem('username', data.username || data.email.split('@')[0]);
-        sessionStorage.setItem('userId', '1'); // Mock user ID
+      try {
+        // Реальний запит до API сервера для реєстрації
+        const response = await fetch('/api/register', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify(data),
+          credentials: 'include'
+        });
         
-        // Redirect to the appropriate dashboard based on user role
-        if (data.role === 'volunteer') {
-          window.location.href = '/dashboard/volunteer';
-        } else if (data.role === 'coordinator') {
-          window.location.href = '/dashboard/coordinator';
-        } else if (data.role === 'donor') {
-          window.location.href = '/dashboard/donor';
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(errorData.message || 'Помилка реєстрації');
         }
-      }, 1000); // 1 second delay to show loading state
+        
+        // Отримуємо дані користувача з відповіді сервера
+        const userData = await response.json();
+        console.log('Successful registration with user data:', userData);
+        
+        // Зберігаємо дані користувача в sessionStorage
+        sessionStorage.setItem('isLoggedIn', 'true');
+        sessionStorage.setItem('userRole', userData.role);
+        sessionStorage.setItem('username', userData.username);
+        sessionStorage.setItem('userId', userData.id.toString());
+        
+        // Перенаправляємо на відповідну панель в залежності від ролі
+        if (userData.role === 'volunteer') {
+          window.location.href = '/dashboard/volunteer';
+        } else if (userData.role === 'coordinator') {
+          window.location.href = '/dashboard/coordinator';
+        } else if (userData.role === 'donor') {
+          window.location.href = '/dashboard/donor';
+        } else if (userData.role === 'admin') {
+          window.location.href = '/dashboard/admin';
+        }
+      } catch (error) {
+        console.error('Registration error:', error);
+        // Покращене відображення помилок
+        const errorMessage = error instanceof Error ? error.message : 'Помилка реєстрації';
+        
+        // Імпортуємо toast зі сторінки, якщо доступно
+        const { toast } = window as any;
+        if (typeof toast === 'function') {
+          toast({
+            title: "Помилка реєстрації",
+            description: errorMessage,
+            variant: "destructive"
+          });
+        } else {
+          alert(errorMessage);
+        }
+      } finally {
+        setIsRegistering(false);
+      }
     },
     isPending: isRegistering
   };
