@@ -73,33 +73,52 @@ export default function AuthPage() {
   const [isRegistering, setIsRegistering] = useState(false);
   
   const loginMutation = {
-    mutate: (credentials: any) => {
+    mutate: async (credentials: any) => {
       console.log('Login mutation called', credentials);
       setIsLoggingIn(true);
       
-      // Simulate network delay
-      setTimeout(() => {
-        // Store auth info in sessionStorage
-        const userRole = credentials.email.includes('volunteer') 
-          ? 'volunteer' 
-          : credentials.email.includes('coordinator') 
-            ? 'coordinator' 
-            : 'donor';
-            
-        sessionStorage.setItem('isLoggedIn', 'true');
-        sessionStorage.setItem('userRole', userRole);
-        sessionStorage.setItem('username', credentials.email.split('@')[0]);
-        sessionStorage.setItem('userId', '1'); // Mock user ID
+      try {
+        // Реальний запит до API сервера для автентифікації
+        const response = await fetch('/api/login', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify(credentials),
+          credentials: 'include'
+        });
         
-        // Redirect to the appropriate dashboard
-        if (userRole === 'volunteer') {
-          window.location.href = '/dashboard/volunteer';
-        } else if (userRole === 'coordinator') {
-          window.location.href = '/dashboard/coordinator';
-        } else {
-          window.location.href = '/dashboard/donor';
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(errorData.message || 'Помилка входу');
         }
-      }, 1000); // 1 second delay to show loading state
+        
+        // Отримуємо дані користувача з відповіді сервера
+        const userData = await response.json();
+        console.log('Successful login with user data:', userData);
+        
+        // Зберігаємо дані користувача в sessionStorage
+        sessionStorage.setItem('isLoggedIn', 'true');
+        sessionStorage.setItem('userRole', userData.role);
+        sessionStorage.setItem('username', userData.username);
+        sessionStorage.setItem('userId', userData.id.toString());
+        
+        // Перенаправляємо на відповідну панель
+        if (userData.role === 'volunteer') {
+          window.location.href = '/dashboard/volunteer';
+        } else if (userData.role === 'coordinator') {
+          window.location.href = '/dashboard/coordinator';
+        } else if (userData.role === 'donor') {
+          window.location.href = '/dashboard/donor';
+        } else if (userData.role === 'admin') {
+          window.location.href = '/dashboard/admin';
+        }
+      } catch (error) {
+        console.error('Login error:', error);
+        alert(error instanceof Error ? error.message : 'Помилка входу');
+      } finally {
+        setIsLoggingIn(false);
+      }
     },
     isPending: isLoggingIn
   };
