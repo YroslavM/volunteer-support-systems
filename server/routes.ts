@@ -68,6 +68,23 @@ function hasRole(roles: string[]) {
   };
 }
 
+// Helper function to check if user is a moderator (using admin role)
+function isModerator(req: Request): boolean {
+  // We're using admin role for moderators as we don't have a separate moderator role in the user role enum
+  if (DEV_MODE) {
+    return req.body.userRole === "admin" || req.user?.role === "admin";
+  }
+  return req.user?.role === "admin";
+}
+
+// Middleware to check if user is a moderator
+function isModeratorMiddleware(req: Request, res: Response, next: Function) {
+  if (DEV_MODE || isModerator(req)) {
+    return next();
+  }
+  return res.status(403).json({ message: "Недостатньо прав для модерації" });
+}
+
 export async function registerRoutes(app: Express): Promise<Server> {
   // Setup authentication
   setupAuth(app);
@@ -653,6 +670,70 @@ export async function registerRoutes(app: Express): Promise<Server> {
       await storage.updateProjectCollectedAmount(donationData.projectId, project.collectedAmount + donationData.amount);
       
       res.status(201).json(donation);
+    } catch (error) {
+      next(error);
+    }
+  });
+
+  // =========================
+  // Moderator Routes
+  // =========================
+  
+  // Get projects for moderation
+  app.get("/api/projects/moderation", isAuthenticated, isModeratorMiddleware, async (req, res, next) => {
+    try {
+      const querySchema = z.object({
+        status: z.enum(projectStatusEnum.enumValues).optional(),
+        search: z.string().optional(),
+        limit: z.coerce.number().optional(),
+        offset: z.coerce.number().optional(),
+      }).optional();
+      
+      const parsedQuery = querySchema.parse(req.query);
+      const options = parsedQuery ? {
+        status: parsedQuery.status,
+        search: parsedQuery.search,
+        limit: parsedQuery.limit !== undefined ? parsedQuery.limit : 20,
+        offset: parsedQuery.offset !== undefined ? parsedQuery.offset : 0
+      } : { limit: 20, offset: 0 };
+      
+      const projects = await storage.getProjects(options);
+      res.json(projects);
+    } catch (error) {
+      next(error);
+    }
+  });
+  
+  // Moderate a project
+  app.post("/api/projects/:id/moderate", isAuthenticated, isModeratorMiddleware, async (req, res, next) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ message: "Некоректний ID проєкту" });
+      }
+      
+      const { status, comment } = z.object({
+        status: z.enum(["in_progress", "completed"]),
+        comment: z.string().nullable(),
+      }).parse(req.body);
+      
+      const project = await storage.getProjectById(id);
+      if (!project) {
+        return res.status(404).json({ message: "Проєкт не знайдено" });
+      }
+      
+      // Update project status based on moderation decision
+      const updatedProject = await storage.updateProjectStatus(id, status);
+      
+      // In a real implementation, we'd also store the moderation comment
+      // and associate it with the project for historical tracking
+      
+      res.json({
+        project: updatedProject,
+        message: status === "in_progress" 
+          ? "Проєкт успішно схвалено" 
+          : "Проєкт відхилено"
+      });
     } catch (error) {
       next(error);
     }
