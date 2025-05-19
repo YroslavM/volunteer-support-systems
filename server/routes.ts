@@ -19,6 +19,8 @@ import {
   projects,
   projectModerations
 } from "@shared/schema";
+import { db } from "./db";
+import { eq, desc } from "drizzle-orm";
 
 // Режим тестового середовища (для демонстрації)
 const DEV_MODE = process.env.NODE_ENV === 'development';
@@ -147,13 +149,33 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Для кожного проекту отримуємо останній статус модерації
       for (const project of allProjects) {
+        // Спробуємо отримати статус модерації з MemStorage
         const moderations = await storage.getProjectModerations(project.id);
+        
         if (moderations.length > 0) {
           // Модерації сортуються за датою створення (найновіші спочатку)
           projectModerationStatus.set(project.id, moderations[0].status);
         } else {
-          // Якщо немає записів модерації, встановлюємо статус "pending"
-          projectModerationStatus.set(project.id, "pending");
+          // Якщо немає записів в MemStorage, спробуємо отримати з бази даних
+          try {
+            const dbModerations = await db
+              .select()
+              .from(projectModerations)
+              .where(eq(projectModerations.projectId, project.id))
+              .orderBy(desc(projectModerations.createdAt));
+              
+            if (dbModerations.length > 0) {
+              // Якщо знайдено записи в базі даних, використовуємо останній за часом
+              projectModerationStatus.set(project.id, dbModerations[0].status);
+            } else {
+              // Якщо немає записів ні в пам'яті, ні в базі даних, встановлюємо статус "pending"
+              projectModerationStatus.set(project.id, "pending");
+            }
+          } catch (dbError) {
+            console.error(`Помилка отримання модерацій для проекту ${project.id}:`, dbError);
+            // При помилці встановлюємо статус "pending"
+            projectModerationStatus.set(project.id, "pending");
+          }
         }
       }
       
@@ -1155,6 +1177,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (status === "approved") {
         // В реальній системі тут ми б оновили поле isPublished,
         // але оскільки ми не змінюємо схему, будемо вважати, що проект опубліковано
+        
+        // Зберігаємо модерацію також у базі даних SQL для довгострокового збереження
+        try {
+          await db.insert(projectModerations).values({
+            projectId,
+            moderatorId: getUserId(req),
+            status,
+            comment: comment || null,
+          });
+          console.log(`Додано модерацію проекту ${projectId} в базу даних зі статусом ${status}`);
+        } catch (dbError) {
+          console.error("Помилка при збереженні в базу даних:", dbError);
+          // Продовжуємо, навіть якщо вставка не вдалася
+        }
       }
       
       res.json(moderation);
