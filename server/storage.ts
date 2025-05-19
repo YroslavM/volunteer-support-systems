@@ -940,6 +940,29 @@ export class MemStorage implements IStorage {
     this.projectModerations.set(id, newModeration);
     return newModeration;
   }
+  
+  async getProjectsForModeration(): Promise<Project[]> {
+    // Отримуємо всі проекти
+    const allProjects = Array.from(this.projects.values());
+    
+    // Створюємо Map для останніх статусів модерації кожного проекту
+    const lastModerationStatusMap = new Map<number, string>();
+    
+    // Заповнюємо Map останніми статусами модерації
+    Array.from(this.projectModerations.values())
+      .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+      .forEach(moderation => {
+        if (!lastModerationStatusMap.has(moderation.projectId)) {
+          lastModerationStatusMap.set(moderation.projectId, moderation.status);
+        }
+      });
+    
+    // Отримуємо проекти, які потребують модерації (статус "pending" або немає запису модерації)
+    return allProjects.filter(project => {
+      const status = lastModerationStatusMap.get(project.id);
+      return status === "pending" || status === "rejected" || !status;
+    });
+  }
 }
 
 // Switch to MemStorage for development to avoid database connectivity issues

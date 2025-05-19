@@ -175,11 +175,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Використовуємо функцію для отримання ID координатора
       const coordinatorId = getUserId(req);
       
+      // Створюємо проект
       const project = await storage.createProject({
         ...data,
         coordinatorId,
         status: "funding", // Set initial status
         collectedAmount: 0, // Set initial collected amount
+      });
+      
+      // Автоматично створюємо запис модерації зі статусом "pending"
+      await storage.createProjectModeration({
+        projectId: project.id,
+        status: "pending", 
+        comment: null,
+        moderatorId: 0 // 0 означає автоматичну модерацію (система)
       });
       
       res.status(201).json(project);
@@ -217,6 +226,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
           coordinatorId: coordinatorId,
           status: "funding",
           collectedAmount: 0
+        });
+        
+        // Автоматично створюємо запис модерації зі статусом "pending"
+        await storage.createProjectModeration({
+          projectId: project.id,
+          status: "pending", 
+          comment: null,
+          moderatorId: 0 // 0 означає автоматичну модерацію (система)
         });
         
         res.status(201).json(project);
