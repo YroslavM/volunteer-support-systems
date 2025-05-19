@@ -175,6 +175,47 @@ export function setupEmergencyRoutes(app: Express) {
     const tasks = staticTasks.filter(t => t.projectId === projectId);
     res.json(tasks);
   });
+  
+  // DELETE /api/projects/:id - видалення проєкту
+  app.delete("/api/projects/:id", (req, res) => {
+    const id = parseInt(req.params.id);
+    
+    // Перевіряємо чи існує проєкт з таким ID
+    const projectIndex = staticProjects.findIndex(p => p.id === id);
+    if (projectIndex === -1) {
+      return res.status(404).json({ message: "Проєкт не знайдено" });
+    }
+    
+    // Видаляємо проєкт з масиву (в реальній БД це було б постійно)
+    staticProjects.splice(projectIndex, 1);
+    
+    // Видаляємо пов'язані записи (задачі, заявки, пожертви)
+    const tasksToRemove = staticTasks.filter(t => t.projectId === id);
+    tasksToRemove.forEach(task => {
+      const taskIndex = staticTasks.findIndex(t => t.id === task.id);
+      if (taskIndex !== -1) {
+        staticTasks.splice(taskIndex, 1);
+      }
+    });
+    
+    const applicationsToRemove = staticApplications.filter(a => a.projectId === id);
+    applicationsToRemove.forEach(app => {
+      const appIndex = staticApplications.findIndex(a => a.id === app.id);
+      if (appIndex !== -1) {
+        staticApplications.splice(appIndex, 1);
+      }
+    });
+    
+    const donationsToRemove = staticDonations.filter(d => d.projectId === id);
+    donationsToRemove.forEach(donation => {
+      const donationIndex = staticDonations.findIndex(d => d.id === donation.id);
+      if (donationIndex !== -1) {
+        staticDonations.splice(donationIndex, 1);
+      }
+    });
+    
+    res.status(200).json({ message: "Проєкт успішно видалено" });
+  });
 
   // Для всіх інших маршрутів, які не реалізовані
   app.all("/api/*", (req, res, next) => {
