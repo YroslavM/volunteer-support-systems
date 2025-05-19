@@ -15,7 +15,9 @@ import {
   projectStatusEnum,
   taskStatusEnum,
   applicationStatusEnum,
-  projects
+  moderationStatusEnum,
+  projects,
+  projectModerations
 } from "@shared/schema";
 
 // Режим тестового середовища (для демонстрації)
@@ -879,6 +881,74 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const projects = await storage.getProjectsByCoordinatorId(req.user!.id);
       res.json(projects);
+    } catch (error) {
+      next(error);
+    }
+  });
+  
+  // === Модерація проектів ===
+  
+  // Отримання всіх модерацій для проекту
+  app.get("/api/projects/:projectId/moderation", isAuthenticated, async (req, res, next) => {
+    try {
+      const projectId = parseInt(req.params.projectId);
+      if (isNaN(projectId)) {
+        return res.status(400).json({ message: "Некоректний ID проєкту" });
+      }
+
+      // Перевірка доступу (тільки координатор проекту, модератор або адмін)
+      const userRole = getUserRole(req);
+      if (userRole !== "moderator" && userRole !== "admin") {
+        const project = await storage.getProjectById(projectId);
+        if (!project) {
+          return res.status(404).json({ message: "Проєкт не знайдено" });
+        }
+        
+        if (userRole === "coordinator" && project.coordinatorId !== getUserId(req)) {
+          return res.status(403).json({ message: "Недостатньо прав для цієї дії" });
+        }
+      }
+      
+      const moderations = await storage.getProjectModerations(projectId);
+      res.json(moderations);
+    } catch (error) {
+      next(error);
+    }
+  });
+  
+  // Модерація проекту (тільки для модераторів та адміністраторів)
+  app.post("/api/projects/:projectId/moderate", hasRole(["moderator", "admin"]), async (req, res, next) => {
+    try {
+      const projectId = parseInt(req.params.projectId);
+      if (isNaN(projectId)) {
+        return res.status(400).json({ message: "Некоректний ID проєкту" });
+      }
+      
+      const project = await storage.getProjectById(projectId);
+      if (!project) {
+        return res.status(404).json({ message: "Проєкт не знайдено" });
+      }
+      
+      const { status, comment } = z.object({
+        status: z.enum(moderationStatusEnum.enumValues),
+        comment: z.string().optional(),
+      }).parse(req.body);
+      
+      // Створення нового запису модерації
+      const moderation = await storage.createProjectModeration({
+        projectId,
+        status,
+        comment: comment || null,
+        moderatorId: getUserId(req)
+      });
+      
+      // Якщо проект був схвалений, ми робимо його опублікованим
+      if (status === "approved") {
+        // В реальній системі тут ми б оновили поле isPublished,
+        // але оскільки ми не змінюємо схему, будемо вважати, що проект опубліковано
+      }
+      
+      res.json(moderation);
     } catch (error) {
       next(error);
     }

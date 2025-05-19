@@ -48,6 +48,17 @@ export const projects = pgTable("projects", {
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
 
+// Project Moderation table
+export const projectModerations = pgTable("project_moderations", {
+  id: serial("id").primaryKey(),
+  projectId: integer("project_id").references(() => projects.id).notNull(),
+  status: moderationStatusEnum("status").default('pending').notNull(),
+  comment: text("comment"),
+  moderatorId: integer("moderator_id").references(() => users.id),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
 // Tasks table
 export const tasks = pgTable("tasks", {
   id: serial("id").primaryKey(),
@@ -157,7 +168,14 @@ export const donationsRelations = relations(donations, ({ one }) => ({
 export const insertUserSchema = createInsertSchema(users).omit({ id: true, createdAt: true });
 export const selectUserSchema = createSelectSchema(users);
 
-export const insertProjectSchema = createInsertSchema(projects).omit({ id: true, createdAt: true, updatedAt: true, collectedAmount: true, status: true, coordinatorId: true });
+export const insertProjectSchema = createInsertSchema(projects).omit({ 
+  id: true, 
+  createdAt: true, 
+  updatedAt: true, 
+  collectedAmount: true, 
+  status: true, 
+  coordinatorId: true
+});
 export const selectProjectSchema = createSelectSchema(projects);
 
 export const insertTaskSchema = createInsertSchema(tasks).omit({ id: true, createdAt: true, updatedAt: true });
