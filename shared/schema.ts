@@ -4,10 +4,13 @@ import { z } from "zod";
 import { relations } from "drizzle-orm";
 
 // Enum for user roles
-export const userRoleEnum = pgEnum('user_role', ['volunteer', 'coordinator', 'donor', 'admin']);
+export const userRoleEnum = pgEnum('user_role', ['volunteer', 'coordinator', 'donor', 'admin', 'moderator']);
 
 // Enum for project status
 export const projectStatusEnum = pgEnum('project_status', ['funding', 'in_progress', 'completed']);
+
+// Enum for project moderation status
+export const moderationStatusEnum = pgEnum('moderation_status', ['pending', 'approved', 'rejected']);
 
 // Enum for task status
 export const taskStatusEnum = pgEnum('task_status', ['pending', 'in_progress', 'completed']);
