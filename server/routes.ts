@@ -1176,11 +1176,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
       
       // Якщо проект був схвалений, ми робимо його опублікованим
-      if (status === "approved") {
+      if (status === "approved" || status === "rejected") {
         // В реальній системі тут ми б оновили поле isPublished,
         // але оскільки ми не змінюємо схему, будемо вважати, що проект опубліковано
         
-        // Зберігаємо модерацію також у базі даних SQL для довгострокового збереження
+        // Видаляємо старі записи модерації з бази даних для цього проекту
+        try {
+          await pool.query(`
+            DELETE FROM project_moderations 
+            WHERE project_id = $1
+          `, [projectId]);
+          
+          console.log(`Видалено попередні модерації проекту ${projectId} з бази даних`);
+        } catch (deleteError) {
+          console.error("Помилка при видаленні старих модерацій:", deleteError);
+        }
+        
+        // Зберігаємо нову модерацію в базі даних SQL для довгострокового збереження
         try {
           await pool.query(`
             INSERT INTO project_moderations 
