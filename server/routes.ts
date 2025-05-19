@@ -96,10 +96,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Project Routes
   // =========================
   
-  // Get all projects for moderation
+  // Get all projects for moderation (повинно бути перед GET /api/projects/:id)
   app.get("/api/projects/moderation", isAuthenticated, isModeratorMiddleware, async (req, res, next) => {
     try {
-      const projects = await storage.getProjects();
+      const querySchema = z.object({
+        status: z.enum(projectStatusEnum.enumValues).optional(),
+        search: z.string().optional(),
+        limit: z.coerce.number().optional(),
+        offset: z.coerce.number().optional(),
+      }).optional();
+      
+      const parsedQuery = querySchema.parse(req.query);
+      const options = parsedQuery ? {
+        status: parsedQuery.status,
+        search: parsedQuery.search,
+        limit: parsedQuery.limit !== undefined ? parsedQuery.limit : 20,
+        offset: parsedQuery.offset !== undefined ? parsedQuery.offset : 0
+      } : { limit: 20, offset: 0 };
+      
+      const projects = await storage.getProjects(options);
       res.json(projects);
     } catch (error) {
       next(error);
@@ -123,11 +138,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
         limit: parsedQuery.limit !== undefined ? parsedQuery.limit : 20,
         offset: parsedQuery.offset !== undefined ? parsedQuery.offset : 0
       } : { limit: 20, offset: 0 };
-      
-      // Для волонтерів та неавторизованих користувачів показуємо тільки затверджені проєкти
-      if (!req.isAuthenticated() || (getUserRole(req) !== 'admin' && getUserRole(req) !== 'coordinator' && !isModerator(req))) {
-        options.status = "in_progress";
-      }
       
       const projects = await storage.getProjects(options);
       res.json(projects);
