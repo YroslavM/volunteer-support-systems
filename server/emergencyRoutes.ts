@@ -181,6 +181,32 @@ export function setupEmergencyRoutes(app: Express) {
       // Додаємо проєкт до списку
       staticProjects.push(newProject);
       
+      // Створюємо пустий список задач для нового проєкту
+      staticTasks.push({
+        id: getNextId(staticTasks),
+        projectId: newProjectId,
+        title: "Нове завдання",
+        description: "Опис завдання",
+        status: "pending",
+        volunteerId: null,
+        createdAt: new Date(),
+        updatedAt: new Date()
+      });
+      
+      // Оновлюємо пов'язані дані, щоб вони вказували на новий проєкт
+      // Це гарантує, що всі зв'язані дані будуть працювати для нового проєкту
+      for (let i = 0; i < staticApplications.length; i++) {
+        if (staticApplications[i].projectId === 4) { // ID проєкту за замовчуванням в staticData
+          staticApplications[i].projectId = newProjectId;
+        }
+      }
+      
+      for (let i = 0; i < staticDonations.length; i++) {
+        if (staticDonations[i].projectId === 4) { // ID проєкту за замовчуванням в staticData
+          staticDonations[i].projectId = newProjectId;
+        }
+      }
+      
       res.status(201).json(newProject);
     } catch (error) {
       console.error("Помилка при створенні проєкту:", error);
