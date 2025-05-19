@@ -142,18 +142,28 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Отримуємо всі проєкти
       const allProjects = await storage.getProjects(options);
       
+      // Створюємо мапу всіх статусів модерації для кожного проекту
+      const projectModerationStatus = new Map<number, string>();
+      
+      // Для кожного проекту отримуємо останній статус модерації
+      for (const project of allProjects) {
+        const moderations = await storage.getProjectModerations(project.id);
+        if (moderations.length > 0) {
+          // Модерації сортуються за датою створення (найновіші спочатку)
+          projectModerationStatus.set(project.id, moderations[0].status);
+        } else {
+          // Якщо немає записів модерації, встановлюємо статус "pending"
+          projectModerationStatus.set(project.id, "pending");
+        }
+      }
+      
       // Якщо користувач не автентифікований або не має спеціальних ролей,
       // повертаємо тільки опубліковані проєкти (які пройшли модерацію)
       if (!req.isAuthenticated() || !req.user) {
         // Для неавторизованих користувачів показуємо лише проєкти, схвалені модераторами
-        const approvedProjects = [];
-        
-        for (const project of allProjects) {
-          const moderations = await storage.getProjectModerations(project.id);
-          if (moderations.length > 0 && moderations[0].status === "approved") {
-            approvedProjects.push(project);
-          }
-        }
+        const approvedProjects = allProjects.filter(project => 
+          projectModerationStatus.get(project.id) === "approved"
+        );
         
         return res.json(approvedProjects);
       }
@@ -169,35 +179,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Координатори бачать власні проєкти та опубліковані проєкти
       if (userRole === "coordinator") {
-        const filteredProjects = [];
-        
-        for (const project of allProjects) {
-          // Додаємо власні проєкти координатора
-          if (project.coordinatorId === userId) {
-            filteredProjects.push(project);
-            continue;
-          }
-          
-          // Додаємо схвалені проєкти
-          const moderations = await storage.getProjectModerations(project.id);
-          if (moderations.length > 0 && moderations[0].status === "approved") {
-            filteredProjects.push(project);
-          }
-        }
+        const filteredProjects = allProjects.filter(project => 
+          // Координатор бачить свої проєкти незалежно від статусу модерації
+          project.coordinatorId === userId || 
+          // Та проєкти інших координаторів, які були схвалені
+          projectModerationStatus.get(project.id) === "approved"
+        );
         
         return res.json(filteredProjects);
       }
       
       // Для всіх інших авторизованих користувачів (донори, волонтери)
       // повертаємо тільки опубліковані проєкти
-      const approvedProjects = [];
-      
-      for (const project of allProjects) {
-        const moderations = await storage.getProjectModerations(project.id);
-        if (moderations.length > 0 && moderations[0].status === "approved") {
-          approvedProjects.push(project);
-        }
-      }
+      const approvedProjects = allProjects.filter(project => 
+        projectModerationStatus.get(project.id) === "approved"
+      );
       
       res.json(approvedProjects);
     } catch (error) {
@@ -218,6 +214,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const project = await storage.getProjectById(id);
       if (!project) {
         return res.status(404).json({ message: "Проєкт не знайдено" });
+      }
+      
+      // Отримуємо статус модерації для проєкту
+      const moderations = await storage.getProjectModerations(id);
+      const moderationStatus = moderations.length > 0 ? moderations[0].status : "pending";
+      
+      // Якщо проєкт не опублікований (не має статусу "approved")
+      if (moderationStatus !== "approved") {
+        // Перевіряємо, чи користувач має право бачити неопублікований проєкт
+        if (!req.isAuthenticated() || !req.user) {
+          return res.status(403).json({ message: "У вас немає доступу до цього проєкту" });
+        }
+        
+        const userRole = getUserRole(req);
+        const userId = getUserId(req);
+        
+        // Тільки координатор проєкту, модератор чи адміністратор можуть бачити неопублікований проєкт
+        if (userRole !== "moderator" && userRole !== "admin" && project.coordinatorId !== userId) {
+          return res.status(403).json({ message: "У вас немає доступу до цього проєкту" });
+        }
       }
       
       res.json(project);
