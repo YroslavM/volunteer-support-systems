@@ -1,54 +1,54 @@
-import { Express } from "express";
-import { staticProjects, staticTasks, staticUsers, staticApplications, staticDonations, staticReports } from "./staticData";
-import { z } from "zod";
+import { Express, Request, Response } from "express";
+import { 
+  staticUsers, 
+  staticProjects, 
+  staticTasks, 
+  staticReports,
+  staticApplications,
+  staticDonations 
+} from "./staticData";
 
-// Функція для налаштування аварійних маршрутів, що використовують статичні дані
 export function setupEmergencyRoutes(app: Express) {
   console.log("ВАЖЛИВО: Запущено аварійні API маршрути з використанням статичних даних!");
-
-  // GET /api/projects - отримання списку проєктів
-  app.get("/api/projects", (req, res) => {
-    const querySchema = z.object({
-      status: z.string().optional(),
-      search: z.string().optional(),
-      limit: z.coerce.number().optional(),
-      offset: z.coerce.number().optional(),
-    }).optional();
+  
+  // GET /api/users - отримання списку користувачів
+  app.get("/api/users", (req, res) => {
+    // Не відправляємо паролі
+    const usersWithoutPasswords = staticUsers.map(user => {
+      const { password, ...userWithoutPassword } = user;
+      return userWithoutPassword;
+    });
     
-    const parsedQuery = querySchema.parse(req.query);
-    
-    // Фільтруємо проекти базуючись на ролі користувача
-    let filteredProjects = [...staticProjects];
-    
-    // Фільтрація за статусом, якщо він вказаний
-    if (parsedQuery?.status) {
-      filteredProjects = filteredProjects.filter(p => p.status === parsedQuery.status);
-    }
-    
-    // Фільтрація за пошуком, якщо він вказаний
-    if (parsedQuery?.search) {
-      const search = parsedQuery.search.toLowerCase();
-      filteredProjects = filteredProjects.filter(p => 
-        p.name.toLowerCase().includes(search) || 
-        p.description.toLowerCase().includes(search) ||
-        p.location.toLowerCase().includes(search)
-      );
-    }
-    
-    // Для волонтерів та донорів показуємо тільки проекти зі статусом "in_progress"
-    if (req.user && ["volunteer", "donor"].includes(req.user.role)) {
-      filteredProjects = filteredProjects.filter(p => p.status === "in_progress");
-    }
-    
-    // Пагінація
-    const limit = parsedQuery?.limit || 20;
-    const offset = parsedQuery?.offset || 0;
-    const paginatedProjects = filteredProjects.slice(offset, offset + limit);
-    
-    res.json(paginatedProjects);
+    res.json(usersWithoutPasswords);
   });
-
-  // GET /api/projects/:id - отримання даних конкретного проєкту
+  
+  // GET /api/user - отримання поточного користувача (симуляція авторизації)
+  app.get("/api/user", (req, res) => {
+    // В аварійному режимі автоматично повертаємо адміністратора
+    const { password, ...adminWithoutPassword } = staticUsers[0];
+    res.json(adminWithoutPassword);
+  });
+  
+  // GET /api/users/:id - отримання користувача за ID
+  app.get("/api/users/:id", (req, res) => {
+    const id = parseInt(req.params.id);
+    const user = staticUsers.find(u => u.id === id);
+    
+    if (!user) {
+      return res.status(404).json({ message: "Користувач не знайдений" });
+    }
+    
+    const { password, ...userWithoutPassword } = user;
+    res.json(userWithoutPassword);
+  });
+  
+  // GET /api/projects - отримання всіх проєктів
+  app.get("/api/projects", (req, res) => {
+    // В реальній системі тут буде фільтрація за статусом, пошук і т.д.
+    res.json(staticProjects);
+  });
+  
+  // GET /api/projects/:id - отримання проєкту за ID
   app.get("/api/projects/:id", (req, res) => {
     const id = parseInt(req.params.id);
     const project = staticProjects.find(p => p.id === id);
@@ -56,120 +56,43 @@ export function setupEmergencyRoutes(app: Express) {
     if (!project) {
       return res.status(404).json({ message: "Проєкт не знайдено" });
     }
-
-    // Для волонтерів та донорів приховуємо проєкти, які ще не в статусі in_progress
-    if (req.user && ["volunteer", "donor"].includes(req.user.role) && project.status !== "in_progress") {
-      return res.status(403).json({ message: "Проєкт недоступний" });
-    }
     
     res.json(project);
   });
-
-  // GET /api/projects/coordinator/:id - проєкти координатора
+  
+  // GET /api/projects/coordinator/:id - отримання проєктів координатора
   app.get("/api/projects/coordinator/:id", (req, res) => {
     const coordinatorId = parseInt(req.params.id);
     const projects = staticProjects.filter(p => p.coordinatorId === coordinatorId);
+    
     res.json(projects);
   });
-
-  // GET /api/projects/moderation - список на модерацію
-  app.get("/api/projects/moderation", (req, res) => {
-    // Для модераторів показуємо тільки проєкти в статусі "funding" для модерації
-    if (req.user && ["admin", "moderator"].includes(req.user.role)) {
-      const moderationProjects = staticProjects.filter(p => p.status === "funding");
-      return res.json(moderationProjects);
-    }
-    
-    res.json([]);
-  });
-
-  // PATCH /api/projects/:id/status - зміна статусу проєкту
-  app.patch("/api/projects/:id/status", (req, res) => {
-    const id = parseInt(req.params.id);
-    const { status } = req.body;
-    
-    const projectIndex = staticProjects.findIndex(p => p.id === id);
-    if (projectIndex === -1) {
-      return res.status(404).json({ message: "Проєкт не знайдено" });
-    }
-    
-    // Оновлюємо статус проєкту (але не змінюємо оригінальні дані, так як це всього лише імітація)
-    const updatedProject = {
-      ...staticProjects[projectIndex],
-      status: status,
-      updatedAt: new Date()
-    };
-    
-    res.json(updatedProject);
-  });
-
-  // GET /api/tasks/project/:id - задачі проєкту
-  app.get("/api/tasks/project/:id", (req, res) => {
-    const projectId = parseInt(req.params.id);
-    const tasks = staticTasks.filter(t => t.projectId === projectId);
-    res.json(tasks);
-  });
-
-  // GET /api/user/applications - заявки користувача
-  app.get("/api/user/applications", (req, res) => {
-    if (!req.user) {
-      return res.status(401).json({ message: "Необхідна авторизація" });
-    }
-    
-    const volunteerId = req.user.id;
-    const applications = staticApplications.filter(a => a.volunteerId === volunteerId);
-    res.json(applications);
-  });
-
-  // GET /api/users - отримання користувачів для адміністратора
-  app.get("/api/users", (req, res) => {
-    if (!req.user || req.user.role !== "admin") {
-      return res.status(403).json({ message: "Доступ заборонено" });
-    }
-    
-    res.json(staticUsers);
-  });
-
-  // GET /api/users/:id - отримання даних користувача
-  app.get("/api/users/:id", (req, res) => {
-    const id = parseInt(req.params.id);
-    const user = staticUsers.find(u => u.id === id);
-    
-    if (!user) {
-      return res.status(404).json({ message: "Користувача не знайдено" });
-    }
-    
-    // Видаляємо чутливі дані перед відправкою
-    const { password, verificationToken, ...userWithoutSensitiveData } = user;
-    res.json(userWithoutSensitiveData);
-  });
-
-  // GET /api/user/donations - пожертви користувача
-  app.get("/api/user/donations", (req, res) => {
-    if (!req.user) {
-      return res.status(401).json({ message: "Необхідна авторизація" });
-    }
-    
-    const userId = req.user.id;
-    const donations = staticDonations.filter(d => d.userId === userId);
-    res.json(donations);
-  });
-
-  // GET /api/projects/:id/donations - пожертви для проєкту
-  app.get("/api/projects/:id/donations", (req, res) => {
-    const projectId = parseInt(req.params.id);
-    const donations = staticDonations.filter(d => d.projectId === projectId);
-    res.json(donations);
-  });
   
-  // GET /api/projects/:id/applications - заявки на проєкт
+  // GET /api/projects/:id/applications - отримання заявок на проєкт
   app.get("/api/projects/:id/applications", (req, res) => {
     const projectId = parseInt(req.params.id);
     const applications = staticApplications.filter(a => a.projectId === projectId);
+    
+    // Додаємо інформацію про волонтера
+    const applicationsWithVolunteers = applications.map(app => {
+      const volunteer = staticUsers.find(u => u.id === app.volunteerId);
+      let volunteerInfo = null;
+      
+      if (volunteer) {
+        const { password, ...volunteerWithoutPassword } = volunteer;
+        volunteerInfo = volunteerWithoutPassword;
+      }
+      
+      return {
+        ...app,
+        volunteer: volunteerInfo
+      };
+    });
+    
     res.json(applications);
   });
   
-  // GET /api/projects/:id/tasks - задачі проєкту
+  // GET /api/projects/:id/tasks - отримання завдань проєкту
   app.get("/api/projects/:id/tasks", (req, res) => {
     const projectId = parseInt(req.params.id);
     const tasks = staticTasks.filter(t => t.projectId === projectId);
@@ -265,16 +188,58 @@ export function setupEmergencyRoutes(app: Express) {
     }
   });
 
+  // POST /api/donations - створення нової пожертви
+  app.post("/api/donations", (req, res) => {
+    try {
+      const donationData = req.body;
+      
+      if (!donationData || !donationData.projectId || !donationData.amount) {
+        return res.status(400).json({ message: "Відсутні обов'язкові дані для пожертви" });
+      }
+      
+      // Перевіряємо чи існує проєкт
+      const project = staticProjects.find(p => p.id === donationData.projectId);
+      if (!project) {
+        return res.status(404).json({ message: "Проєкт не знайдено" });
+      }
+      
+      // Генеруємо новий ID для пожертви
+      const newDonationId = getNextId(staticDonations);
+      
+      // Створюємо нову пожертву
+      const newDonation = {
+        id: newDonationId,
+        userId: donationData.userId || 3, // За замовчуванням донор
+        projectId: donationData.projectId,
+        amount: donationData.amount,
+        message: donationData.message || "Пожертва на проєкт",
+        createdAt: new Date()
+      };
+      
+      // Додаємо пожертву до списку
+      staticDonations.push(newDonation);
+      
+      // Оновлюємо зібрану суму проєкту
+      const projectIndex = staticProjects.findIndex(p => p.id === donationData.projectId);
+      if (projectIndex !== -1) {
+        staticProjects[projectIndex].collectedAmount += donationData.amount;
+      }
+      
+      res.status(201).json(newDonation);
+    } catch (error) {
+      console.error("Помилка при створенні пожертви:", error);
+      res.status(500).json({ message: "Внутрішня помилка сервера" });
+    }
+  });
+  
   // Для всіх інших маршрутів, які не реалізовані
   app.all("/api/*", (req, res, next) => {
     // Перевіряємо, чи маршрут вже був оброблений іншим обробником
-    const handled = res.headersSent;
-    if (!handled) {
-      console.warn(`Незареєстрований маршрут: ${req.method} ${req.originalUrl}`);
-      // Повертаємо 404 для незареєстрованих маршрутів
-      res.status(404).json({ message: "Маршрут не знайдено" });
-    } else {
-      next();
+    if (res.headersSent) {
+      return next();
     }
+    
+    console.log(`Незареєстрований маршрут: ${req.method} ${req.path}`);
+    res.status(404).json({ message: "Маршрут не знайдено" });
   });
 }

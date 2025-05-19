@@ -121,38 +121,36 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Get all projects - тимчасове статичне рішення для відновлення роботи сайту
+  // Get all projects
   app.get("/api/projects", async (req, res, next) => {
     try {
-      // Повертаємо статичні дані для тестування інтерфейсу
-      res.json([
-        {
-          id: 1,
-          name: "Допомога переселенцям",
-          description: "Проєкт з допомоги внутрішньо переміщеним особам у Львівській області",
-          targetAmount: 150000,
-          collectedAmount: 75000,
-          imageUrl: "https://images.unsplash.com/photo-1637419450536-378d5457abb8?q=80",
-          status: "in_progress",
-          coordinatorId: 1,
-          createdAt: new Date("2023-10-01"),
-          updatedAt: new Date("2023-10-01"),
-          bankDetails: null
-        },
-        {
-          id: 2,
-          name: "Відновлення парку",
-          description: "Проєкт з відновлення міського парку після негоди",
-          targetAmount: 75000,
-          collectedAmount: 25000,
-          imageUrl: "https://images.unsplash.com/photo-1569817480241-41b3e7a13c89?q=80",
-          status: "in_progress",
-          coordinatorId: 1,
-          createdAt: new Date("2023-10-15"),
-          updatedAt: new Date("2023-10-15"),
-          bankDetails: null
+      const querySchema = z.object({
+        status: z.enum(projectStatusEnum.enumValues).optional(),
+        search: z.string().optional(),
+        limit: z.coerce.number().optional(),
+        offset: z.coerce.number().optional(),
+      }).optional();
+      
+      const parsedQuery = querySchema.parse(req.query);
+      const options = parsedQuery ? {
+        status: parsedQuery.status,
+        search: parsedQuery.search,
+        limit: parsedQuery.limit !== undefined ? parsedQuery.limit : 20,
+        offset: parsedQuery.offset !== undefined ? parsedQuery.offset : 0
+      } : { limit: 20, offset: 0 };
+      
+      // Якщо користувач не авторизований або не має ролі модератора чи адміністратора,
+      // показуємо тільки проєкти зі статусом "in_progress" (затверджені)
+      if (!req.isAuthenticated() || !(isModerator(req) || getUserRole(req) === 'admin')) {
+        // Якщо це звичайний користувач (не адміністратор/модератор) - показуємо 
+        // тільки затверджені проєкти, якщо явно не вказано інший статус
+        if (!options.status) {
+          options.status = "in_progress";
         }
-      ]);
+      }
+      
+      const projects = await storage.getProjects(options);
+      res.json(projects);
     } catch (error) {
       next(error);
     }
@@ -160,7 +158,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   // Маршрут переміщено нижче з кращою логікою авторизації
   
-  // Get project by ID - тимчасове статичне рішення
+  // Get project by ID
   app.get("/api/projects/:id", async (req, res, next) => {
     try {
       const id = parseInt(req.params.id);
@@ -168,43 +166,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "Некоректний ID проєкту" });
       }
       
-      // Статичні дані для тестування інтерфейсу
-      const mockProjects = {
-        "1": {
-          id: 1,
-          name: "Допомога переселенцям",
-          description: "Проєкт з допомоги внутрішньо переміщеним особам у Львівській області. Потрібна допомога з розселенням, забезпеченням продуктами та ліками.",
-          targetAmount: 150000,
-          collectedAmount: 75000,
-          imageUrl: "https://images.unsplash.com/photo-1637419450536-378d5457abb8?q=80",
-          status: "in_progress",
-          coordinatorId: 6,
-          createdAt: new Date("2023-10-01"),
-          updatedAt: new Date("2023-10-01"),
-          bankDetails: null,
-          location: "Львів",
-          startDate: new Date("2023-11-01"),
-          endDate: new Date("2024-03-01")
-        },
-        "2": {
-          id: 2,
-          name: "Відновлення парку",
-          description: "Проєкт з відновлення міського парку після негоди. Потрібні волонтери для прибирання території, висадки нових дерев та облаштування доріжок.",
-          targetAmount: 75000,
-          collectedAmount: 25000,
-          imageUrl: "https://images.unsplash.com/photo-1569817480241-41b3e7a13c89?q=80",
-          status: "in_progress",
-          coordinatorId: 6,
-          createdAt: new Date("2023-10-15"),
-          updatedAt: new Date("2023-10-15"),
-          bankDetails: null,
-          location: "Київ",
-          startDate: new Date("2023-10-15"),
-          endDate: new Date("2023-12-15")
-        }
-      };
-      
-      const project = mockProjects[id.toString()];
+      const project = await storage.getProjectById(id);
       if (!project) {
         return res.status(404).json({ message: "Проєкт не знайдено" });
       }
@@ -777,7 +739,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
-  // Moderate a project - тимчасове статичне рішення
+  // Moderate a project
   app.post("/api/projects/:id/moderate", isAuthenticated, isModeratorMiddleware, async (req, res, next) => {
     try {
       const id = parseInt(req.params.id);
@@ -790,43 +752,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
         comment: z.string().nullable(),
       }).parse(req.body);
       
-      // Тимчасове рішення з статичними даними для тестування інтерфейсу
-      const mockProjects = {
-        "1": {
-          id: 1,
-          name: "Допомога переселенцям",
-          description: "Проєкт з допомоги внутрішньо переміщеним особам у Львівській області",
-          targetAmount: 150000,
-          collectedAmount: 75000,
-          imageUrl: "https://images.unsplash.com/photo-1637419450536-378d5457abb8?q=80",
-          status: status, // оновлюємо статус відповідно до запиту
-          coordinatorId: 6,
-          createdAt: new Date("2023-10-01"),
-          updatedAt: new Date("2023-10-01"),
-          bankDetails: null
-        },
-        "2": {
-          id: 2,
-          name: "Відновлення парку",
-          description: "Проєкт з відновлення міського парку після негоди",
-          targetAmount: 75000,
-          collectedAmount: 25000,
-          imageUrl: "https://images.unsplash.com/photo-1569817480241-41b3e7a13c89?q=80",
-          status: status, // оновлюємо статус відповідно до запиту
-          coordinatorId: 6,
-          createdAt: new Date("2023-10-15"),
-          updatedAt: new Date("2023-10-15"),
-          bankDetails: null
-        }
-      };
-      
-      const project = mockProjects[id.toString()];
+      const project = await storage.getProjectById(id);
       if (!project) {
         return res.status(404).json({ message: "Проєкт не знайдено" });
       }
       
+      // Update project status based on moderation decision
+      const updatedProject = await storage.updateProjectStatus(id, status);
+      
+      // In a real implementation, we'd also store the moderation comment
+      // and associate it with the project for historical tracking
+      
       res.json({
-        project: project,
+        project: updatedProject,
         message: status === "in_progress" 
           ? "Проєкт успішно схвалено" 
           : "Проєкт відхилено"
@@ -840,36 +778,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // User Routes
   // =========================
   
-  // Get all users (admin only) - тимчасове статичне рішення
+  // Get all users (admin only)
   app.get("/api/users", hasRole(["admin"]), async (req, res, next) => {
     try {
-      // Повертаємо статичні дані
-      res.json([
-        {
-          id: 1,
-          username: "admin",
-          email: "admin@gmail.com",
-          role: "admin",
-          firstName: "Admin",
-          lastName: "User",
-          isVerified: true,
-          isBlocked: false,
-          createdAt: new Date(),
-          verificationToken: null
-        },
-        {
-          id: 6,
-          username: "Yaroslav3",
-          email: "ipz22-3@kpi.ua",
-          role: "coordinator",
-          firstName: "Yaroslav",
-          lastName: "Korotetskyi",
-          isVerified: true,
-          isBlocked: false,
-          createdAt: new Date(),
-          verificationToken: null
-        }
-      ]);
+      const users = await storage.getAllUsers();
+      res.json(users);
     } catch (error) {
       next(error);
     }
