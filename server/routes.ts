@@ -96,6 +96,31 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Project Routes
   // =========================
   
+  // Get all projects for moderation (повинно бути перед GET /api/projects/:id)
+  app.get("/api/projects/moderation", isAuthenticated, isModeratorMiddleware, async (req, res, next) => {
+    try {
+      const querySchema = z.object({
+        status: z.enum(projectStatusEnum.enumValues).optional(),
+        search: z.string().optional(),
+        limit: z.coerce.number().optional(),
+        offset: z.coerce.number().optional(),
+      }).optional();
+      
+      const parsedQuery = querySchema.parse(req.query);
+      const options = parsedQuery ? {
+        status: parsedQuery.status,
+        search: parsedQuery.search,
+        limit: parsedQuery.limit !== undefined ? parsedQuery.limit : 20,
+        offset: parsedQuery.offset !== undefined ? parsedQuery.offset : 0
+      } : { limit: 20, offset: 0 };
+      
+      const projects = await storage.getProjects(options);
+      res.json(projects);
+    } catch (error) {
+      next(error);
+    }
+  });
+
   // Get all projects
   app.get("/api/projects", async (req, res, next) => {
     try {
