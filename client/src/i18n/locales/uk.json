@@ -97,6 +97,11 @@
       "in_progress": "У процесі",
       "completed": "Завершено"
     },
+    "moderationStatus": {
+      "pending": "На розгляді",
+      "approved": "Затверджено",
+      "rejected": "Відхилено"
+    },
     "filter": {
       "title": "Фільтри",
       "status": "Статус",

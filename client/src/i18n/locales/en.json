@@ -97,6 +97,11 @@
       "in_progress": "In Progress",
       "completed": "Completed"
     },
+    "moderationStatus": {
+      "pending": "Pending Review",
+      "approved": "Approved",
+      "rejected": "Rejected"
+    },
     "filter": {
       "title": "Filters",
       "status": "Status",

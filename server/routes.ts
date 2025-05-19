@@ -171,7 +171,33 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ message: "Проєкт не знайдено" });
       }
       
-      res.json(project);
+      // Якщо користувач є координатором цього проєкту або модератором/адміном,
+      // додаємо статус модерації до відповіді
+      const isProjectOwner = req.isAuthenticated() && req.user!.id === project.coordinatorId;
+      const isAdminOrModerator = req.isAuthenticated() && (isModerator(req) || getUserRole(req) === 'admin');
+      
+      if (isProjectOwner || isAdminOrModerator) {
+        // Отримуємо останню модерацію для проєкту
+        const moderations = await storage.getProjectModerations(id);
+        const lastModeration = moderations.length > 0 ? moderations[0] : null;
+        
+        // Додаємо інформацію про модерацію до проєкту
+        res.json({
+          ...project,
+          moderation: lastModeration ? {
+            status: lastModeration.status,
+            comment: lastModeration.comment,
+            date: lastModeration.createdAt
+          } : {
+            status: 'pending',
+            comment: null,
+            date: null
+          }
+        });
+      } else {
+        // Звичайним користувачам повертаємо тільки проєкт без інформації про модерацію
+        res.json(project);
+      }
     } catch (error) {
       next(error);
     }
