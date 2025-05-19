@@ -1,358 +1,408 @@
-import { useState, useEffect } from "react";
-import { useTranslation } from "react-i18next";
-import { useQuery, useMutation } from "@tanstack/react-query";
-import { useAuth } from "@/hooks/use-auth";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { useEffect, useState } from "react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Badge } from "@/components/ui/badge";
-import { SelectProject, SelectUser } from "@shared/schema";
 import { 
-  Check, 
-  X, 
-  Filter, 
-  Search, 
-  Calendar,
-  User
-} from "lucide-react";
-import { 
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogTrigger,
-} from "@/components/ui/alert-dialog";
+  Dialog, 
+  DialogContent, 
+  DialogDescription, 
+  DialogFooter, 
+  DialogHeader, 
+  DialogTitle 
+} from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
-import { apiRequest, queryClient } from "@/lib/queryClient";
-import { useToast } from "@/hooks/use-toast";
+import { 
+  Table, 
+  TableBody, 
+  TableCaption, 
+  TableCell, 
+  TableHead, 
+  TableHeader, 
+  TableRow 
+} from "@/components/ui/table";
+import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { format } from "date-fns";
-import { uk } from "date-fns/locale";
+import { Check, X, Clock, AlertTriangle, Eye } from "lucide-react";
+import { apiRequest } from "@/lib/queryClient";
+import { useToast } from "@/hooks/use-toast";
+import { Link, useLocation } from "wouter";
+import { SelectProject } from "@shared/schema";
 
-// Типи для модерації проектів
 type ModerateAction = "approve" | "reject";
-
 type ModerationStatus = "pending" | "approved" | "rejected" | "all";
 
 export default function ModeratorDashboard() {
-  const { t } = useTranslation();
-  const { user } = useAuth();
-  const { toast } = useToast();
-
-  // Стан фільтрації
   const [statusFilter, setStatusFilter] = useState<ModerationStatus>("pending");
-  const [searchQuery, setSearchQuery] = useState("");
-  const [isAlertOpen, setIsAlertOpen] = useState(false);
-  const [currentProjectId, setCurrentProjectId] = useState<number | null>(null);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [selectedProject, setSelectedProject] = useState<SelectProject | null>(null);
+  const [isDetailsOpen, setIsDetailsOpen] = useState(false);
+  const [isModerateDialogOpen, setIsModerateDialogOpen] = useState(false);
+  const [moderationAction, setModerationAction] = useState<ModerateAction | null>(null);
   const [rejectionReason, setRejectionReason] = useState("");
-  const [currentAction, setCurrentAction] = useState<ModerateAction | null>(null);
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
+  const [, setLocation] = useLocation();
 
-  // Отримання всіх проектів
-  const { data: projects, isLoading: projectsLoading, refetch } = useQuery<SelectProject[]>({
-    queryKey: ["/api/projects"],
-    retry: 1
+  // Fetch projects for moderation
+  const { data: projects = [], isLoading, error, refetch } = useQuery<SelectProject[]>({
+    queryKey: ["/api/projects/moderation", statusFilter, searchTerm],
+    queryFn: async () => {
+      const query = new URLSearchParams();
+      if (statusFilter !== "all") {
+        query.append("status", statusFilter);
+      }
+      if (searchTerm) {
+        query.append("search", searchTerm);
+      }
+      const queryString = query.toString();
+      const url = `/api/projects/moderation${queryString ? `?${queryString}` : ''}`;
+      const response = await fetch(url);
+      
+      if (!response.ok) {
+        throw new Error("Failed to fetch projects for moderation");
+      }
+      
+      return response.json();
+    }
   });
 
-  // Отримання координаторів проектів
-  const [coordinators, setCoordinators] = useState<Record<number, SelectUser>>({});
-
-  // Завантаження даних координаторів для проектів
-  useEffect(() => {
-    if (projects && projects.length > 0) {
-      const loadCoordinators = async () => {
-        const coordinatorsMap: Record<number, SelectUser> = {};
-        
-        for (const project of projects) {
-          if (!coordinatorsMap[project.coordinatorId]) {
-            try {
-              const res = await fetch(`/api/users/${project.coordinatorId}`);
-              if (res.ok) {
-                const coordinator = await res.json();
-                coordinatorsMap[project.coordinatorId] = coordinator;
-              }
-            } catch (error) {
-              console.error("Failed to fetch coordinator:", error);
-            }
-          }
-        }
-        
-        setCoordinators(coordinatorsMap);
-      };
-      
-      loadCoordinators();
-    }
-  }, [projects]);
-
-  // Мутація для модерації проекту
-  const moderateProjectMutation = useMutation({
+  // Mutation for moderating projects
+  const moderationMutation = useMutation({
     mutationFn: async ({ projectId, action, comment }: { projectId: number; action: ModerateAction; comment?: string }) => {
-      const res = await apiRequest("POST", `/api/projects/${projectId}/moderate`, {
-        status: action,
-        comment: comment || undefined,
+      const response = await apiRequest("POST", `/api/projects/${projectId}/moderate`, {
+        status: action === "approve" ? "approved" : "rejected",
+        comment: comment || null
       });
-      return await res.json();
+      
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message || "Failed to moderate project");
+      }
+      
+      return response.json();
     },
     onSuccess: () => {
-      toast({
-        title: currentAction === "approve" ? "Проект схвалено" : "Проект відхилено",
-        description: currentAction === "approve" 
-          ? "Проект успішно опубліковано і тепер доступний для волонтерів" 
-          : "Проект відхилено і повернуто координатору на доопрацювання",
-      });
-      
-      // Оновити список проектів
+      queryClient.invalidateQueries({ queryKey: ["/api/projects/moderation"] });
       queryClient.invalidateQueries({ queryKey: ["/api/projects"] });
-      refetch();
-      
-      // Скинути стан
-      setCurrentProjectId(null);
+      setIsModerateDialogOpen(false);
       setRejectionReason("");
-      setIsAlertOpen(false);
+      toast({
+        title: moderationAction === "approve" ? "Проєкт схвалено" : "Проєкт відхилено",
+        description: moderationAction === "approve" 
+          ? "Проєкт тепер доступний для всіх користувачів" 
+          : "Проєкт відхилено та повернуто координатору",
+        variant: moderationAction === "approve" ? "default" : "destructive",
+      });
     },
     onError: (error: Error) => {
       toast({
         title: "Помилка",
-        description: `Не вдалося ${currentAction === "approve" ? "схвалити" : "відхилити"} проект: ${error.message}`,
+        description: error.message || "Не вдалося змодерувати проєкт",
         variant: "destructive",
       });
     },
   });
 
-  // Обробник схвалення/відхилення проекту
   const handleModerateAction = (projectId: number, action: ModerateAction) => {
-    setCurrentProjectId(projectId);
-    setCurrentAction(action);
-    
-    if (action === "reject") {
-      setIsAlertOpen(true);
-    } else {
-      moderateProjectMutation.mutate({ projectId, action });
+    const project = projects.find(p => p.id === projectId);
+    if (project) {
+      setSelectedProject(project);
+      setModerationAction(action);
+      setIsModerateDialogOpen(true);
     }
   };
 
-  // Підтвердження відхилення проекту з коментарем
-  const confirmReject = () => {
-    if (currentProjectId) {
-      moderateProjectMutation.mutate({ 
-        projectId: currentProjectId, 
-        action: "reject", 
-        comment: rejectionReason 
-      });
-    }
-  };
-
-  // Фільтрація проектів за статусом та пошуковим запитом
-  const filteredProjects = () => {
-    if (!projects) return [];
+  const confirmModeration = () => {
+    if (!selectedProject || !moderationAction) return;
     
-    return projects.filter(project => {
-      // Фільтрація за текстом
-      const matchesSearch = 
-        searchQuery === "" || 
-        project.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        project.description.toLowerCase().includes(searchQuery.toLowerCase());
-      
-      // Фільтрація за статусом модерації (наразі всі проекти вважаються pending)
-      const matchesStatus = statusFilter === "all" || statusFilter === "pending";
-      
-      return matchesSearch && matchesStatus;
+    moderationMutation.mutate({
+      projectId: selectedProject.id,
+      action: moderationAction,
+      comment: moderationAction === "reject" ? rejectionReason : undefined
     });
   };
 
-  // Форматування дати
-  const formatDate = (dateString: string | Date) => {
-    const date = typeof dateString === 'string' ? new Date(dateString) : dateString;
-    return format(date, "d MMMM yyyy, HH:mm", { locale: uk });
+  const viewProjectDetails = (project: SelectProject) => {
+    setSelectedProject(project);
+    setIsDetailsOpen(true);
   };
 
-  // Отримати відформатоване ім'я координатора
-  const getCoordinatorName = (coordinatorId: number) => {
-    const coordinator = coordinators[coordinatorId];
-    if (coordinator) {
-      return coordinator.firstName && coordinator.lastName 
-        ? `${coordinator.firstName} ${coordinator.lastName}` 
-        : coordinator.username;
+  const getStatusBadge = (status: string) => {
+    switch (status) {
+      case "pending":
+        return <Badge variant="outline" className="flex items-center gap-1"><Clock className="h-3 w-3" /> На розгляді</Badge>;
+      case "approved":
+        return <Badge variant="success" className="flex items-center gap-1"><Check className="h-3 w-3" /> Схвалено</Badge>;
+      case "rejected":
+        return <Badge variant="destructive" className="flex items-center gap-1"><X className="h-3 w-3" /> Відхилено</Badge>;
+      default:
+        return <Badge variant="secondary">{status}</Badge>;
     }
-    return `Координатор #${coordinatorId}`;
   };
+
+  const filterButtons = [
+    { value: "pending", label: "На розгляді", icon: <Clock className="h-4 w-4" /> },
+    { value: "approved", label: "Схвалені", icon: <Check className="h-4 w-4" /> },
+    { value: "rejected", label: "Відхилені", icon: <X className="h-4 w-4" /> },
+    { value: "all", label: "Усі", icon: null },
+  ];
 
   return (
-    <div className="bg-gray-50 py-10 min-h-screen">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <header className="mb-8">
-          <h1 className="text-3xl font-extrabold text-gray-900 font-heading">
-            Панель модератора
-          </h1>
-          <p className="mt-2 text-lg text-gray-500">
-            Вітаємо, {user?.firstName || user?.username}! Тут ви можете переглядати та модерувати проєкти перед їх публікацією.
-          </p>
-        </header>
+    <div className="container py-10">
+      <h1 className="text-3xl font-bold mb-6">Панель модератора</h1>
+      
+      <div className="mb-8">
+        <div className="flex justify-between items-center mb-4">
+          <div>
+            <h2 className="text-xl font-semibold">Проєкти на модерацію</h2>
+            <p className="text-muted-foreground">Перевірте та затвердіть проєкти, створені координаторами</p>
+          </div>
+          <div className="flex gap-2">
+            {filterButtons.map((button) => (
+              <Button
+                key={button.value}
+                variant={statusFilter === button.value ? "default" : "outline"}
+                size="sm"
+                onClick={() => setStatusFilter(button.value as ModerationStatus)}
+                className="flex items-center gap-1"
+              >
+                {button.icon}
+                {button.label}
+                {button.value === "pending" && (
+                  <Badge variant="secondary" className="ml-1">
+                    {projects?.filter(p => p.moderationStatus === "pending").length || 0}
+                  </Badge>
+                )}
+              </Button>
+            ))}
+          </div>
+        </div>
 
-        <Card className="shadow-sm">
-          <CardHeader className="pb-3">
-            <CardTitle>Модерація проєктів</CardTitle>
-          </CardHeader>
-          <CardContent>
-            {/* Фільтри */}
-            <div className="mb-6 flex flex-col md:flex-row gap-4">
-              <div className="relative flex-1">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
-                <Input
-                  className="pl-10"
-                  placeholder="Пошук проєктів за назвою або описом..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                />
-              </div>
-              
-              <div className="flex gap-2 items-center">
-                <Filter size={18} className="text-gray-400" />
-                <Label className="whitespace-nowrap">Статус:</Label>
-                <select 
-                  className="border rounded px-3 py-2 bg-white"
-                  value={statusFilter}
-                  onChange={(e) => setStatusFilter(e.target.value as ModerationStatus)}
-                >
-                  <option value="pending">Очікують перевірки</option>
-                  <option value="approved">Схвалені</option>
-                  <option value="rejected">Відхилені</option>
-                  <option value="all">Усі</option>
-                </select>
-              </div>
-            </div>
+        <div className="relative mb-4">
+          <Input
+            placeholder="Пошук проєктів..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="max-w-md"
+          />
+        </div>
 
-            {/* Список проєктів */}
-            {projectsLoading ? (
-              <div className="py-20 text-center">
-                <div className="animate-spin w-8 h-8 border-4 border-primary border-t-transparent rounded-full mx-auto mb-4"></div>
-                <p className="text-gray-500">Завантаження проєктів...</p>
+        {isLoading ? (
+          <div className="text-center py-10">
+            <div className="inline-block h-6 w-6 animate-spin rounded-full border-2 border-primary border-t-transparent"></div>
+            <p className="mt-2 text-muted-foreground">Завантаження проєктів...</p>
+          </div>
+        ) : error ? (
+          <Card className="mb-4">
+            <CardContent className="pt-6">
+              <div className="flex items-center gap-2 text-destructive">
+                <AlertTriangle className="h-5 w-5" />
+                <p>Помилка завантаження проєктів: {(error as Error).message}</p>
               </div>
-            ) : (
-              filteredProjects().length === 0 ? (
-                <div className="text-center py-20">
-                  <Filter className="mx-auto h-12 w-12 text-gray-400" />
-                  <h3 className="mt-2 text-lg font-medium text-gray-900">
-                    Проєктів не знайдено
-                  </h3>
-                  <p className="mt-1 text-sm text-gray-500">
-                    Немає проєктів, що відповідають вибраним фільтрам
-                  </p>
-                </div>
-              ) : (
-                <div className="space-y-4">
-                  {filteredProjects().map((project) => (
-                    <div key={project.id} className="bg-white border rounded-lg p-4 shadow-sm">
-                      <div className="flex flex-col md:flex-row justify-between">
-                        <div className="flex-1">
-                          <div className="flex flex-col md:flex-row md:items-center gap-2 mb-2">
-                            <h3 className="text-lg font-medium text-gray-900">{project.name}</h3>
-                            <Badge className="bg-blue-100 text-blue-800 hover:bg-blue-100 px-2 py-0.5 md:ml-2">
-                              Очікує перевірки
-                            </Badge>
-                          </div>
-                          
-                          <div className="text-gray-500 mb-2 text-sm flex items-center">
-                            <User size={16} className="mr-1" />
-                            {getCoordinatorName(project.coordinatorId)}
-                          </div>
-                          
-                          <div className="text-gray-500 mb-2 text-sm flex items-center">
-                            <Calendar size={16} className="mr-1" />
-                            Створено: {formatDate(project.createdAt)}
-                          </div>
-                          
-                          <div className="mt-2">
-                            <h4 className="font-medium mb-1">Опис проєкту:</h4>
-                            <p className="text-gray-700">{project.description}</p>
-                          </div>
-                          
-                          {project.imageUrl && (
-                            <div className="mt-4">
-                              <img 
-                                src={project.imageUrl} 
-                                alt={project.name} 
-                                className="rounded-md max-h-48 object-cover"
-                              />
-                            </div>
-                          )}
-                          
-                          <div className="mt-4 grid grid-cols-2 gap-4">
-                            <div>
-                              <h4 className="font-medium mb-1">Цільова сума:</h4>
-                              <p className="text-gray-700">{project.targetAmount.toLocaleString()} ₴</p>
-                            </div>
-                            <div>
-                              <h4 className="font-medium mb-1">Зібрано:</h4>
-                              <p className="text-gray-700">{project.collectedAmount.toLocaleString()} ₴</p>
-                            </div>
-                            <div>
-                              <h4 className="font-medium mb-1">Статус:</h4>
-                              <p className="text-gray-700">{project.status}</p>
-                            </div>
-                            <div>
-                              <h4 className="font-medium mb-1">Дата створення:</h4>
-                              <p className="text-gray-700">{formatDate(project.createdAt)}</p>
-                            </div>
-                          </div>
-                        </div>
+              <Button onClick={() => refetch()} className="mt-2" variant="outline">
+                Спробувати знову
+              </Button>
+            </CardContent>
+          </Card>
+        ) : projects.length === 0 ? (
+          <Card className="mb-4">
+            <CardContent className="pt-6 text-center">
+              <p className="text-muted-foreground">Немає проєктів для відображення</p>
+            </CardContent>
+          </Card>
+        ) : (
+          <div className="bg-card rounded-lg border shadow">
+            <Table>
+              <TableCaption>Список проєктів для модерації</TableCaption>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Назва</TableHead>
+                  <TableHead>Координатор</TableHead>
+                  <TableHead>Сума</TableHead>
+                  <TableHead>Дата створення</TableHead>
+                  <TableHead>Статус</TableHead>
+                  <TableHead className="text-right">Дії</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {projects.map((project) => (
+                  <TableRow key={project.id}>
+                    <TableCell className="font-medium">{project.name}</TableCell>
+                    <TableCell>{project.coordinator?.username || "Невідомо"}</TableCell>
+                    <TableCell>{new Intl.NumberFormat('uk-UA', { style: 'currency', currency: 'UAH' }).format(project.targetAmount)}</TableCell>
+                    <TableCell>{new Date(project.createdAt).toLocaleDateString('uk-UA')}</TableCell>
+                    <TableCell>{getStatusBadge(project.moderationStatus || "pending")}</TableCell>
+                    <TableCell className="text-right">
+                      <div className="flex justify-end gap-2">
+                        <Button 
+                          size="icon" 
+                          variant="ghost" 
+                          onClick={() => viewProjectDetails(project)}
+                        >
+                          <Eye className="h-4 w-4" />
+                          <span className="sr-only">Деталі</span>
+                        </Button>
                         
-                        <div className="mt-4 md:mt-0 md:ml-4 flex md:flex-col gap-2">
-                          <Button 
-                            className="bg-green-600 hover:bg-green-700 flex-1 md:flex-none" 
-                            onClick={() => handleModerateAction(project.id, "approve")}
-                          >
-                            <Check className="mr-2 h-4 w-4" />
-                            Схвалити
-                          </Button>
-                          <Button 
-                            variant="outline" 
-                            className="border-red-300 text-red-600 hover:bg-red-50 flex-1 md:flex-none"
-                            onClick={() => handleModerateAction(project.id, "reject")}
-                          >
-                            <X className="mr-2 h-4 w-4" />
-                            Відхилити
-                          </Button>
-                        </div>
+                        {(project.moderationStatus === "pending") && (
+                          <>
+                            <Button 
+                              size="icon" 
+                              variant="ghost" 
+                              className="text-green-600 hover:text-green-700 hover:bg-green-50"
+                              onClick={() => handleModerateAction(project.id, "approve")}
+                            >
+                              <Check className="h-4 w-4" />
+                              <span className="sr-only">Схвалити</span>
+                            </Button>
+                            <Button 
+                              size="icon" 
+                              variant="ghost" 
+                              className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                              onClick={() => handleModerateAction(project.id, "reject")}
+                            >
+                              <X className="h-4 w-4" />
+                              <span className="sr-only">Відхилити</span>
+                            </Button>
+                          </>
+                        )}
                       </div>
-                    </div>
-                  ))}
-                </div>
-              )
-            )}
-          </CardContent>
-        </Card>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </div>
+        )}
       </div>
 
-      {/* Діалог для відхилення проекту */}
-      <AlertDialog open={isAlertOpen} onOpenChange={setIsAlertOpen}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Відхилити проект</AlertDialogTitle>
-            <AlertDialogDescription>
-              Вкажіть, будь ласка, причину відхилення проекту. Цей коментар буде надіслано координатору проекту.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <div className="py-4">
-            <Textarea
-              placeholder="Опишіть причину відхилення..."
-              value={rejectionReason}
-              onChange={(e) => setRejectionReason(e.target.value)}
-              rows={4}
-            />
-          </div>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Скасувати</AlertDialogCancel>
-            <AlertDialogAction onClick={confirmReject} className="bg-red-600 hover:bg-red-700">
-              Відхилити проект
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+      {/* Project Details Dialog */}
+      <Dialog open={isDetailsOpen} onOpenChange={setIsDetailsOpen}>
+        <DialogContent className="max-w-3xl">
+          <DialogHeader>
+            <DialogTitle>{selectedProject?.name}</DialogTitle>
+            <DialogDescription>
+              Створено: {selectedProject ? new Date(selectedProject.createdAt).toLocaleDateString('uk-UA') : ''}
+            </DialogDescription>
+          </DialogHeader>
+          
+          {selectedProject && (
+            <div className="space-y-4">
+              {selectedProject.imageUrl && (
+                <div className="rounded-md overflow-hidden h-[200px]">
+                  <img 
+                    src={selectedProject.imageUrl} 
+                    alt={selectedProject.name} 
+                    className="w-full h-full object-cover"
+                  />
+                </div>
+              )}
+              
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <h3 className="font-semibold mb-1">Опис</h3>
+                  <p className="text-sm text-muted-foreground">{selectedProject.description}</p>
+                </div>
+                
+                <div className="space-y-4">
+                  <div>
+                    <h3 className="font-semibold mb-1">Цільова сума</h3>
+                    <p>{new Intl.NumberFormat('uk-UA', { style: 'currency', currency: 'UAH' }).format(selectedProject.targetAmount)}</p>
+                  </div>
+                  
+                  <div>
+                    <h3 className="font-semibold mb-1">Статус проєкту</h3>
+                    <p>{selectedProject.status === "funding" ? "Збір коштів" : 
+                        selectedProject.status === "in_progress" ? "В процесі" : 
+                        selectedProject.status === "completed" ? "Завершено" : selectedProject.status}</p>
+                  </div>
+                  
+                  <div>
+                    <h3 className="font-semibold mb-1">Статус модерації</h3>
+                    <div>{getStatusBadge(selectedProject.moderationStatus || "pending")}</div>
+                  </div>
+                </div>
+              </div>
+              
+              {selectedProject.moderationStatus === "pending" && (
+                <div className="flex justify-end gap-2 pt-4">
+                  <Button variant="outline" onClick={() => setIsDetailsOpen(false)}>
+                    Закрити
+                  </Button>
+                  <Button 
+                    variant="destructive" 
+                    onClick={() => {
+                      setIsDetailsOpen(false);
+                      handleModerateAction(selectedProject.id, "reject");
+                    }}
+                  >
+                    <X className="mr-2 h-4 w-4" />
+                    Відхилити
+                  </Button>
+                  <Button 
+                    onClick={() => {
+                      setIsDetailsOpen(false);
+                      handleModerateAction(selectedProject.id, "approve");
+                    }}
+                  >
+                    <Check className="mr-2 h-4 w-4" />
+                    Схвалити
+                  </Button>
+                </div>
+              )}
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Moderation Confirmation Dialog */}
+      <Dialog open={isModerateDialogOpen} onOpenChange={setIsModerateDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>
+              {moderationAction === "approve" ? "Схвалити проєкт" : "Відхилити проєкт"}
+            </DialogTitle>
+            <DialogDescription>
+              {moderationAction === "approve" 
+                ? "Проєкт стане публічно доступним для волонтерів та донорів."
+                : "Проєкт буде відхилено і повернуто координатору на доопрацювання."}
+            </DialogDescription>
+          </DialogHeader>
+          
+          {selectedProject && (
+            <div>
+              <p className="font-medium">{selectedProject.name}</p>
+              
+              {moderationAction === "reject" && (
+                <div className="mt-4">
+                  <Label htmlFor="rejection-reason">Причина відхилення</Label>
+                  <Textarea
+                    id="rejection-reason"
+                    placeholder="Вкажіть причину відхилення проєкту..."
+                    value={rejectionReason}
+                    onChange={(e) => setRejectionReason(e.target.value)}
+                    className="mt-1"
+                  />
+                </div>
+              )}
+              
+              <DialogFooter className="mt-6">
+                <Button variant="outline" onClick={() => setIsModerateDialogOpen(false)}>
+                  Скасувати
+                </Button>
+                <Button 
+                  variant={moderationAction === "approve" ? "default" : "destructive"}
+                  onClick={confirmModeration}
+                  disabled={moderationAction === "reject" && !rejectionReason.trim()}
+                >
+                  {moderationAction === "approve" ? "Підтвердити схвалення" : "Підтвердити відхилення"}
+                </Button>
+              </DialogFooter>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

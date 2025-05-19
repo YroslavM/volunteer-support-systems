@@ -1,6 +1,7 @@
 import { useAuth } from "@/hooks/use-auth";
 import { Loader2 } from "lucide-react";
 import { Redirect } from "wouter";
+import { useToast } from "@/hooks/use-toast";
 
 type ProtectedRouteProps = {
   component: React.ComponentType;
@@ -26,6 +27,12 @@ export function ProtectedRoute({
   }
 
   if (roles && !roles.includes(user.role)) {
+    const { toast } = useToast();
+    toast({
+      title: "Немає доступу",
+      description: "У вас немає необхідних прав для доступу до цієї сторінки",
+      variant: "destructive",
+    });
     return <Redirect to="/" />;
   }
 
