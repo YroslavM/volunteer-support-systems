@@ -76,7 +76,7 @@ export default function ModeratorDashboard() {
   const moderationMutation = useMutation({
     mutationFn: async ({ projectId, action, comment }: { projectId: number; action: ModerateAction; comment?: string }) => {
       const response = await apiRequest("POST", `/api/projects/${projectId}/moderate`, {
-        status: action === "approve" ? "approved" : "rejected",
+        status: action === "approve" ? "in_progress" : "completed",
         comment: comment || null
       });
       
@@ -174,9 +174,9 @@ export default function ModeratorDashboard() {
               >
                 {button.icon}
                 {button.label}
-                {button.value === "pending" && (
+                {button.value === "funding" && (
                   <Badge variant="secondary" className="ml-1">
-                    {projects?.filter(p => p.moderationStatus === "pending").length || 0}
+                    {projects?.filter(p => p.status === "funding").length || 0}
                   </Badge>
                 )}
               </Button>
@@ -234,7 +234,7 @@ export default function ModeratorDashboard() {
                 {projects.map((project) => (
                   <TableRow key={project.id}>
                     <TableCell className="font-medium">{project.name}</TableCell>
-                    <TableCell>{project.coordinator?.username || "Невідомо"}</TableCell>
+                    <TableCell>Координатор ID: {project.coordinatorId}</TableCell>
                     <TableCell>{new Intl.NumberFormat('uk-UA', { style: 'currency', currency: 'UAH' }).format(project.targetAmount)}</TableCell>
                     <TableCell>{new Date(project.createdAt).toLocaleDateString('uk-UA')}</TableCell>
                     <TableCell>{getStatusBadge(project.status)}</TableCell>
@@ -249,7 +249,7 @@ export default function ModeratorDashboard() {
                           <span className="sr-only">Деталі</span>
                         </Button>
                         
-                        {(project.moderationStatus === "pending") && (
+                        {(project.status === "funding") && (
                           <>
                             <Button 
                               size="icon" 
@@ -324,12 +324,12 @@ export default function ModeratorDashboard() {
                   
                   <div>
                     <h3 className="font-semibold mb-1">Статус модерації</h3>
-                    <div>{getStatusBadge(selectedProject.moderationStatus || "pending")}</div>
+                    <div>{getStatusBadge(selectedProject.status)}</div>
                   </div>
                 </div>
               </div>
               
-              {selectedProject.moderationStatus === "pending" && (
+              {selectedProject.status === "funding" && (
                 <div className="flex justify-end gap-2 pt-4">
                   <Button variant="outline" onClick={() => setIsDetailsOpen(false)}>
                     Закрити
