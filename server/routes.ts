@@ -139,16 +139,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
         offset: parsedQuery.offset !== undefined ? parsedQuery.offset : 0
       } : { limit: 20, offset: 0 };
       
-      // Якщо користувач не авторизований або не має ролі модератора чи адміністратора,
-      // показуємо тільки проєкти зі статусом "in_progress" (затверджені)
-      if (!req.isAuthenticated() || !(isModerator(req) || getUserRole(req) === 'admin')) {
-        // Якщо це звичайний користувач (не адміністратор/модератор) - показуємо 
-        // тільки затверджені проєкти, якщо явно не вказано інший статус
-        if (!options.status) {
-          options.status = "in_progress";
-        }
-      }
-      
       const projects = await storage.getProjects(options);
       res.json(projects);
     } catch (error) {

@@ -130,13 +130,7 @@
     "funded": "Профінансовано",
     "learnMore": "Дізнатися більше"
   },
-  "moderation": {
-    "status": {
-      "pending": "На розгляді",
-      "approved": "Затверджено",
-      "rejected": "Відхилено"
-    }
-  },
+
   "dashboard": {
     "choose": "Виберіть режим перегляду",
     "startNow": "Почати зараз",
