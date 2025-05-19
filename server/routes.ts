@@ -6,6 +6,7 @@ import { setupAuth } from "./auth";
 import { z } from "zod";
 import path from "path";
 import { projectImageUpload } from "./middleware/upload";
+import { pool } from "./db";
 import { 
   insertProjectSchema, 
   insertTaskSchema, 
@@ -158,7 +159,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         } else {
           // Якщо немає записів в MemStorage, спробуємо отримати з бази даних
           try {
-            const { rows: dbModerations } = await db.pool.query(`
+            const { rows: dbModerations } = await pool.query(`
               SELECT id, project_id, moderator_id, status, comment, created_at 
               FROM project_moderations 
               WHERE project_id = $1 
@@ -1181,7 +1182,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         
         // Зберігаємо модерацію також у базі даних SQL для довгострокового збереження
         try {
-          await db.pool.query(`
+          await pool.query(`
             INSERT INTO project_moderations 
             (project_id, moderator_id, status, comment, created_at) 
             VALUES 
