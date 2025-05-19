@@ -139,17 +139,43 @@ export async function registerRoutes(app: Express): Promise<Server> {
         offset: parsedQuery.offset !== undefined ? parsedQuery.offset : 0
       } : { limit: 20, offset: 0 };
       
-      // Якщо користувач не авторизований або не має ролі модератора чи адміністратора,
-      // показуємо тільки проєкти зі статусом "in_progress" (затверджені)
-      if (!req.isAuthenticated() || !(isModerator(req) || getUserRole(req) === 'admin')) {
-        // Якщо це звичайний користувач (не адміністратор/модератор) - показуємо 
-        // тільки затверджені проєкти, якщо явно не вказано інший статус
-        if (!options.status) {
-          options.status = "in_progress";
-        }
+      // Визначаємо, хто зробив запит
+      const isAdmin = req.isAuthenticated() && getUserRole(req) === 'admin';
+      const isMod = req.isAuthenticated() && isModerator(req);
+      const isCoordinator = req.isAuthenticated() && getUserRole(req) === 'coordinator';
+      
+      let projects;
+      
+      // Якщо це адміністратор або модератор - показуємо всі проєкти
+      if (isAdmin || isMod) {
+        projects = await storage.getProjects(options);
+      }
+      // Якщо це координатор - показуємо всі затверджені проєкти + його власні проєкти
+      else if (isCoordinator) {
+        // Отримуємо всі затверджені проєкти
+        const approvedProjects = await storage.getProjects({
+          ...options,
+          status: "in_progress"
+        });
+        
+        // Отримуємо всі проєкти координатора
+        const coordinatorProjects = await storage.getProjectsByCoordinatorId(getUserId(req));
+        
+        // Об'єднуємо два списки, видаляючи дублікати
+        const coordinatorProjectIds = new Set(coordinatorProjects.map(p => p.id));
+        projects = [
+          ...coordinatorProjects,
+          ...approvedProjects.filter(p => !coordinatorProjectIds.has(p.id))
+        ];
+      }
+      // Для всіх інших користувачів (волонтери, донори, неавторизовані) - показуємо тільки затверджені проєкти
+      else {
+        projects = await storage.getProjects({
+          ...options,
+          status: "in_progress"
+        });
       }
       
-      const projects = await storage.getProjects(options);
       res.json(projects);
     } catch (error) {
       next(error);
