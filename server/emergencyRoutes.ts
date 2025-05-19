@@ -150,7 +150,23 @@ export function setupEmergencyRoutes(app: Express) {
   app.post("/api/projects/with-image", (req, res) => {
     try {
       // В аварійному режимі ми не обробляємо зображення, але імітуємо успішне завантаження
-      const projectData = req.body;
+      console.log("Отримані дані проєкту:", req.body);
+      
+      // Перевіряємо форму даних
+      let projectData;
+      
+      // Якщо дані прийшли як FormData (з полями form)
+      if (req.body.form) {
+        try {
+          projectData = JSON.parse(req.body.form);
+          console.log("Розпаковані дані з form:", projectData);
+        } catch (e) {
+          console.error("Помилка розпаковки JSON з form:", e);
+          projectData = req.body;
+        }
+      } else {
+        projectData = req.body;
+      }
       
       // Якщо немає тіла запиту
       if (!projectData) {
@@ -165,11 +181,11 @@ export function setupEmergencyRoutes(app: Express) {
         id: newProjectId,
         name: projectData.name || "Новий проєкт",
         description: projectData.description || "Опис проєкту",
-        targetAmount: projectData.targetAmount || 10000,
+        targetAmount: parseFloat(projectData.targetAmount) || 10000,
         collectedAmount: 0,
         imageUrl: "/uploads/placeholder.jpg", // Імітація шляху до зображення
         status: "funding", // Початковий статус - збір коштів
-        coordinatorId: req.user?.id || 6, // За замовчуванням використовуємо ID = 6
+        coordinatorId: 6, // За замовчуванням використовуємо ID = 6
         createdAt: new Date(),
         updatedAt: new Date(),
         bankDetails: projectData.bankDetails || null,
@@ -177,6 +193,8 @@ export function setupEmergencyRoutes(app: Express) {
         startDate: projectData.startDate ? new Date(projectData.startDate) : new Date(),
         endDate: projectData.endDate ? new Date(projectData.endDate) : new Date(Date.now() + 90 * 24 * 60 * 60 * 1000) // +90 днів
       };
+      
+      console.log("Створюємо новий проєкт:", newProject);
       
       // Додаємо проєкт до списку
       staticProjects.push(newProject);
