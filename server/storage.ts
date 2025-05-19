@@ -54,6 +54,7 @@ export interface IStorage {
   // Project Moderation methods
   getProjectModerations(projectId: number): Promise<any[]>;
   createProjectModeration(moderation: { projectId: number; status: string; comment: string | null; moderatorId: number }): Promise<any>;
+  getProjectsForModeration(): Promise<Project[]>;
   
   // Task methods
   getTaskById(id: number): Promise<Task | undefined>;

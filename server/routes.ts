@@ -994,6 +994,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   // === Модерація проектів ===
   
+  // Отримання проектів, що потребують модерації (для модераторів)
+  app.get("/api/projects/moderation", hasRole(["moderator", "admin"]), async (req, res, next) => {
+    try {
+      // Отримати всі проекти, які потребують модерації
+      const projects = await storage.getProjectsForModeration();
+      res.json(projects);
+    } catch (error) {
+      next(error);
+    }
+  });
+  
   // Отримання всіх модерацій для проекту
   app.get("/api/projects/:projectId/moderation", isAuthenticated, async (req, res, next) => {
     try {
