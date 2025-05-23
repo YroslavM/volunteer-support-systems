@@ -993,4 +993,4 @@ export class MemStorage implements IStorage {
 }
 
 // Використовуємо MemStorage для розробки
-export const storage = new MemStorage();
+export const storage = new DatabaseStorage();
