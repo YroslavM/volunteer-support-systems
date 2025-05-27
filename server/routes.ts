@@ -168,45 +168,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
       }
       
-      // Якщо користувач не автентифікований або не має спеціальних ролей,
-      // повертаємо тільки опубліковані проєкти (які пройшли модерацію)
-      if (!req.isAuthenticated() || !req.user) {
-        // Для неавторизованих користувачів показуємо лише проєкти, схвалені модераторами
-        const approvedProjects = allProjects.filter(project => 
-          projectModerationStatus.get(project.id) === "approved"
-        );
-        
-        return res.json(approvedProjects);
-      }
-      
-      // Перевіряємо роль користувача
-      const userRole = getUserRole(req);
-      const userId = getUserId(req);
-      
-      // Модератори та адміни бачать всі проєкти
-      if (userRole === "moderator" || userRole === "admin") {
-        return res.json(allProjects);
-      }
-      
-      // Координатори бачать власні проєкти та опубліковані проєкти
-      if (userRole === "coordinator") {
-        const filteredProjects = allProjects.filter(project => 
-          // Координатор бачить свої проєкти незалежно від статусу модерації
-          project.coordinatorId === userId || 
-          // Та проєкти інших координаторів, які були схвалені
-          projectModerationStatus.get(project.id) === "approved"
-        );
-        
-        return res.json(filteredProjects);
-      }
-      
-      // Для всіх інших авторизованих користувачів (донори, волонтери)
-      // повертаємо тільки опубліковані проєкти
-      const approvedProjects = allProjects.filter(project => 
-        projectModerationStatus.get(project.id) === "approved"
-      );
-      
-      res.json(approvedProjects);
+      // Всі користувачі бачать всі проєкти (модерація відключена для спрощення)
+      res.json(allProjects);
     } catch (error) {
       next(error);
     }
