@@ -115,12 +115,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
         offset: parsedQuery.offset !== undefined ? parsedQuery.offset : 0
       } : { limit: 20, offset: 0 };
       
-      const projects = await storage.getProjectsForModeration();
+      // Get all projects for moderation (not just pending ones)
+      const allProjects = await storage.getProjects({ userRole: "moderator", userId: getUserId(req) });
       
       // Filter by moderation status if specified
-      let filteredProjects = projects;
+      let filteredProjects = allProjects;
       if (options.moderationStatus && options.moderationStatus !== "all") {
-        filteredProjects = projects.filter(p => p.moderationStatus === options.moderationStatus);
+        filteredProjects = allProjects.filter(p => p.moderationStatus === options.moderationStatus);
+      } else {
+        // Default to showing pending projects if no filter specified
+        filteredProjects = allProjects.filter(p => p.moderationStatus === "pending");
       }
       
       // Apply search filter
@@ -146,10 +150,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "Некоректний ID проєкту" });
       }
       
-      const { moderationStatus, comment } = z.object({
+      const bodySchema = z.object({
         moderationStatus: z.enum(["approved", "rejected"]),
-        comment: z.string().nullable().optional(),
-      }).parse(req.body);
+        comment: z.string().nullable().optional().default(null),
+      });
+      
+      const { moderationStatus, comment } = bodySchema.parse(req.body);
       
       const project = await storage.getProjectById(id);
       if (!project) {
