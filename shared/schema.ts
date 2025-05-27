@@ -1,22 +1,61 @@
-import { pgTable, text, serial, integer, boolean, timestamp, doublePrecision, pgEnum } from "drizzle-orm/pg-core";
+import {
+  pgTable,
+  text,
+  serial,
+  integer,
+  boolean,
+  timestamp,
+  doublePrecision,
+  pgEnum,
+} from "drizzle-orm/pg-core";
 import { createInsertSchema, createSelectSchema } from "drizzle-zod";
 import { z } from "zod";
 import { relations } from "drizzle-orm";
 
+// export type ModerationStatus = z.infer<typeof moderationStatusEnum>;
+
 // Enum for user roles
-export const userRoleEnum = pgEnum('user_role', ['volunteer', 'coordinator', 'donor', 'admin', 'moderator']);
+export const userRoleEnum = pgEnum("user_role", [
+  "volunteer",
+  "coordinator",
+  "donor",
+  "admin",
+  "moderator",
+]);
 
 // Enum for project status
-export const projectStatusEnum = pgEnum('project_status', ['funding', 'in_progress', 'completed']);
+export const projectStatusEnum = pgEnum("project_status", [
+  "funding",
+  "in_progress",
+  "completed",
+]);
 
 // Enum for project moderation status
-export const moderationStatusEnum = pgEnum('moderation_status', ['pending', 'approved', 'rejected']);
+export const moderationStatusEnum = pgEnum("moderation_status", [
+  "pending",
+  "approved",
+  "rejected",
+]);
+
+// export const moderationStatusEnum = z.enum([
+//   "pending",    // на перевірці
+//   "approved",   // схвалено
+//   "rejected",   // відхилено
+// ]);
 
 // Enum for task status
-export const taskStatusEnum = pgEnum('task_status', ['pending', 'in_progress', 'completed']);
+export const taskStatusEnum = pgEnum("task_status", [
+  "pending",
+  "in_progress",
+  "completed",
+]);
 
 // Enum for application status
-export const applicationStatusEnum = pgEnum('application_status', ['pending', 'approved', 'rejected']);
+export const applicationStatusEnum = pgEnum("application_status", [
+  "pending",
+  "approved",
+  "rejected",
+]);
 
 // Users table
 export const users = pgTable("users", {
@@ -41,8 +80,16 @@ export const projects = pgTable("projects", {
   imageUrl: text("image_url"),
   targetAmount: doublePrecision("target_amount").notNull(),
   collectedAmount: doublePrecision("collected_amount").default(0).notNull(),
-  status: projectStatusEnum("status").default('funding').notNull(),
-  coordinatorId: integer("coordinator_id").references(() => users.id).notNull(),
+  status: projectStatusEnum("status").default("funding").notNull(),
+  //
+  moderationStatus: moderationStatusEnum("moderation_status")
+    .default("pending")
+    .notNull(),
+  isPublished: boolean("is_published").default(false).notNull(), // опціонально для швидкої перевірки
+  //
+  coordinatorId: integer("coordinator_id")
+    .references(() => users.id)
+    .notNull(),
   bankDetails: text("bank_details"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
@@ -51,8 +98,10 @@ export const projects = pgTable("projects", {
 // Project Moderation table
 export const projectModerations = pgTable("project_moderations", {
   id: serial("id").primaryKey(),
-  projectId: integer("project_id").references(() => projects.id).notNull(),
-  status: moderationStatusEnum("status").default('pending').notNull(),
+  projectId: integer("project_id")
+    .references(() => projects.id)
+    .notNull(),
+  status: moderationStatusEnum("status").default("pending").notNull(),
   comment: text("comment"),
   moderatorId: integer("moderator_id").references(() => users.id),
   createdAt: timestamp("created_at").defaultNow().notNull(),
@@ -64,9 +113,11 @@ export const tasks = pgTable("tasks", {
   id: serial("id").primaryKey(),
   title: text("title").notNull(),
   description: text("description").notNull(),
-  projectId: integer("project_id").references(() => projects.id).notNull(),
+  projectId: integer("project_id")
+    .references(() => projects.id)
+    .notNull(),
   volunteerId: integer("volunteer_id").references(() => users.id),
-  status: taskStatusEnum("status").default('pending').notNull(),
+  status: taskStatusEnum("status").default("pending").notNull(),
   deadline: timestamp("deadline"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
@@ -75,7 +126,9 @@ export const tasks = pgTable("tasks", {
 // Reports table
 export const reports = pgTable("reports", {
   id: serial("id").primaryKey(),
-  taskId: integer("task_id").references(() => tasks.id).notNull(),
+  taskId: integer("task_id")
+    .references(() => tasks.id)
+    .notNull(),
   imageUrl: text("image_url"),
   comment: text("comment"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
@@ -84,9 +137,13 @@ export const reports = pgTable("reports", {
 // Volunteer applications
 export const applications = pgTable("applications", {
   id: serial("id").primaryKey(),
-  projectId: integer("project_id").references(() => projects.id).notNull(),
-  volunteerId: integer("volunteer_id").references(() => users.id).notNull(),
-  status: applicationStatusEnum("status").default('pending').notNull(),
+  projectId: integer("project_id")
+    .references(() => projects.id)
+    .notNull(),
+  volunteerId: integer("volunteer_id")
+    .references(() => users.id)
+    .notNull(),
+  status: applicationStatusEnum("status").default("pending").notNull(),
   message: text("message"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
@@ -94,7 +151,9 @@ export const applications = pgTable("applications", {
 // Donations table
 export const donations = pgTable("donations", {
   id: serial("id").primaryKey(),
-  projectId: integer("project_id").references(() => projects.id).notNull(),
+  projectId: integer("project_id")
+    .references(() => projects.id)
+    .notNull(),
   donorId: integer("donor_id").references(() => users.id),
   amount: doublePrecision("amount").notNull(),
   comment: text("comment"),
@@ -113,7 +172,7 @@ export const projectsRelations = relations(projects, ({ one, many }) => ({
   coordinator: one(users, {
     fields: [projects.coordinatorId],
     references: [users.id],
-    relationName: "coordinator_projects"
+    relationName: "coordinator_projects",
   }),
   tasks: many(tasks),
   applications: many(applications),
@@ -128,7 +187,7 @@ export const tasksRelations = relations(tasks, ({ one, many }) => ({
   volunteer: one(users, {
     fields: [tasks.volunteerId],
     references: [users.id],
-    relationName: "volunteer_tasks"
+    relationName: "volunteer_tasks",
   }),
   reports: many(reports),
 }));
@@ -148,7 +207,7 @@ export const applicationsRelations = relations(applications, ({ one }) => ({
   volunteer: one(users, {
     fields: [applications.volunteerId],
     references: [users.id],
-    relationName: "volunteer_applications"
+    relationName: "volunteer_applications",
   }),
 }));
 
@@ -160,34 +219,51 @@ export const donationsRelations = relations(donations, ({ one }) => ({
   donor: one(users, {
     fields: [donations.donorId],
     references: [users.id],
-    relationName: "donor_donations"
+    relationName: "donor_donations",
   }),
 }));
 
 // Zod schemas for validation
-export const insertUserSchema = createInsertSchema(users).omit({ id: true, createdAt: true });
+export const insertUserSchema = createInsertSchema(users).omit({
+  id: true,
+  createdAt: true,
+});
 export const selectUserSchema = createSelectSchema(users);
 
-export const insertProjectSchema = createInsertSchema(projects).omit({ 
-  id: true, 
-  createdAt: true, 
-  updatedAt: true, 
-  collectedAmount: true, 
-  status: true, 
-  coordinatorId: true
+export const insertProjectSchema = createInsertSchema(projects).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+  collectedAmount: true,
+  status: true,
+  coordinatorId: true,
 });
 export const selectProjectSchema = createSelectSchema(projects);
 
-export const insertTaskSchema = createInsertSchema(tasks).omit({ id: true, createdAt: true, updatedAt: true });
+export const insertTaskSchema = createInsertSchema(tasks).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
 export const selectTaskSchema = createSelectSchema(tasks);
 
-export const insertReportSchema = createInsertSchema(reports).omit({ id: true, createdAt: true });
+export const insertReportSchema = createInsertSchema(reports).omit({
+  id: true,
+  createdAt: true,
+});
 export const selectReportSchema = createSelectSchema(reports);
 
-export const insertApplicationSchema = createInsertSchema(applications).omit({ id: true, createdAt: true, status: true });
+export const insertApplicationSchema = createInsertSchema(applications).omit({
+  id: true,
+  createdAt: true,
+  status: true,
+});
 export const selectApplicationSchema = createSelectSchema(applications);
 
-export const insertDonationSchema = createInsertSchema(donations).omit({ id: true, createdAt: true });
+export const insertDonationSchema = createInsertSchema(donations).omit({
+  id: true,
+  createdAt: true,
+});
 export const selectDonationSchema = createSelectSchema(donations);
 
 // Types
