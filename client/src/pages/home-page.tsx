@@ -390,20 +390,20 @@ export default function HomePage() {
                       
                       {/* Прогрес бар і кнопки */}
                       <div className="mt-auto">
-                        {project.status === 'funding' && (
+                        {project.status === 'fundraising' && (
                           <div className="mb-4">
                             <div className="flex items-center justify-between text-sm mb-1">
                               <span className="font-medium text-slate-700">
                                 {t('projects.funded')}
                               </span>
                               <span className="font-medium text-secondary-700">
-                                {Math.floor((project.collectedAmount / project.targetAmount) * 100)}%
+                                {Math.floor((project.currentAmount / project.targetAmount) * 100)}%
                               </span>
                             </div>
                             <div className="h-2 bg-slate-200 rounded-full overflow-hidden">
                               <div 
                                 className="h-full bg-secondary-500 rounded-full" 
-                                style={{width: `${Math.min(100, Math.floor((project.collectedAmount / project.targetAmount) * 100))}%`}}
+                                style={{width: `${Math.min(100, Math.floor((project.currentAmount / project.targetAmount) * 100))}%`}}
                               ></div>
                             </div>
                           </div>
