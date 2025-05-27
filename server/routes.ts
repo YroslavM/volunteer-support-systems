@@ -211,7 +211,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
       };
       
       // Get filtered projects based on user role and moderation status
-      const allProjects = await storage.getProjects(optionsWithUser);
+      let allProjects = await storage.getProjects(optionsWithUser);
+      
+      // Фільтрувати проекти за статусом модерації для неавторизованих користувачів та користувачів з ролями donor/volunteer
+      const isUnauthorized = !req.user;
+      const isLimitedRole = userRole === 'donor' || userRole === 'volunteer';
+      
+      if (isUnauthorized || isLimitedRole) {
+        allProjects = allProjects.filter(project => project.moderationStatus === 'approved');
+      }
       
       // Map database fields to frontend expected format for backward compatibility
       const mappedProjects = allProjects.map(project => ({
