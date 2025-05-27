@@ -144,7 +144,7 @@ export default function ProjectDetails() {
   
   // Calculate progress percentage
   const progressPercentage = project 
-    ? Math.min(Math.round((project.collectedAmount / project.targetAmount) * 100), 100)
+    ? Math.min(Math.round((project.currentAmount / project.targetAmount) * 100), 100)
     : 0;
   
   // Get status badge color
@@ -206,8 +206,8 @@ export default function ProjectDetails() {
                   className="w-full h-full object-cover"
                 />
                 <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/60 to-transparent p-4">
-                  <Badge className={`mb-2 ${getStatusColor(project.status)}`}>
-                    {t(`projects.status.${project.status}`)}
+                  <Badge className={`mb-2 ${getStatusColor(project.projectStatus)}`}>
+                    {t(`projects.status.${project.projectStatus}`)}
                   </Badge>
                   <h1 className="text-2xl font-bold text-white">{project.name}</h1>
                 </div>
@@ -218,7 +218,7 @@ export default function ProjectDetails() {
                 {project.status === 'funding' && (
                   <div className="mb-6">
                     <div className="flex justify-between mb-2">
-                      <span className="text-gray-600">{t('home.projects.collected')}: {project.collectedAmount.toLocaleString('uk-UA')} ₴</span>
+                      <span className="text-gray-600">{t('home.projects.collected')}: {project.currentAmount?.toLocaleString('uk-UA') || '0'} ₴</span>
                       <span className="font-medium">{t('home.projects.target')}: {project.targetAmount.toLocaleString('uk-UA')} ₴</span>
                     </div>
                     <Progress value={progressPercentage} className="h-2" />
@@ -345,7 +345,7 @@ export default function ProjectDetails() {
                 <CardDescription>Фінансова мета проекту</CardDescription>
               </CardHeader>
               <CardContent>
-                <div className="text-3xl font-bold">{project.collectedAmount.toLocaleString('uk-UA')} ₴</div>
+                <div className="text-3xl font-bold">{project.currentAmount?.toLocaleString('uk-UA') || '0'} ₴</div>
                 <div className="text-sm text-gray-500 mt-1">
                   Зібрано {progressPercentage}% від необхідної суми
                 </div>
