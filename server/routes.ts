@@ -152,10 +152,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       const bodySchema = z.object({
         moderationStatus: z.enum(["approved", "rejected"]),
-        comment: z.string().nullable().optional().default(null),
       });
       
-      const { moderationStatus, comment } = bodySchema.parse(req.body);
+      const { moderationStatus } = bodySchema.parse(req.body);
+      const comment = req.body.comment || null;
       
       const project = await storage.getProjectById(id);
       if (!project) {
