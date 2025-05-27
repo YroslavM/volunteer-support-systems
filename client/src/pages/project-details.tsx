@@ -215,7 +215,7 @@ export default function ProjectDetails() {
               <div className="p-6">
                 <p className="text-gray-700 mb-6 whitespace-pre-line">{project.description}</p>
                 
-                {project.status === 'funding' && (
+                {project.projectStatus === 'fundraising' && (
                   <div className="mb-6">
                     <div className="flex justify-between mb-2">
                       <span className="text-gray-600">{t('home.projects.collected')}: {project.currentAmount?.toLocaleString('uk-UA') || '0'} ₴</span>
@@ -227,7 +227,7 @@ export default function ProjectDetails() {
                 
                 <div className="mt-6 flex flex-wrap gap-3">
                   {/* Кнопка "Підтримати" для всіх користувачів, якщо проект у стані збору коштів */}
-                  {project.status === 'funding' && (
+                  {project.projectStatus === 'fundraising' && (
                     <Link href={`/donate/${project.id}`}>
                       <Button className="bg-green-600 hover:bg-green-700 text-white flex items-center">
                         <HeartHandshake className="mr-2 h-5 w-5" />
@@ -237,7 +237,7 @@ export default function ProjectDetails() {
                   )}
                   
                   {/* Кнопки для волонтерів */}
-                  {user && user.role === 'volunteer' && project.status === 'in_progress' && hasApplied === false && (
+                  {user && user.role === 'volunteer' && project.projectStatus === 'in_progress' && hasApplied === false && (
                     <Button 
                       onClick={handleApply} 
                       disabled={applyMutation.isPending}
@@ -358,7 +358,7 @@ export default function ProjectDetails() {
                   </div>
                 </div>
                 
-                {project.status === 'funding' && (
+                {project.projectStatus === 'fundraising' && (
                   <div className="mt-6">
                     <Link href={`/donate/${project.id}`}>
                       <Button className="w-full bg-green-600 hover:bg-green-700 text-white">
