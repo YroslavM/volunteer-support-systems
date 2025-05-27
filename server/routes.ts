@@ -142,84 +142,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
         offset: parsedQuery.offset !== undefined ? parsedQuery.offset : 0
       } : { limit: 20, offset: 0 };
       
-      // Отримуємо всі проєкти
-      const allProjects = await storage.getProjects(options);
+      // Get user info for role-based filtering
+      const userId = req.user?.id;
+      const userRole = req.user?.role;
       
-      // Створюємо мапу всіх статусів модерації для кожного проекту
-      const projectModerationStatus = new Map<number, string>();
+      // Add user context to options for proper filtering
+      const optionsWithUser = {
+        ...options,
+        userId,
+        userRole
+      };
       
-      // Для кожного проекту отримуємо останній статус модерації
-      for (const project of allProjects) {
-        // Спробуємо отримати статус модерації з MemStorage
-        const moderations = await storage.getProjectModerations(project.id);
-        
-        if (moderations.length > 0) {
-          // Модерації сортуються за датою створення (найновіші спочатку)
-          projectModerationStatus.set(project.id, moderations[0].status);
-        } else {
-          // Якщо немає записів в MemStorage, спробуємо отримати з бази даних
-          try {
-            const { rows: dbModerations } = await pool.query(`
-              SELECT id, project_id, moderator_id, status, comment, created_at 
-              FROM project_moderation_status 
-              WHERE project_id = $1 
-              ORDER BY created_at DESC
-            `, [project.id]);
-              
-            if (dbModerations.length > 0) {
-              // Якщо знайдено записи в базі даних, використовуємо останній за часом
-              projectModerationStatus.set(project.id, dbModerations[0].status);
-            } else {
-              // Якщо немає записів ні в пам'яті, ні в базі даних, встановлюємо статус "pending"
-              projectModerationStatus.set(project.id, "pending");
-            }
-          } catch (dbError) {
-            console.error(`Помилка отримання модерацій для проекту ${project.id}:`, dbError);
-            // При помилці встановлюємо статус "pending"
-            projectModerationStatus.set(project.id, "pending");
-          }
-        }
-      }
+      // Get filtered projects based on user role and moderation status
+      const allProjects = await storage.getProjects(optionsWithUser);
       
-      // Якщо користувач не автентифікований або не має спеціальних ролей,
-      // повертаємо тільки опубліковані проєкти (які пройшли модерацію)
-      if (!req.isAuthenticated() || !req.user) {
-        // Для неавторизованих користувачів показуємо лише проєкти, схвалені модераторами
-        const approvedProjects = allProjects.filter(project => 
-          projectModerationStatus.get(project.id) === "approved"
-        );
-        
-        return res.json(approvedProjects);
-      }
-      
-      // Перевіряємо роль користувача
-      const userRole = getUserRole(req);
-      const userId = getUserId(req);
-      
-      // Модератори та адміни бачать всі проєкти
-      if (userRole === "moderator" || userRole === "admin") {
-        return res.json(allProjects);
-      }
-      
-      // Координатори бачать власні проєкти та опубліковані проєкти
-      if (userRole === "coordinator") {
-        const filteredProjects = allProjects.filter(project => 
-          // Координатор бачить свої проєкти незалежно від статусу модерації
-          project.coordinatorId === userId || 
-          // Та проєкти інших координаторів, які були схвалені
-          projectModerationStatus.get(project.id) === "approved"
-        );
-        
-        return res.json(filteredProjects);
-      }
-      
-      // Для всіх інших авторизованих користувачів (донори, волонтери)
-      // повертаємо тільки опубліковані проєкти
-      const approvedProjects = allProjects.filter(project => 
-        projectModerationStatus.get(project.id) === "approved"
-      );
-      
-      res.json(approvedProjects);
+      res.json(allProjects);
     } catch (error) {
       next(error);
     }
