@@ -161,7 +161,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           try {
             const { rows: dbModerations } = await pool.query(`
               SELECT id, project_id, moderator_id, status, comment, created_at 
-              FROM project_moderation_status 
+              FROM project_moderations 
               WHERE project_id = $1 
               ORDER BY created_at DESC
             `, [project.id]);
