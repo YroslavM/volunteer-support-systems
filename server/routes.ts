@@ -1180,11 +1180,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "Некоректний ID координатора" });
       }
       
-      // Check if user is the coordinator or an admin
+      // Check if user is the coordinator or an admin/moderator
       const userRole = getUserRole(req);
       const userId = getUserId(req);
       
-      if (userRole !== "admin" && coordinatorId !== userId) {
+      if (userRole !== "admin" && userRole !== "moderator" && coordinatorId !== userId) {
         return res.status(403).json({ message: "Ви можете переглядати тільки власні проєкти" });
       }
       
