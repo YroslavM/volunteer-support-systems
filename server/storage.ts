@@ -281,9 +281,28 @@ export class DatabaseStorage implements IStorage {
   }
   
   async deleteProject(id: number): Promise<void> {
-    await db
-      .delete(projects)
-      .where(eq(projects.id, id));
+    // Delete related records first to avoid foreign key constraint errors
+    
+    // Delete donations
+    await db.delete(donations).where(eq(donations.projectId, id));
+    
+    // Delete reports related to tasks of this project
+    const projectTasks = await db.select({ id: tasks.id }).from(tasks).where(eq(tasks.projectId, id));
+    for (const task of projectTasks) {
+      await db.delete(reports).where(eq(reports.taskId, task.id));
+    }
+    
+    // Delete tasks
+    await db.delete(tasks).where(eq(tasks.projectId, id));
+    
+    // Delete applications
+    await db.delete(applications).where(eq(applications.projectId, id));
+    
+    // Delete project moderations
+    await db.delete(projectModerations).where(eq(projectModerations.projectId, id));
+    
+    // Finally delete the project
+    await db.delete(projects).where(eq(projects.id, id));
   }
   
   // Project Moderation Methods

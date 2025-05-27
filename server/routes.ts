@@ -565,12 +565,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "Ви вже подали заявку на цей проєкт" });
       }
       
-      const data = insertApplicationSchema.parse(req.body);
+      // Only parse the message from request body, projectId and volunteerId come from route and user
+      const { message } = z.object({
+        message: z.string().optional(),
+      }).parse(req.body);
       
       const application = await storage.createApplication({
-        ...data,
         projectId,
         volunteerId: req.user!.id,
+        message: message || "",
       });
       
       res.status(201).json(application);
