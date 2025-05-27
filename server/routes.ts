@@ -17,8 +17,7 @@ import {
   taskStatusEnum,
   applicationStatusEnum,
   moderationStatusEnum,
-  projects,
-  projectModerations
+  projects
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, desc } from "drizzle-orm";
@@ -156,7 +155,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Get filtered projects based on user role and moderation status
       const allProjects = await storage.getProjects(optionsWithUser);
       
-      res.json(allProjects);
+      // Map database fields to frontend expected format for backward compatibility
+      const mappedProjects = allProjects.map(project => ({
+        ...project,
+        status: project.projectStatus, // Map projectStatus to status for frontend
+        collectedAmount: project.currentAmount // Map currentAmount to collectedAmount for frontend
+      }));
+      
+      res.json(mappedProjects);
     } catch (error) {
       next(error);
     }
@@ -211,20 +217,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Використовуємо функцію для отримання ID координатора
       const coordinatorId = getUserId(req);
       
-      // Створюємо проект
+      // Створюємо проект з правильними початковими статусами
       const project = await storage.createProject({
         ...data,
-        coordinatorId,
-        status: "funding", // Set initial status
-        collectedAmount: 0, // Set initial collected amount
-      });
-      
-      // Автоматично створюємо запис модерації зі статусом "pending"
-      await storage.createProjectModeration({
-        projectId: project.id,
-        status: "pending", 
-        comment: null,
-        moderatorId: 0 // 0 означає автоматичну модерацію (система)
+        coordinatorId
       });
       
       res.status(201).json(project);
@@ -259,17 +255,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         // Create project
         const project = await storage.createProject({
           ...validatedData,
-          coordinatorId: coordinatorId,
-          status: "funding",
-          collectedAmount: 0
-        });
-        
-        // Автоматично створюємо запис модерації зі статусом "pending"
-        await storage.createProjectModeration({
-          projectId: project.id,
-          status: "pending", 
-          comment: null,
-          moderatorId: 0 // 0 означає автоматичну модерацію (система)
+          coordinatorId: coordinatorId
         });
         
         res.status(201).json(project);
