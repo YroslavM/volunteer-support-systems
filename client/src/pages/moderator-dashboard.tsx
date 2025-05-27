@@ -31,14 +31,14 @@ import { Link, useLocation } from "wouter";
 import { SelectProject } from "@shared/schema";
 
 type ModerateAction = "approve" | "reject";
-// Використовуємо статус модерації
-// pending = очікує схвалення
-// approved = схвалено
-// rejected = відхилено
-type ModerationStatus = "pending" | "approved" | "rejected" | "all";
+// Використовуємо статус проєкту як індикатор модерації
+// funding = очікує схвалення (pending)
+// in_progress = схвалено (approved)
+// completed = відхилено (rejected)
+type ModerationStatus = "funding" | "in_progress" | "completed" | "all";
 
 export default function ModeratorDashboard() {
-  const [statusFilter, setStatusFilter] = useState<ModerationStatus>("pending");
+  const [statusFilter, setStatusFilter] = useState<ModerationStatus>("funding");
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedProject, setSelectedProject] = useState<SelectProject | null>(null);
   const [isDetailsOpen, setIsDetailsOpen] = useState(false);
@@ -76,7 +76,7 @@ export default function ModeratorDashboard() {
   const moderationMutation = useMutation({
     mutationFn: async ({ projectId, action, comment }: { projectId: number; action: ModerateAction; comment?: string }) => {
       const response = await apiRequest("POST", `/api/projects/${projectId}/moderate`, {
-        moderationStatus: action === "approve" ? "approved" : "rejected",
+        status: action === "approve" ? "in_progress" : "completed",
         comment: comment || null
       });
       
@@ -133,36 +133,23 @@ export default function ModeratorDashboard() {
     setIsDetailsOpen(true);
   };
 
-  const getStatusBadge = (moderationStatus: string) => {
-    switch (moderationStatus) {
-      case "pending":
+  const getStatusBadge = (status: string) => {
+    switch (status) {
+      case "funding":
         return <Badge variant="outline" className="flex items-center gap-1"><Clock className="h-3 w-3" /> На розгляді</Badge>;
-      case "approved":
+      case "in_progress":
         return <Badge variant="default" className="flex items-center gap-1"><Check className="h-3 w-3" /> Схвалено</Badge>;
-      case "rejected":
+      case "completed":
         return <Badge variant="destructive" className="flex items-center gap-1"><X className="h-3 w-3" /> Відхилено</Badge>;
       default:
-        return <Badge variant="secondary">{moderationStatus}</Badge>;
-    }
-  };
-
-  const getProjectStatusBadge = (projectStatus: string) => {
-    switch (projectStatus) {
-      case "fundraising":
-        return <Badge variant="outline" className="text-blue-600 border-blue-600">Збір коштів</Badge>;
-      case "in_progress":
-        return <Badge variant="outline" className="text-orange-600 border-orange-600">У процесі</Badge>;
-      case "completed":
-        return <Badge variant="outline" className="text-green-600 border-green-600">Завершено</Badge>;
-      default:
-        return <Badge variant="outline">{projectStatus}</Badge>;
+        return <Badge variant="secondary">{status}</Badge>;
     }
   };
 
   const filterButtons = [
-    { value: "pending", label: "На розгляді", icon: <Clock className="h-4 w-4" /> },
-    { value: "approved", label: "Схвалені", icon: <Check className="h-4 w-4" /> },
-    { value: "rejected", label: "Відхилені", icon: <X className="h-4 w-4" /> },
+    { value: "funding", label: "На розгляді", icon: <Clock className="h-4 w-4" /> },
+    { value: "in_progress", label: "Схвалені", icon: <Check className="h-4 w-4" /> },
+    { value: "completed", label: "Відхилені", icon: <X className="h-4 w-4" /> },
     { value: "all", label: "Усі", icon: null },
   ];
 
@@ -187,9 +174,9 @@ export default function ModeratorDashboard() {
               >
                 {button.icon}
                 {button.label}
-                {button.value === "pending" && (
+                {button.value === "funding" && (
                   <Badge variant="secondary" className="ml-1">
-                    {projects?.filter(p => p.moderationStatus === "pending").length || 0}
+                    {projects?.filter(p => p.status === "funding").length || 0}
                   </Badge>
                 )}
               </Button>
@@ -239,8 +226,7 @@ export default function ModeratorDashboard() {
                   <TableHead>Координатор</TableHead>
                   <TableHead>Сума</TableHead>
                   <TableHead>Дата створення</TableHead>
-                  <TableHead>Статус проекту</TableHead>
-                  <TableHead>Статус модерації</TableHead>
+                  <TableHead>Статус</TableHead>
                   <TableHead className="text-right">Дії</TableHead>
                 </TableRow>
               </TableHeader>
@@ -251,8 +237,7 @@ export default function ModeratorDashboard() {
                     <TableCell>Координатор ID: {project.coordinatorId}</TableCell>
                     <TableCell>{new Intl.NumberFormat('uk-UA', { style: 'currency', currency: 'UAH' }).format(project.targetAmount)}</TableCell>
                     <TableCell>{new Date(project.createdAt).toLocaleDateString('uk-UA')}</TableCell>
-                    <TableCell>{getProjectStatusBadge(project.projectStatus)}</TableCell>
-                    <TableCell>{getStatusBadge(project.moderationStatus)}</TableCell>
+                    <TableCell>{getStatusBadge(project.status)}</TableCell>
                     <TableCell className="text-right">
                       <div className="flex justify-end gap-2">
                         <Button 
@@ -264,7 +249,7 @@ export default function ModeratorDashboard() {
                           <span className="sr-only">Деталі</span>
                         </Button>
                         
-                        {(project.moderationStatus === "pending") && (
+                        {(project.status === "funding") && (
                           <>
                             <Button 
                               size="icon" 
@@ -332,19 +317,19 @@ export default function ModeratorDashboard() {
                   
                   <div>
                     <h3 className="font-semibold mb-1">Статус проєкту</h3>
-                    <p>{selectedProject.projectStatus === "fundraising" ? "Збір коштів" : 
-                        selectedProject.projectStatus === "in_progress" ? "В процесі" : 
-                        selectedProject.projectStatus === "completed" ? "Завершено" : selectedProject.projectStatus}</p>
+                    <p>{selectedProject.status === "funding" ? "Збір коштів" : 
+                        selectedProject.status === "in_progress" ? "В процесі" : 
+                        selectedProject.status === "completed" ? "Завершено" : selectedProject.status}</p>
                   </div>
                   
                   <div>
                     <h3 className="font-semibold mb-1">Статус модерації</h3>
-                    <div>{getStatusBadge(selectedProject.moderationStatus)}</div>
+                    <div>{getStatusBadge(selectedProject.status)}</div>
                   </div>
                 </div>
               </div>
               
-              {selectedProject.moderationStatus === "pending" && (
+              {selectedProject.status === "funding" && (
                 <div className="flex justify-end gap-2 pt-4">
                   <Button variant="outline" onClick={() => setIsDetailsOpen(false)}>
                     Закрити

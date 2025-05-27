@@ -6,8 +6,8 @@ import { relations } from "drizzle-orm";
 // Enum for user roles
 export const userRoleEnum = pgEnum('user_role', ['volunteer', 'coordinator', 'donor', 'admin', 'moderator']);
 
-// Enum for project status  
-export const projectStatusEnum = pgEnum('project_status', ['fundraising', 'in_progress', 'completed']);
+// Enum for project status
+export const projectStatusEnum = pgEnum('project_status', ['funding', 'in_progress', 'completed']);
 
 // Enum for project moderation status
 export const moderationStatusEnum = pgEnum('moderation_status', ['pending', 'approved', 'rejected']);
@@ -40,16 +40,24 @@ export const projects = pgTable("projects", {
   description: text("description").notNull(),
   imageUrl: text("image_url"),
   targetAmount: doublePrecision("target_amount").notNull(),
-  currentAmount: doublePrecision("current_amount").default(0).notNull(),
-  projectStatus: projectStatusEnum("project_status").default('fundraising').notNull(),
-  moderationStatus: moderationStatusEnum("moderation_status").default('pending').notNull(),
+  collectedAmount: doublePrecision("collected_amount").default(0).notNull(),
+  status: projectStatusEnum("status").default('funding').notNull(),
   coordinatorId: integer("coordinator_id").references(() => users.id).notNull(),
   bankDetails: text("bank_details"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
 
-
+// Project Moderation table
+export const projectModerations = pgTable("project_moderations", {
+  id: serial("id").primaryKey(),
+  projectId: integer("project_id").references(() => projects.id).notNull(),
+  status: moderationStatusEnum("status").default('pending').notNull(),
+  comment: text("comment"),
+  moderatorId: integer("moderator_id").references(() => users.id),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
 
 // Tasks table
 export const tasks = pgTable("tasks", {
@@ -164,9 +172,8 @@ export const insertProjectSchema = createInsertSchema(projects).omit({
   id: true, 
   createdAt: true, 
   updatedAt: true, 
-  currentAmount: true, 
-  projectStatus: true, 
-  moderationStatus: true,
+  collectedAmount: true, 
+  status: true, 
   coordinatorId: true
 });
 export const selectProjectSchema = createSelectSchema(projects);

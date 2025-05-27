@@ -47,7 +47,7 @@ export default function HomePage() {
     window.addEventListener('scroll', handleScroll);
     
     // Load projects
-    fetch("/api/projects?status=fundraising")
+    fetch("/api/projects?status=funding")
       .then((res) => res.json())
       .then((data) => {
         setProjects(data);
@@ -352,7 +352,7 @@ export default function HomePage() {
                 </div>
               ) : (
                 // Проєкти
-                (Array.isArray(projects) ? projects : []).slice(0, 3).map((project) => (
+                projects.slice(0, 3).map((project) => (
                   <div key={project.id} className="group relative rounded-2xl shadow-sm hover:shadow-xl overflow-hidden bg-white border border-slate-200 transition-all duration-300 hover:border-secondary-200 flex flex-col">
                     {/* Верхня частина карточки */}
                     <div className="relative h-52 bg-slate-100 overflow-hidden">
@@ -373,7 +373,7 @@ export default function HomePage() {
                       <div className="absolute bottom-0 left-0 right-0 p-5">
                         <div className="flex items-center justify-between">
                           <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-white/20 text-white backdrop-blur-sm">
-                            {project.status === 'fundraising' ? t('projects.status.funding') : 
+                            {project.status === 'funding' ? t('projects.status.funding') : 
                              project.status === 'in_progress' ? t('projects.status.in_progress') : 
                              t('projects.status.completed')}
                           </span>
@@ -390,20 +390,20 @@ export default function HomePage() {
                       
                       {/* Прогрес бар і кнопки */}
                       <div className="mt-auto">
-                        {project.status === 'fundraising' && (
+                        {project.status === 'funding' && (
                           <div className="mb-4">
                             <div className="flex items-center justify-between text-sm mb-1">
                               <span className="font-medium text-slate-700">
                                 {t('projects.funded')}
                               </span>
                               <span className="font-medium text-secondary-700">
-                                {Math.floor((project.currentAmount / project.targetAmount) * 100)}%
+                                {Math.floor((project.collectedAmount / project.targetAmount) * 100)}%
                               </span>
                             </div>
                             <div className="h-2 bg-slate-200 rounded-full overflow-hidden">
                               <div 
                                 className="h-full bg-secondary-500 rounded-full" 
-                                style={{width: `${Math.min(100, Math.floor((project.currentAmount / project.targetAmount) * 100))}%`}}
+                                style={{width: `${Math.min(100, Math.floor((project.collectedAmount / project.targetAmount) * 100))}%`}}
                               ></div>
                             </div>
                           </div>

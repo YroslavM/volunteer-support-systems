@@ -144,7 +144,7 @@ export default function ProjectDetails() {
   
   // Calculate progress percentage
   const progressPercentage = project 
-    ? Math.min(Math.round((project.currentAmount / project.targetAmount) * 100), 100)
+    ? Math.min(Math.round((project.collectedAmount / project.targetAmount) * 100), 100)
     : 0;
   
   // Get status badge color
@@ -206,31 +206,19 @@ export default function ProjectDetails() {
                   className="w-full h-full object-cover"
                 />
                 <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/60 to-transparent p-4">
-                  <div className="flex gap-2 mb-2">
-                    <Badge className={`${getStatusColor(project.projectStatus)}`}>
-                      {project.projectStatus === 'fundraising' && 'Збір коштів'}
-                      {project.projectStatus === 'in_progress' && 'У процесі'}
-                      {project.projectStatus === 'completed' && 'Завершено'}
-                    </Badge>
-                    {/* Статус модерації тільки для координаторів та модераторів */}
-                    {user && (user.role === 'coordinator' || user.role === 'moderator' || user.role === 'admin') && (
-                      <Badge variant="outline" className="bg-white/10 text-white border-white/30">
-                        {project.moderationStatus === 'pending' && 'На розгляді'}
-                        {project.moderationStatus === 'approved' && 'Схвалено'}
-                        {project.moderationStatus === 'rejected' && 'Відхилено'}
-                      </Badge>
-                    )}
-                  </div>
+                  <Badge className={`mb-2 ${getStatusColor(project.status)}`}>
+                    {t(`projects.status.${project.status}`)}
+                  </Badge>
                   <h1 className="text-2xl font-bold text-white">{project.name}</h1>
                 </div>
               </div>
               <div className="p-6">
                 <p className="text-gray-700 mb-6 whitespace-pre-line">{project.description}</p>
                 
-                {project.projectStatus === 'fundraising' && (
+                {project.status === 'funding' && (
                   <div className="mb-6">
                     <div className="flex justify-between mb-2">
-                      <span className="text-gray-600">{t('home.projects.collected')}: {project.currentAmount?.toLocaleString('uk-UA') || '0'} ₴</span>
+                      <span className="text-gray-600">{t('home.projects.collected')}: {project.collectedAmount.toLocaleString('uk-UA')} ₴</span>
                       <span className="font-medium">{t('home.projects.target')}: {project.targetAmount.toLocaleString('uk-UA')} ₴</span>
                     </div>
                     <Progress value={progressPercentage} className="h-2" />
@@ -239,7 +227,7 @@ export default function ProjectDetails() {
                 
                 <div className="mt-6 flex flex-wrap gap-3">
                   {/* Кнопка "Підтримати" для всіх користувачів, якщо проект у стані збору коштів */}
-                  {project.projectStatus === 'fundraising' && (
+                  {project.status === 'funding' && (
                     <Link href={`/donate/${project.id}`}>
                       <Button className="bg-green-600 hover:bg-green-700 text-white flex items-center">
                         <HeartHandshake className="mr-2 h-5 w-5" />
@@ -249,7 +237,7 @@ export default function ProjectDetails() {
                   )}
                   
                   {/* Кнопки для волонтерів */}
-                  {user && user.role === 'volunteer' && project.projectStatus === 'in_progress' && hasApplied === false && (
+                  {user && user.role === 'volunteer' && project.status === 'in_progress' && hasApplied === false && (
                     <Button 
                       onClick={handleApply} 
                       disabled={applyMutation.isPending}
@@ -357,7 +345,7 @@ export default function ProjectDetails() {
                 <CardDescription>Фінансова мета проекту</CardDescription>
               </CardHeader>
               <CardContent>
-                <div className="text-3xl font-bold">{project.currentAmount?.toLocaleString('uk-UA') || '0'} ₴</div>
+                <div className="text-3xl font-bold">{project.collectedAmount.toLocaleString('uk-UA')} ₴</div>
                 <div className="text-sm text-gray-500 mt-1">
                   Зібрано {progressPercentage}% від необхідної суми
                 </div>
@@ -370,7 +358,7 @@ export default function ProjectDetails() {
                   </div>
                 </div>
                 
-                {project.projectStatus === 'fundraising' && (
+                {project.status === 'funding' && (
                   <div className="mt-6">
                     <Link href={`/donate/${project.id}`}>
                       <Button className="w-full bg-green-600 hover:bg-green-700 text-white">

@@ -17,7 +17,8 @@ import {
   taskStatusEnum,
   applicationStatusEnum,
   moderationStatusEnum,
-  projects
+  projects,
+  projectModerations
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, desc } from "drizzle-orm";
@@ -70,12 +71,13 @@ function hasRole(roles: string[]) {
   };
 }
 
-// Helper function to check if user is a moderator
+// Helper function to check if user is a moderator (using admin role)
 function isModerator(req: Request): boolean {
+  // We're using admin role for moderators as we don't have a separate moderator role in the user role enum
   if (DEV_MODE) {
-    return req.body.userRole === "moderator" || req.body.userRole === "admin" || req.user?.role === "moderator" || req.user?.role === "admin";
+    return req.body.userRole === "admin" || req.user?.role === "admin";
   }
-  return req.user?.role === "moderator" || req.user?.role === "admin";
+  return req.user?.role === "admin";
 }
 
 // Middleware to check if user is a moderator
@@ -101,91 +103,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/projects/moderation", isAuthenticated, isModeratorMiddleware, async (req, res, next) => {
     try {
       const querySchema = z.object({
-        status: z.string().optional(), // moderationStatus filter
-        search: z.string().optional(),
-        limit: z.coerce.number().optional(),
-        offset: z.coerce.number().optional(),
-      }).optional();
-      
-      const parsedQuery = querySchema.parse(req.query);
-      const options = parsedQuery ? {
-        moderationStatus: parsedQuery.status, // Use moderationStatus for filtering
-        search: parsedQuery.search,
-        limit: parsedQuery.limit !== undefined ? parsedQuery.limit : 20,
-        offset: parsedQuery.offset !== undefined ? parsedQuery.offset : 0
-      } : { limit: 20, offset: 0 };
-      
-      // Get all projects for moderation (not just pending ones)
-      const allProjects = await storage.getProjects({ userRole: "moderator", userId: getUserId(req) });
-      
-      // Filter by moderation status if specified
-      let filteredProjects = allProjects;
-      if (options.moderationStatus && options.moderationStatus !== "all") {
-        filteredProjects = allProjects.filter(p => p.moderationStatus === options.moderationStatus);
-      } else {
-        // Default to showing pending projects if no filter specified
-        filteredProjects = allProjects.filter(p => p.moderationStatus === "pending");
-      }
-      
-      // Apply search filter
-      if (options.search) {
-        const searchLower = options.search.toLowerCase();
-        filteredProjects = filteredProjects.filter(p => 
-          p.name.toLowerCase().includes(searchLower) ||
-          p.description.toLowerCase().includes(searchLower)
-        );
-      }
-      
-      res.json(filteredProjects);
-    } catch (error) {
-      next(error);
-    }
-  });
-
-  // Moderate project (approve/reject)
-  app.post("/api/projects/:id/moderate", isAuthenticated, isModeratorMiddleware, async (req, res, next) => {
-    try {
-      const id = parseInt(req.params.id);
-      if (isNaN(id)) {
-        return res.status(400).json({ message: "Некоректний ID проєкту" });
-      }
-      
-      const bodySchema = z.object({
-        moderationStatus: z.enum(["approved", "rejected"]),
-      });
-      
-      const { moderationStatus } = bodySchema.parse(req.body);
-      const comment = req.body.comment || null;
-      
-      const project = await storage.getProjectById(id);
-      if (!project) {
-        return res.status(404).json({ message: "Проєкт не знайдено" });
-      }
-      
-      const moderatorId = getUserId(req);
-      
-      // Create moderation record
-      await storage.createProjectModeration({
-        projectId: id,
-        status: moderationStatus,
-        comment: comment || null,
-        moderatorId
-      });
-      
-      // Update project moderation status
-      const updatedProject = await storage.updateProjectModerationStatus(id, moderationStatus, moderatorId);
-      
-      res.json(updatedProject);
-    } catch (error) {
-      next(error);
-    }
-  });
-
-  // Get all projects
-  app.get("/api/projects", async (req, res, next) => {
-    try {
-      const querySchema = z.object({
-        status: z.string().optional(), // Accept any string to handle old status values
+        status: z.enum(projectStatusEnum.enumValues).optional(),
         search: z.string().optional(),
         limit: z.coerce.number().optional(),
         offset: z.coerce.number().optional(),
@@ -199,36 +117,109 @@ export async function registerRoutes(app: Express): Promise<Server> {
         offset: parsedQuery.offset !== undefined ? parsedQuery.offset : 0
       } : { limit: 20, offset: 0 };
       
-      // Get user info for role-based filtering
-      const userId = req.user?.id;
-      const userRole = req.user?.role;
+      const projects = await storage.getProjects(options);
+      res.json(projects);
+    } catch (error) {
+      next(error);
+    }
+  });
+
+  // Get all projects
+  app.get("/api/projects", async (req, res, next) => {
+    try {
+      const querySchema = z.object({
+        status: z.enum(projectStatusEnum.enumValues).optional(),
+        search: z.string().optional(),
+        limit: z.coerce.number().optional(),
+        offset: z.coerce.number().optional(),
+      }).optional();
       
-      // Add user context to options for proper filtering
-      const optionsWithUser = {
-        ...options,
-        userId,
-        userRole
-      };
+      const parsedQuery = querySchema.parse(req.query);
+      const options = parsedQuery ? {
+        status: parsedQuery.status,
+        search: parsedQuery.search,
+        limit: parsedQuery.limit !== undefined ? parsedQuery.limit : 20,
+        offset: parsedQuery.offset !== undefined ? parsedQuery.offset : 0
+      } : { limit: 20, offset: 0 };
       
-      // Get filtered projects based on user role and moderation status
-      let allProjects = await storage.getProjects(optionsWithUser);
+      // Отримуємо всі проєкти
+      const allProjects = await storage.getProjects(options);
       
-      // Фільтрувати проекти за статусом модерації для неавторизованих користувачів та користувачів з ролями donor/volunteer
-      const isUnauthorized = !req.user;
-      const isLimitedRole = userRole === 'donor' || userRole === 'volunteer';
+      // Створюємо мапу всіх статусів модерації для кожного проекту
+      const projectModerationStatus = new Map<number, string>();
       
-      if (isUnauthorized || isLimitedRole) {
-        allProjects = allProjects.filter(project => project.moderationStatus === 'approved');
+      // Для кожного проекту отримуємо останній статус модерації
+      for (const project of allProjects) {
+        // Спробуємо отримати статус модерації з MemStorage
+        const moderations = await storage.getProjectModerations(project.id);
+        
+        if (moderations.length > 0) {
+          // Модерації сортуються за датою створення (найновіші спочатку)
+          projectModerationStatus.set(project.id, moderations[0].status);
+        } else {
+          // Якщо немає записів в MemStorage, спробуємо отримати з бази даних
+          try {
+            const { rows: dbModerations } = await pool.query(`
+              SELECT id, project_id, moderator_id, status, comment, created_at 
+              FROM project_moderation_status 
+              WHERE project_id = $1 
+              ORDER BY created_at DESC
+            `, [project.id]);
+              
+            if (dbModerations.length > 0) {
+              // Якщо знайдено записи в базі даних, використовуємо останній за часом
+              projectModerationStatus.set(project.id, dbModerations[0].status);
+            } else {
+              // Якщо немає записів ні в пам'яті, ні в базі даних, встановлюємо статус "pending"
+              projectModerationStatus.set(project.id, "pending");
+            }
+          } catch (dbError) {
+            console.error(`Помилка отримання модерацій для проекту ${project.id}:`, dbError);
+            // При помилці встановлюємо статус "pending"
+            projectModerationStatus.set(project.id, "pending");
+          }
+        }
       }
       
-      // Map database fields to frontend expected format for backward compatibility
-      const mappedProjects = allProjects.map(project => ({
-        ...project,
-        status: project.projectStatus, // Map projectStatus to status for frontend
-        collectedAmount: project.currentAmount // Map currentAmount to collectedAmount for frontend
-      }));
+      // Якщо користувач не автентифікований або не має спеціальних ролей,
+      // повертаємо тільки опубліковані проєкти (які пройшли модерацію)
+      if (!req.isAuthenticated() || !req.user) {
+        // Для неавторизованих користувачів показуємо лише проєкти, схвалені модераторами
+        const approvedProjects = allProjects.filter(project => 
+          projectModerationStatus.get(project.id) === "approved"
+        );
+        
+        return res.json(approvedProjects);
+      }
       
-      res.json(mappedProjects);
+      // Перевіряємо роль користувача
+      const userRole = getUserRole(req);
+      const userId = getUserId(req);
+      
+      // Модератори та адміни бачать всі проєкти
+      if (userRole === "moderator" || userRole === "admin") {
+        return res.json(allProjects);
+      }
+      
+      // Координатори бачать власні проєкти та опубліковані проєкти
+      if (userRole === "coordinator") {
+        const filteredProjects = allProjects.filter(project => 
+          // Координатор бачить свої проєкти незалежно від статусу модерації
+          project.coordinatorId === userId || 
+          // Та проєкти інших координаторів, які були схвалені
+          projectModerationStatus.get(project.id) === "approved"
+        );
+        
+        return res.json(filteredProjects);
+      }
+      
+      // Для всіх інших авторизованих користувачів (донори, волонтери)
+      // повертаємо тільки опубліковані проєкти
+      const approvedProjects = allProjects.filter(project => 
+        projectModerationStatus.get(project.id) === "approved"
+      );
+      
+      res.json(approvedProjects);
     } catch (error) {
       next(error);
     }
@@ -283,10 +274,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Використовуємо функцію для отримання ID координатора
       const coordinatorId = getUserId(req);
       
-      // Створюємо проект з правильними початковими статусами
+      // Створюємо проект
       const project = await storage.createProject({
         ...data,
-        coordinatorId
+        coordinatorId,
+        status: "funding", // Set initial status
+        collectedAmount: 0, // Set initial collected amount
+      });
+      
+      // Автоматично створюємо запис модерації зі статусом "pending"
+      await storage.createProjectModeration({
+        projectId: project.id,
+        status: "pending", 
+        comment: null,
+        moderatorId: 0 // 0 означає автоматичну модерацію (система)
       });
       
       res.status(201).json(project);
@@ -321,7 +322,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
         // Create project
         const project = await storage.createProject({
           ...validatedData,
-          coordinatorId: coordinatorId
+          coordinatorId: coordinatorId,
+          status: "funding",
+          collectedAmount: 0
+        });
+        
+        // Автоматично створюємо запис модерації зі статусом "pending"
+        await storage.createProjectModeration({
+          projectId: project.id,
+          status: "pending", 
+          comment: null,
+          moderatorId: 0 // 0 означає автоматичну модерацію (система)
         });
         
         res.status(201).json(project);
@@ -590,7 +601,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       // Check if project is in a valid state for applications
-      if (project.projectStatus !== "in_progress") {
+      if (project.status !== "in_progress") {
         return res.status(400).json({ message: "Проєкт не приймає заявки в даний момент" });
       }
       
@@ -701,7 +712,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       // Check if project is in a valid state for donations
-      if (project.projectStatus !== "fundraising") {
+      if (project.status !== "funding") {
         return res.status(400).json({ message: "Проєкт не приймає пожертви в даний момент" });
       }
       
@@ -720,7 +731,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       await storage.updateProjectCollectedAmount(projectId, data.amount);
       
       // Check if project has reached its target amount
-      if (project.currentAmount + data.amount >= project.targetAmount) {
+      if (project.collectedAmount + data.amount >= project.targetAmount) {
         await storage.updateProjectStatus(projectId, "in_progress");
       }
       
@@ -780,7 +791,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       // Check if project is in funding status
-      if (project.projectStatus !== "fundraising") {
+      if (project.status !== "funding") {
         return res.status(400).json({ message: "Збір коштів для цього проєкту завершено" });
       }
       
@@ -797,7 +808,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
       
       // Update project collected amount
-      await storage.updateProjectCollectedAmount(donationData.projectId, donationData.amount);
+      await storage.updateProjectCollectedAmount(donationData.projectId, project.collectedAmount + donationData.amount);
       
       res.status(201).json(donation);
     } catch (error) {
