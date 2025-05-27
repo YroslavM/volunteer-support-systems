@@ -249,7 +249,7 @@ export default function ModeratorDashboard() {
                           <span className="sr-only">Деталі</span>
                         </Button>
                         
-                        {(project.status === "funding") && (
+                        {(project.moderationStatus === "pending") && (
                           <>
                             <Button 
                               size="icon" 
@@ -317,19 +317,19 @@ export default function ModeratorDashboard() {
                   
                   <div>
                     <h3 className="font-semibold mb-1">Статус проєкту</h3>
-                    <p>{selectedProject.status === "funding" ? "Збір коштів" : 
-                        selectedProject.status === "in_progress" ? "В процесі" : 
-                        selectedProject.status === "completed" ? "Завершено" : selectedProject.status}</p>
+                    <p>{selectedProject.projectStatus === "fundraising" ? "Збір коштів" : 
+                        selectedProject.projectStatus === "in_progress" ? "В процесі" : 
+                        selectedProject.projectStatus === "completed" ? "Завершено" : selectedProject.projectStatus}</p>
                   </div>
                   
                   <div>
                     <h3 className="font-semibold mb-1">Статус модерації</h3>
-                    <div>{getStatusBadge(selectedProject.status)}</div>
+                    <div>{getStatusBadge(selectedProject.moderationStatus)}</div>
                   </div>
                 </div>
               </div>
               
-              {selectedProject.status === "funding" && (
+              {selectedProject.moderationStatus === "pending" && (
                 <div className="flex justify-end gap-2 pt-4">
                   <Button variant="outline" onClick={() => setIsDetailsOpen(false)}>
                     Закрити

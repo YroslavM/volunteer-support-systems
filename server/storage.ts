@@ -290,6 +290,23 @@ export class DatabaseStorage implements IStorage {
   }
   
   async deleteProject(id: number): Promise<void> {
+    // Видаляємо всі залежні записи перед видаленням проекту
+    // Видаляємо пожертви
+    await db.delete(donations).where(eq(donations.projectId, id));
+    
+    // Видаляємо звіти по завданнях проекту
+    const projectTasks = await db.select().from(tasks).where(eq(tasks.projectId, id));
+    for (const task of projectTasks) {
+      await db.delete(reports).where(eq(reports.taskId, task.id));
+    }
+    
+    // Видаляємо завдання
+    await db.delete(tasks).where(eq(tasks.projectId, id));
+    
+    // Видаляємо заявки
+    await db.delete(applications).where(eq(applications.projectId, id));
+    
+    // Тепер видаляємо сам проект
     await db.delete(projects).where(eq(projects.id, id));
   }
 

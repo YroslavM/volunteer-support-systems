@@ -102,7 +102,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/projects/moderation", isAuthenticated, isModeratorMiddleware, async (req, res, next) => {
     try {
       const querySchema = z.object({
-        status: z.string().optional(), // Accept any string to handle old status values
+        status: z.string().optional(), // moderationStatus filter
         search: z.string().optional(),
         limit: z.coerce.number().optional(),
         offset: z.coerce.number().optional(),
@@ -110,14 +110,67 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       const parsedQuery = querySchema.parse(req.query);
       const options = parsedQuery ? {
-        status: parsedQuery.status,
+        moderationStatus: parsedQuery.status, // Use moderationStatus for filtering
         search: parsedQuery.search,
         limit: parsedQuery.limit !== undefined ? parsedQuery.limit : 20,
         offset: parsedQuery.offset !== undefined ? parsedQuery.offset : 0
       } : { limit: 20, offset: 0 };
       
-      const projects = await storage.getProjects(options);
-      res.json(projects);
+      const projects = await storage.getProjectsForModeration();
+      
+      // Filter by moderation status if specified
+      let filteredProjects = projects;
+      if (options.moderationStatus && options.moderationStatus !== "all") {
+        filteredProjects = projects.filter(p => p.moderationStatus === options.moderationStatus);
+      }
+      
+      // Apply search filter
+      if (options.search) {
+        const searchLower = options.search.toLowerCase();
+        filteredProjects = filteredProjects.filter(p => 
+          p.name.toLowerCase().includes(searchLower) ||
+          p.description.toLowerCase().includes(searchLower)
+        );
+      }
+      
+      res.json(filteredProjects);
+    } catch (error) {
+      next(error);
+    }
+  });
+
+  // Moderate project (approve/reject)
+  app.post("/api/projects/:id/moderate", isAuthenticated, isModeratorMiddleware, async (req, res, next) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ message: "Некоректний ID проєкту" });
+      }
+      
+      const { moderationStatus, comment } = z.object({
+        moderationStatus: z.enum(["approved", "rejected"]),
+        comment: z.string().optional(),
+      }).parse(req.body);
+      
+      const project = await storage.getProjectById(id);
+      if (!project) {
+        return res.status(404).json({ message: "Проєкт не знайдено" });
+      }
+      
+      const moderatorId = getUserId(req);
+      
+      // Create moderation record
+      await storage.createProjectModeration({
+        projectId: id,
+        status: moderationStatus,
+        comment: comment || null,
+        moderatorId
+      });
+      
+      // Update project moderation status
+      const updatedProject = await storage.updateProjectModerationStatus(id, moderationStatus, moderatorId);
+      
+      res.json(updatedProject);
     } catch (error) {
       next(error);
     }
