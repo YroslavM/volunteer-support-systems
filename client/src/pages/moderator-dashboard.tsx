@@ -31,14 +31,14 @@ import { Link, useLocation } from "wouter";
 import { SelectProject } from "@shared/schema";
 
 type ModerateAction = "approve" | "reject";
-// Використовуємо статус проєкту як індикатор модерації
-// funding = очікує схвалення (pending)
-// in_progress = схвалено (approved)
-// completed = відхилено (rejected)
-type ModerationStatus = "funding" | "in_progress" | "completed" | "all";
+// Використовуємо статус модерації
+// pending = очікує схвалення
+// approved = схвалено
+// rejected = відхилено
+type ModerationStatus = "pending" | "approved" | "rejected" | "all";
 
 export default function ModeratorDashboard() {
-  const [statusFilter, setStatusFilter] = useState<ModerationStatus>("funding");
+  const [statusFilter, setStatusFilter] = useState<ModerationStatus>("pending");
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedProject, setSelectedProject] = useState<SelectProject | null>(null);
   const [isDetailsOpen, setIsDetailsOpen] = useState(false);
@@ -76,7 +76,7 @@ export default function ModeratorDashboard() {
   const moderationMutation = useMutation({
     mutationFn: async ({ projectId, action, comment }: { projectId: number; action: ModerateAction; comment?: string }) => {
       const response = await apiRequest("POST", `/api/projects/${projectId}/moderate`, {
-        status: action === "approve" ? "in_progress" : "completed",
+        moderationStatus: action === "approve" ? "approved" : "rejected",
         comment: comment || null
       });
       
@@ -133,23 +133,23 @@ export default function ModeratorDashboard() {
     setIsDetailsOpen(true);
   };
 
-  const getStatusBadge = (status: string) => {
-    switch (status) {
-      case "funding":
+  const getStatusBadge = (moderationStatus: string) => {
+    switch (moderationStatus) {
+      case "pending":
         return <Badge variant="outline" className="flex items-center gap-1"><Clock className="h-3 w-3" /> На розгляді</Badge>;
-      case "in_progress":
+      case "approved":
         return <Badge variant="default" className="flex items-center gap-1"><Check className="h-3 w-3" /> Схвалено</Badge>;
-      case "completed":
+      case "rejected":
         return <Badge variant="destructive" className="flex items-center gap-1"><X className="h-3 w-3" /> Відхилено</Badge>;
       default:
-        return <Badge variant="secondary">{status}</Badge>;
+        return <Badge variant="secondary">{moderationStatus}</Badge>;
     }
   };
 
   const filterButtons = [
-    { value: "funding", label: "На розгляді", icon: <Clock className="h-4 w-4" /> },
-    { value: "in_progress", label: "Схвалені", icon: <Check className="h-4 w-4" /> },
-    { value: "completed", label: "Відхилені", icon: <X className="h-4 w-4" /> },
+    { value: "pending", label: "На розгляді", icon: <Clock className="h-4 w-4" /> },
+    { value: "approved", label: "Схвалені", icon: <Check className="h-4 w-4" /> },
+    { value: "rejected", label: "Відхилені", icon: <X className="h-4 w-4" /> },
     { value: "all", label: "Усі", icon: null },
   ];
 
@@ -174,9 +174,9 @@ export default function ModeratorDashboard() {
               >
                 {button.icon}
                 {button.label}
-                {button.value === "funding" && (
+                {button.value === "pending" && (
                   <Badge variant="secondary" className="ml-1">
-                    {projects?.filter(p => p.status === "funding").length || 0}
+                    {projects?.filter(p => p.moderationStatus === "pending").length || 0}
                   </Badge>
                 )}
               </Button>
@@ -237,7 +237,7 @@ export default function ModeratorDashboard() {
                     <TableCell>Координатор ID: {project.coordinatorId}</TableCell>
                     <TableCell>{new Intl.NumberFormat('uk-UA', { style: 'currency', currency: 'UAH' }).format(project.targetAmount)}</TableCell>
                     <TableCell>{new Date(project.createdAt).toLocaleDateString('uk-UA')}</TableCell>
-                    <TableCell>{getStatusBadge(project.status)}</TableCell>
+                    <TableCell>{getStatusBadge(project.moderationStatus)}</TableCell>
                     <TableCell className="text-right">
                       <div className="flex justify-end gap-2">
                         <Button 
