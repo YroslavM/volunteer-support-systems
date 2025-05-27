@@ -127,7 +127,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/projects", async (req, res, next) => {
     try {
       const querySchema = z.object({
-        status: z.enum(projectStatusEnum.enumValues).optional(),
+        status: z.string().optional(), // Accept any string to handle old status values
         search: z.string().optional(),
         limit: z.coerce.number().optional(),
         offset: z.coerce.number().optional(),
