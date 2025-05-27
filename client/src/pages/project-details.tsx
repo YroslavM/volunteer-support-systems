@@ -208,7 +208,9 @@ export default function ProjectDetails() {
                 <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/60 to-transparent p-4">
                   <div className="flex gap-2 mb-2">
                     <Badge className={`${getStatusColor(project.projectStatus)}`}>
-                      {t(`projects.status.${project.projectStatus}`)}
+                      {project.projectStatus === 'fundraising' && 'Збір коштів'}
+                      {project.projectStatus === 'in_progress' && 'У процесі'}
+                      {project.projectStatus === 'completed' && 'Завершено'}
                     </Badge>
                     {/* Статус модерації тільки для координаторів та модераторів */}
                     {user && (user.role === 'coordinator' || user.role === 'moderator' || user.role === 'admin') && (
