@@ -150,34 +150,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Для кожного проекту отримуємо останній статус модерації
       for (const project of allProjects) {
-        // Спробуємо отримати статус модерації з MemStorage
-        const moderations = await storage.getProjectModerations(project.id);
-        
-        if (moderations.length > 0) {
-          // Модерації сортуються за датою створення (найновіші спочатку)
-          projectModerationStatus.set(project.id, moderations[0].status);
-        } else {
-          // Якщо немає записів в MemStorage, спробуємо отримати з бази даних
-          try {
-            const { rows: dbModerations } = await pool.query(`
-              SELECT id, project_id, moderator_id, status, comment, created_at 
-              FROM project_moderations 
-              WHERE project_id = $1 
-              ORDER BY created_at DESC
-            `, [project.id]);
-              
-            if (dbModerations.length > 0) {
-              // Якщо знайдено записи в базі даних, використовуємо останній за часом
-              projectModerationStatus.set(project.id, dbModerations[0].status);
-            } else {
-              // Якщо немає записів ні в пам'яті, ні в базі даних, встановлюємо статус "pending"
-              projectModerationStatus.set(project.id, "pending");
-            }
-          } catch (dbError) {
-            console.error(`Помилка отримання модерацій для проекту ${project.id}:`, dbError);
-            // При помилці встановлюємо статус "pending"
-            projectModerationStatus.set(project.id, "pending");
+        try {
+          // Використовуємо storage interface замість прямих SQL запитів
+          const moderations = await storage.getProjectModerations(project.id);
+          
+          if (moderations.length > 0) {
+            // Модерації сортуються за датою створення (найновіші спочатку)
+            projectModerationStatus.set(project.id, moderations[0].status);
+          } else {
+            // Якщо немає записів модерації, встановлюємо статус "approved" за замовчуванням
+            projectModerationStatus.set(project.id, "approved");
           }
+        } catch (error) {
+          console.error(`Помилка отримання модерацій для проекту ${project.id}:`, error);
+          // При помилці встановлюємо статус "approved" щоб проекти були видимі
+          projectModerationStatus.set(project.id, "approved");
         }
       }
       
