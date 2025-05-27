@@ -153,7 +153,16 @@ export class DatabaseStorage implements IStorage {
     
     if (options) {
       if (options.status) {
-        query = query.where(eq(projects.projectStatus, options.status as any));
+        // Map old status values to new projectStatus values
+        let mappedStatus = options.status;
+        if (options.status === 'funding') {
+          mappedStatus = 'fundraising';
+        }
+        
+        // Only filter if the mapped status is valid
+        if (['fundraising', 'in_progress', 'completed'].includes(mappedStatus)) {
+          query = query.where(eq(projects.projectStatus, mappedStatus as any));
+        }
       }
       
       if (options.search) {

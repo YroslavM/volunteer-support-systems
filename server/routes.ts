@@ -524,7 +524,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       // Check if project is in a valid state for applications
-      if (project.status !== "in_progress") {
+      if (project.projectStatus !== "in_progress") {
         return res.status(400).json({ message: "Проєкт не приймає заявки в даний момент" });
       }
       
@@ -635,7 +635,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       // Check if project is in a valid state for donations
-      if (project.status !== "funding") {
+      if (project.projectStatus !== "fundraising") {
         return res.status(400).json({ message: "Проєкт не приймає пожертви в даний момент" });
       }
       
@@ -654,7 +654,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       await storage.updateProjectCollectedAmount(projectId, data.amount);
       
       // Check if project has reached its target amount
-      if (project.collectedAmount + data.amount >= project.targetAmount) {
+      if (project.currentAmount + data.amount >= project.targetAmount) {
         await storage.updateProjectStatus(projectId, "in_progress");
       }
       
@@ -714,7 +714,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       // Check if project is in funding status
-      if (project.status !== "funding") {
+      if (project.projectStatus !== "fundraising") {
         return res.status(400).json({ message: "Збір коштів для цього проєкту завершено" });
       }
       
@@ -731,7 +731,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
       
       // Update project collected amount
-      await storage.updateProjectCollectedAmount(donationData.projectId, project.collectedAmount + donationData.amount);
+      await storage.updateProjectCollectedAmount(donationData.projectId, donationData.amount);
       
       res.status(201).json(donation);
     } catch (error) {
