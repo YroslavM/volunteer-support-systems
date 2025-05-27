@@ -47,7 +47,7 @@ export default function HomePage() {
     window.addEventListener('scroll', handleScroll);
     
     // Load projects
-    fetch("/api/projects?status=funding")
+    fetch("/api/projects?status=fundraising")
       .then((res) => res.json())
       .then((data) => {
         setProjects(data);
@@ -352,7 +352,7 @@ export default function HomePage() {
                 </div>
               ) : (
                 // Проєкти
-                projects.slice(0, 3).map((project) => (
+                (Array.isArray(projects) ? projects : []).slice(0, 3).map((project) => (
                   <div key={project.id} className="group relative rounded-2xl shadow-sm hover:shadow-xl overflow-hidden bg-white border border-slate-200 transition-all duration-300 hover:border-secondary-200 flex flex-col">
                     {/* Верхня частина карточки */}
                     <div className="relative h-52 bg-slate-100 overflow-hidden">
@@ -373,7 +373,7 @@ export default function HomePage() {
                       <div className="absolute bottom-0 left-0 right-0 p-5">
                         <div className="flex items-center justify-between">
                           <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-white/20 text-white backdrop-blur-sm">
-                            {project.status === 'funding' ? t('projects.status.funding') : 
+                            {project.status === 'fundraising' ? t('projects.status.funding') : 
                              project.status === 'in_progress' ? t('projects.status.in_progress') : 
                              t('projects.status.completed')}
                           </span>
