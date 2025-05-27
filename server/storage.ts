@@ -160,12 +160,28 @@ export class DatabaseStorage implements IStorage {
   }
   
   // Project methods
-  async getProjects(options?: { status?: string; search?: string; limit?: number; offset?: number }): Promise<Project[]> {
+  async getProjects(options?: { status?: string; search?: string; limit?: number; offset?: number; userRole?: string; userId?: number }): Promise<Project[]> {
     let query = db.select().from(projects);
+    
+    // Filter based on user role - hide pending/rejected projects from non-moderators/non-coordinators
+    if (options?.userRole && !['moderator', 'admin'].includes(options.userRole)) {
+      if (options.userRole === 'coordinator' && options.userId) {
+        // Coordinators can see their own projects regardless of moderation status
+        query = query.where(
+          or(
+            eq(projects.coordinatorId, options.userId),
+            eq(projects.moderationStatus, 'approved')
+          )
+        );
+      } else {
+        // Volunteers, donors, and unauthenticated users only see approved projects
+        query = query.where(eq(projects.moderationStatus, 'approved'));
+      }
+    }
     
     if (options) {
       if (options.status) {
-        query = query.where(eq(projects.status, options.status));
+        query = query.where(eq(projects.projectStatus, options.status as any));
       }
       
       if (options.search) {
