@@ -6,7 +6,6 @@ import { setupAuth } from "./auth";
 import { z } from "zod";
 import path from "path";
 import { projectImageUpload } from "./middleware/upload";
-import { pool } from "./db";
 import { 
   insertProjectSchema, 
   insertTaskSchema, 
@@ -20,8 +19,6 @@ import {
   projects,
   projectModerations
 } from "@shared/schema";
-import { db } from "./db";
-import { eq, desc } from "drizzle-orm";
 
 // Режим тестового середовища (для демонстрації)
 const DEV_MODE = process.env.NODE_ENV === 'development';
@@ -142,34 +139,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         offset: parsedQuery.offset !== undefined ? parsedQuery.offset : 0
       } : { limit: 20, offset: 0 };
       
-      // Отримуємо всі проєкти
-      const allProjects = await storage.getProjects(options);
-      
-      // Створюємо мапу всіх статусів модерації для кожного проекту
-      const projectModerationStatus = new Map<number, string>();
-      
-      // Для кожного проекту отримуємо останній статус модерації
-      for (const project of allProjects) {
-        try {
-          // Використовуємо storage interface замість прямих SQL запитів
-          const moderations = await storage.getProjectModerations(project.id);
-          
-          if (moderations.length > 0) {
-            // Модерації сортуються за датою створення (найновіші спочатку)
-            projectModerationStatus.set(project.id, moderations[0].status);
-          } else {
-            // Якщо немає записів модерації, встановлюємо статус "approved" за замовчуванням
-            projectModerationStatus.set(project.id, "approved");
-          }
-        } catch (error) {
-          console.error(`Помилка отримання модерацій для проекту ${project.id}:`, error);
-          // При помилці встановлюємо статус "approved" щоб проекти були видимі
-          projectModerationStatus.set(project.id, "approved");
-        }
-      }
-      
-      // Всі користувачі бачать всі проєкти (модерація відключена для спрощення)
-      res.json(allProjects);
+      const projects = await storage.getProjects(options);
+      res.json(projects);
     } catch (error) {
       next(error);
     }
@@ -190,26 +161,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ message: "Проєкт не знайдено" });
       }
       
-      // Отримуємо статус модерації для проєкту
-      const moderations = await storage.getProjectModerations(id);
-      const moderationStatus = moderations.length > 0 ? moderations[0].status : "pending";
-      
-      // Якщо проєкт не опублікований (не має статусу "approved")
-      if (moderationStatus !== "approved") {
-        // Перевіряємо, чи користувач має право бачити неопублікований проєкт
-        if (!req.isAuthenticated() || !req.user) {
-          return res.status(403).json({ message: "У вас немає доступу до цього проєкту" });
-        }
-        
-        const userRole = getUserRole(req);
-        const userId = getUserId(req);
-        
-        // Тільки координатор проєкту, модератор чи адміністратор можуть бачити неопублікований проєкт
-        if (userRole !== "moderator" && userRole !== "admin" && project.coordinatorId !== userId) {
-          return res.status(403).json({ message: "У вас немає доступу до цього проєкту" });
-        }
-      }
-      
       res.json(project);
     } catch (error) {
       next(error);
@@ -224,20 +175,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Використовуємо функцію для отримання ID координатора
       const coordinatorId = getUserId(req);
       
-      // Створюємо проект
       const project = await storage.createProject({
         ...data,
         coordinatorId,
         status: "funding", // Set initial status
         collectedAmount: 0, // Set initial collected amount
-      });
-      
-      // Автоматично створюємо запис модерації зі статусом "pending"
-      await storage.createProjectModeration({
-        projectId: project.id,
-        status: "pending", 
-        comment: null,
-        moderatorId: 0 // 0 означає автоматичну модерацію (система)
       });
       
       res.status(201).json(project);
@@ -275,14 +217,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
           coordinatorId: coordinatorId,
           status: "funding",
           collectedAmount: 0
-        });
-        
-        // Автоматично створюємо запис модерації зі статусом "pending"
-        await storage.createProjectModeration({
-          projectId: project.id,
-          status: "pending", 
-          comment: null,
-          moderatorId: 0 // 0 означає автоматичну модерацію (система)
         });
         
         res.status(201).json(project);
@@ -565,15 +499,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "Ви вже подали заявку на цей проєкт" });
       }
       
-      // Only parse the message from request body, projectId and volunteerId come from route and user
-      const { message } = z.object({
-        message: z.string().optional(),
-      }).parse(req.body);
+      const data = insertApplicationSchema.parse(req.body);
       
       const application = await storage.createApplication({
+        ...data,
         projectId,
         volunteerId: req.user!.id,
-        message: message || "",
       });
       
       res.status(201).json(application);
@@ -1063,17 +994,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   // === Модерація проектів ===
   
-  // Отримання проектів, що потребують модерації (для модераторів)
-  app.get("/api/projects/moderation", hasRole(["moderator", "admin"]), async (req, res, next) => {
-    try {
-      // Отримати всі проекти, які потребують модерації
-      const projects = await storage.getProjectsForModeration();
-      res.json(projects);
-    } catch (error) {
-      next(error);
-    }
-  });
-  
   // Отримання всіх модерацій для проекту
   app.get("/api/projects/:projectId/moderation", isAuthenticated, async (req, res, next) => {
     try {
@@ -1129,41 +1049,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
       
       // Якщо проект був схвалений, ми робимо його опублікованим
-      if (status === "approved" || status === "rejected") {
+      if (status === "approved") {
         // В реальній системі тут ми б оновили поле isPublished,
         // але оскільки ми не змінюємо схему, будемо вважати, що проект опубліковано
-        
-        // Видаляємо старі записи модерації з бази даних для цього проекту
-        try {
-          await pool.query(`
-            DELETE FROM project_moderation_status 
-            WHERE project_id = $1
-          `, [projectId]);
-          
-          console.log(`Видалено попередні модерації проекту ${projectId} з бази даних`);
-        } catch (deleteError) {
-          console.error("Помилка при видаленні старих модерацій:", deleteError);
-        }
-        
-        // Зберігаємо нову модерацію в базі даних SQL для довгострокового збереження
-        try {
-          await pool.query(`
-            INSERT INTO project_moderation_status 
-            (project_id, moderator_id, status, comment, created_at) 
-            VALUES 
-            ($1, $2, $3, $4, $5)
-          `, [
-            projectId, 
-            getUserId(req), 
-            status, 
-            comment || null, 
-            new Date()
-          ]);
-          console.log(`Додано модерацію проекту ${projectId} в базу даних зі статусом ${status}`);
-        } catch (dbError) {
-          console.error("Помилка при збереженні в базу даних:", dbError);
-          // Продовжуємо, навіть якщо вставка не вдалася
-        }
       }
       
       res.json(moderation);
@@ -1180,11 +1068,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "Некоректний ID координатора" });
       }
       
-      // Check if user is the coordinator or an admin/moderator
+      // Check if user is the coordinator or an admin
       const userRole = getUserRole(req);
       const userId = getUserId(req);
       
-      if (userRole !== "admin" && userRole !== "moderator" && coordinatorId !== userId) {
+      if (userRole !== "admin" && coordinatorId !== userId) {
         return res.status(403).json({ message: "Ви можете переглядати тільки власні проєкти" });
       }
       

@@ -1,17 +1,29 @@
-import { eq, desc, and, ilike, sql } from "drizzle-orm";
-import { db } from "./db";
-import {
-  users, projects, tasks, reports, applications, donations, projectModerations,
-  type User, type InsertUser, type Project, type InsertProject,
-  type Task, type InsertTask, type Report, type InsertReport,
-  type Application, type InsertApplication, type Donation, type InsertDonation,
-  type ProjectModeration, type InsertProjectModeration
+import { 
+  users, 
+  projects, 
+  tasks, 
+  reports, 
+  applications, 
+  donations,
+  type User, 
+  type InsertUser, 
+  type Project,
+  type InsertProject, 
+  type Task, 
+  type InsertTask, 
+  type Report, 
+  type InsertReport,
+  type Application, 
+  type InsertApplication, 
+  type Donation, 
+  type InsertDonation
 } from "@shared/schema";
+import { db } from "./db";
+import { eq, and, like, or, sql, gte, lte, isNull, desc } from "drizzle-orm";
+import connectPg from "connect-pg-simple";
 import session from "express-session";
-import ConnectPgSimple from "connect-pg-simple";
-import { pool } from "./db";
 
-const PgSession = ConnectPgSimple(session);
+const PostgresSessionStore = connectPg(session);
 
 export interface IStorage {
   // User methods
@@ -29,16 +41,15 @@ export interface IStorage {
   getProjectById(id: number): Promise<Project | undefined>;
   getProjectsByCoordinatorId(coordinatorId: number): Promise<Project[]>;
   getProjectsForVolunteer(volunteerId: number): Promise<Project[]>;
-  createProject(project: any): Promise<Project>;
+  createProject(project: InsertProject): Promise<Project>;
   updateProjectStatus(id: number, status: string): Promise<Project>;
   updateProjectCollectedAmount(id: number, amount: number): Promise<Project>;
   updateProject(id: number, project: Partial<InsertProject>): Promise<Project>;
   deleteProject(id: number): Promise<void>;
   
   // Project Moderation methods
-  getProjectModerations(projectId: number): Promise<ProjectModeration[]>;
-  createProjectModeration(moderation: { projectId: number; status: string; comment: string | null; moderatorId: number }): Promise<ProjectModeration>;
-  getProjectsForModeration(): Promise<Project[]>;
+  getProjectModerations(projectId: number): Promise<any[]>;
+  createProjectModeration(moderation: { projectId: number; status: string; comment: string | null; moderatorId: number }): Promise<any>;
   
   // Task methods
   getTaskById(id: number): Promise<Task | undefined>;
@@ -69,327 +80,234 @@ export interface IStorage {
   getVolunteersByProjectId(projectId: number): Promise<User[]>;
   
   // Session store
-  sessionStore: any;
+  sessionStore: session.SessionStore;
 }
 
 export class DatabaseStorage implements IStorage {
-  sessionStore: any;
-
+  sessionStore: session.SessionStore;
+  
   constructor() {
-    this.sessionStore = new PgSession({
-      pool: pool,
-      tableName: 'session',
+    this.sessionStore = new PostgresSessionStore({
+      conObject: {
+        connectionString: process.env.DATABASE_URL,
+      },
       createTableIfMissing: true,
     });
   }
-
-  // =============================
-  // USER METHODS
-  // =============================
-
+  
+  // User methods
   async getUser(id: number): Promise<User | undefined> {
-    try {
-      const result = await db.select().from(users).where(eq(users.id, id)).limit(1);
-      return result[0] || undefined;
-    } catch (error) {
-      console.error("Error getting user:", error);
-      return undefined;
-    }
+    const [user] = await db.select().from(users).where(eq(users.id, id));
+    return user;
   }
-
+  
   async getUserByUsername(username: string): Promise<User | undefined> {
-    try {
-      const result = await db.select().from(users).where(eq(users.username, username)).limit(1);
-      return result[0] || undefined;
-    } catch (error) {
-      console.error("Error getting user by username:", error);
-      return undefined;
-    }
+    const [user] = await db.select().from(users).where(eq(users.username, username));
+    return user;
   }
-
+  
   async getUserByEmail(email: string): Promise<User | undefined> {
-    try {
-      const result = await db.select().from(users).where(eq(users.email, email)).limit(1);
-      return result[0] || undefined;
-    } catch (error) {
-      console.error("Error getting user by email:", error);
-      return undefined;
-    }
+    const [user] = await db.select().from(users).where(eq(users.email, email));
+    return user;
   }
-
+  
   async getUserByVerificationToken(token: string): Promise<User | undefined> {
-    try {
-      const result = await db.select().from(users).where(eq(users.verificationToken, token)).limit(1);
-      return result[0] || undefined;
-    } catch (error) {
-      console.error("Error getting user by verification token:", error);
-      return undefined;
-    }
+    const [user] = await db
+      .select()
+      .from(users)
+      .where(eq(users.verificationToken, token));
+    return user;
   }
-
+  
   async createUser(insertUser: InsertUser): Promise<User> {
-    const result = await db
+    const [user] = await db
       .insert(users)
-      .values({
-        username: insertUser.username,
-        email: insertUser.email,
-        password: insertUser.password,
-        role: insertUser.role,
-        firstName: insertUser.firstName || null,
-        lastName: insertUser.lastName || null,
-        isVerified: insertUser.isVerified || false,
-        isBlocked: insertUser.isBlocked || false,
-        verificationToken: insertUser.verificationToken || null,
-      })
+      .values(insertUser)
       .returning();
-    return result[0];
+    return user;
   }
-
+  
   async verifyUser(id: number): Promise<User> {
-    const result = await db
+    const [user] = await db
       .update(users)
       .set({ isVerified: true, verificationToken: null })
       .where(eq(users.id, id))
       .returning();
-    return result[0];
+    return user;
   }
 
   async blockUser(id: number): Promise<User> {
-    const result = await db
+    const [user] = await db
       .update(users)
-      .set({ isBlocked: true })
+      .set({ 
+        isBlocked: true
+      })
       .where(eq(users.id, id))
       .returning();
-    return result[0];
+    return user;
   }
 
   async getAllUsers(): Promise<User[]> {
-    return await db.select().from(users).orderBy(desc(users.createdAt));
+    return await db
+      .select()
+      .from(users)
+      .orderBy(users.username);
   }
-
-  // =============================
-  // PROJECT METHODS  
-  // =============================
-
+  
+  // Project methods
   async getProjects(options?: { status?: string; search?: string; limit?: number; offset?: number }): Promise<Project[]> {
-    try {
-      let query = db.select().from(projects);
-      
-      // Always show published projects
-      query = query.where(eq(projects.isPublished, true));
-      
-      if (options?.search) {
-        query = query.where(and(
-          eq(projects.isPublished, true),
-          ilike(projects.name, `%${options.search}%`)
-        ));
+    let query = db.select().from(projects);
+    
+    if (options) {
+      if (options.status) {
+        query = query.where(eq(projects.status, options.status));
       }
       
-      query = query.orderBy(desc(projects.createdAt));
+      if (options.search) {
+        query = query.where(
+          or(
+            like(projects.name, `%${options.search}%`),
+            like(projects.description, `%${options.search}%`)
+          )
+        );
+      }
       
-      if (options?.limit) {
+      if (options.limit) {
         query = query.limit(options.limit);
       }
       
-      if (options?.offset) {
+      if (options.offset) {
         query = query.offset(options.offset);
       }
-      
-      return await query;
-    } catch (error) {
-      console.error("Error getting projects:", error);
-      return [];
     }
+    
+    return await query.orderBy(desc(projects.createdAt));
   }
-
+  
   async getProjectById(id: number): Promise<Project | undefined> {
-    try {
-      const result = await db.select().from(projects).where(eq(projects.id, id)).limit(1);
-      return result[0] || undefined;
-    } catch (error) {
-      console.error("Error getting project by id:", error);
-      return undefined;
-    }
+    const [project] = await db.select().from(projects).where(eq(projects.id, id));
+    return project;
   }
-
+  
   async getProjectsByCoordinatorId(coordinatorId: number): Promise<Project[]> {
-    try {
-      return await db
-        .select()
-        .from(projects)
-        .where(eq(projects.coordinatorId, coordinatorId))
-        .orderBy(desc(projects.createdAt));
-    } catch (error) {
-      console.error("Error getting projects by coordinator:", error);
-      return [];
-    }
-  }
-
-  async getProjectsForVolunteer(volunteerId: number): Promise<Project[]> {
-    try {
-      const approvedApplications = await db
-        .select({ projectId: applications.projectId })
-        .from(applications)
-        .where(
-          and(
-            eq(applications.volunteerId, volunteerId),
-            eq(applications.status, "approved")
-          )
-        );
-      
-      if (approvedApplications.length === 0) {
-        return [];
-      }
-      
-      const projectIds = approvedApplications.map(app => app.projectId);
-      const volunteerProjects = [];
-      
-      for (const projectId of projectIds) {
-        const project = await this.getProjectById(projectId);
-        if (project) {
-          volunteerProjects.push(project);
-        }
-      }
-      
-      return volunteerProjects;
-    } catch (error) {
-      console.error("Error getting projects for volunteer:", error);
-      return [];
-    }
-  }
-
-  async createProject(insertProject: InsertProject & { coordinatorId: number }): Promise<Project> {
-    const result = await db
-      .insert(projects)
-      .values({
-        name: insertProject.name,
-        description: insertProject.description,
-        targetAmount: insertProject.targetAmount,
-        imageUrl: insertProject.imageUrl || null,
-        bankDetails: insertProject.bankDetails || null,
-        coordinatorId: insertProject.coordinatorId,
-        status: "funding",
-        collectedAmount: 0,
-        moderationStatus: "approved",
-        isPublished: true,
-        createdAt: new Date(),
-        updatedAt: new Date(),
-      })
-      .returning();
-    return result[0];
-  }
-
-  async updateProjectStatus(id: number, status: string): Promise<Project> {
-    const result = await db
-      .update(projects)
-      .set({ 
-        status: status as "funding" | "in_progress" | "completed",
-        updatedAt: new Date()
-      })
-      .where(eq(projects.id, id))
-      .returning();
-    return result[0];
-  }
-
-  async updateProjectCollectedAmount(id: number, amount: number): Promise<Project> {
-    // Get current project
-    const currentProject = await this.getProjectById(id);
-    if (!currentProject) {
-      throw new Error("Project not found");
-    }
-
-    const newCollectedAmount = currentProject.collectedAmount + amount;
-    
-    // Check if funding goal is reached and status should change
-    const shouldChangeStatus = 
-      currentProject.status === "funding" && 
-      newCollectedAmount >= currentProject.targetAmount;
-
-    const updateData: any = { 
-      collectedAmount: newCollectedAmount,
-      updatedAt: new Date()
-    };
-
-    if (shouldChangeStatus) {
-      updateData.status = "in_progress";
-    }
-
-    const result = await db
-      .update(projects)
-      .set(updateData)
-      .where(eq(projects.id, id))
-      .returning();
-    
-    return result[0];
-  }
-
-  async updateProject(id: number, projectData: Partial<InsertProject>): Promise<Project> {
-    const result = await db
-      .update(projects)
-      .set({
-        ...projectData,
-        updatedAt: new Date()
-      })
-      .where(eq(projects.id, id))
-      .returning();
-    return result[0];
-  }
-
-  async deleteProject(id: number): Promise<void> {
-    // The CASCADE relationships in schema will handle related records automatically
-    await db.delete(projects).where(eq(projects.id, id));
-  }
-
-  // =============================
-  // PROJECT MODERATION METHODS
-  // =============================
-
-  async getProjectModerations(projectId: number): Promise<ProjectModeration[]> {
     return await db
       .select()
-      .from(projectModerations)
-      .where(eq(projectModerations.projectId, projectId))
-      .orderBy(desc(projectModerations.createdAt));
+      .from(projects)
+      .where(eq(projects.coordinatorId, coordinatorId))
+      .orderBy(desc(projects.createdAt));
   }
-
+  
+  async getProjectsForVolunteer(volunteerId: number): Promise<Project[]> {
+    // Get projects where volunteer's application was approved
+    const approvedProjects = await db
+      .select({
+        project: projects
+      })
+      .from(applications)
+      .innerJoin(projects, eq(applications.projectId, projects.id))
+      .where(
+        and(
+          eq(applications.volunteerId, volunteerId),
+          eq(applications.status, "approved")
+        )
+      );
+    
+    return approvedProjects.map(row => row.project);
+  }
+  
+  async createProject(insertProject: InsertProject & { coordinatorId: number; status?: string; collectedAmount?: number }): Promise<Project> {
+    const [project] = await db
+      .insert(projects)
+      .values(insertProject)
+      .returning();
+    return project;
+  }
+  
+  async updateProjectStatus(id: number, status: string): Promise<Project> {
+    const [project] = await db
+      .update(projects)
+      .set({ status })
+      .where(eq(projects.id, id))
+      .returning();
+    return project;
+  }
+  
+  async updateProjectCollectedAmount(id: number, amount: number): Promise<Project> {
+    const [project] = await db
+      .update(projects)
+      .set({ 
+        collectedAmount: sql`${projects.collectedAmount} + ${amount}`
+      })
+      .where(eq(projects.id, id))
+      .returning();
+    return project;
+  }
+  
+  async updateProject(id: number, projectData: Partial<InsertProject>): Promise<Project> {
+    const [project] = await db
+      .update(projects)
+      .set(projectData)
+      .where(eq(projects.id, id))
+      .returning();
+    return project;
+  }
+  
+  async deleteProject(id: number): Promise<void> {
+    await db
+      .delete(projects)
+      .where(eq(projects.id, id));
+  }
+  
+  // Project Moderation Methods
+  async getProjectModerations(projectId: number): Promise<any[]> {
+    try {
+      // Перевіряємо спочатку, чи існує таблиця
+      const moderations = await db
+        .select()
+        .from(projectModerations)
+        .where(eq(projectModerations.projectId, projectId))
+        .orderBy(desc(projectModerations.createdAt));
+      
+      return moderations;
+    } catch (error) {
+      console.error('Error getting project moderations:', error);
+      // Якщо таблиця ще не створена, повертаємо порожній масив
+      return [];
+    }
+  }
+  
   async createProjectModeration(moderation: { 
     projectId: number; 
     status: string; 
     comment: string | null; 
     moderatorId: number 
-  }): Promise<ProjectModeration> {
-    const result = await db
-      .insert(projectModerations)
-      .values({
-        projectId: moderation.projectId,
-        status: moderation.status as "pending" | "approved" | "rejected",
-        comment: moderation.comment,
-        moderatorId: moderation.moderatorId,
-        createdAt: new Date(),
-        updatedAt: new Date(),
-      })
-      .returning();
-    return result[0];
-  }
-
-  async getProjectsForModeration(): Promise<Project[]> {
-    return await db.select().from(projects).orderBy(desc(projects.createdAt));
-  }
-
-  // =============================
-  // TASK METHODS
-  // =============================
-
-  async getTaskById(id: number): Promise<Task | undefined> {
+  }): Promise<any> {
     try {
-      const result = await db.select().from(tasks).where(eq(tasks.id, id)).limit(1);
-      return result[0] || undefined;
+      // Перевіряємо спочатку, чи існує таблиця
+      const [result] = await db
+        .insert(projectModerations)
+        .values(moderation)
+        .returning();
+      
+      return result;
     } catch (error) {
-      console.error("Error getting task by id:", error);
-      return undefined;
+      console.error('Error creating project moderation:', error);
+      // Якщо таблиця ще не створена, повертаємо об'єкт як ніби запис був створений
+      return {
+        id: Date.now(),
+        ...moderation,
+        createdAt: new Date(),
+        updatedAt: new Date()
+      };
     }
   }
-
+  
+  // Task methods
+  async getTaskById(id: number): Promise<Task | undefined> {
+    const [task] = await db.select().from(tasks).where(eq(tasks.id, id));
+    return task;
+  }
+  
   async getTasksByProjectId(projectId: number): Promise<Task[]> {
     return await db
       .select()
@@ -397,7 +315,7 @@ export class DatabaseStorage implements IStorage {
       .where(eq(tasks.projectId, projectId))
       .orderBy(desc(tasks.createdAt));
   }
-
+  
   async getTasksForVolunteer(volunteerId: number): Promise<Task[]> {
     return await db
       .select()
@@ -405,53 +323,34 @@ export class DatabaseStorage implements IStorage {
       .where(eq(tasks.volunteerId, volunteerId))
       .orderBy(desc(tasks.createdAt));
   }
-
+  
   async createTask(insertTask: InsertTask): Promise<Task> {
-    const result = await db
+    const [task] = await db
       .insert(tasks)
-      .values({
-        title: insertTask.title,
-        description: insertTask.description,
-        projectId: insertTask.projectId,
-        volunteerId: insertTask.volunteerId || null,
-        status: insertTask.status || "pending",
-        deadline: insertTask.deadline || null,
-        createdAt: new Date(),
-        updatedAt: new Date(),
-      })
+      .values(insertTask)
       .returning();
-    return result[0];
+    return task;
   }
-
+  
   async assignTaskToVolunteer(id: number, volunteerId: number): Promise<Task> {
-    const result = await db
+    const [task] = await db
       .update(tasks)
-      .set({ 
-        volunteerId,
-        status: "in_progress",
-        updatedAt: new Date()
-      })
+      .set({ volunteerId, status: "in_progress" })
       .where(eq(tasks.id, id))
       .returning();
-    return result[0];
+    return task;
   }
-
+  
   async updateTaskStatus(id: number, status: string): Promise<Task> {
-    const result = await db
+    const [task] = await db
       .update(tasks)
-      .set({ 
-        status: status as "pending" | "in_progress" | "completed",
-        updatedAt: new Date()
-      })
+      .set({ status })
       .where(eq(tasks.id, id))
       .returning();
-    return result[0];
+    return task;
   }
-
-  // =============================
-  // REPORT METHODS
-  // =============================
-
+  
+  // Report methods
   async getReportsByTaskId(taskId: number): Promise<Report[]> {
     return await db
       .select()
@@ -459,34 +358,21 @@ export class DatabaseStorage implements IStorage {
       .where(eq(reports.taskId, taskId))
       .orderBy(desc(reports.createdAt));
   }
-
+  
   async createReport(insertReport: InsertReport): Promise<Report> {
-    const result = await db
+    const [report] = await db
       .insert(reports)
-      .values({
-        taskId: insertReport.taskId,
-        imageUrl: insertReport.imageUrl || null,
-        comment: insertReport.comment || null,
-        createdAt: new Date(),
-      })
+      .values(insertReport)
       .returning();
-    return result[0];
+    return report;
   }
-
-  // =============================
-  // APPLICATION METHODS
-  // =============================
-
+  
+  // Application methods
   async getApplicationById(id: number): Promise<Application | undefined> {
-    try {
-      const result = await db.select().from(applications).where(eq(applications.id, id)).limit(1);
-      return result[0] || undefined;
-    } catch (error) {
-      console.error("Error getting application by id:", error);
-      return undefined;
-    }
+    const [application] = await db.select().from(applications).where(eq(applications.id, id));
+    return application;
   }
-
+  
   async getApplicationsByProjectId(projectId: number): Promise<Application[]> {
     return await db
       .select()
@@ -494,53 +380,38 @@ export class DatabaseStorage implements IStorage {
       .where(eq(applications.projectId, projectId))
       .orderBy(desc(applications.createdAt));
   }
-
+  
   async getApplicationByVolunteerAndProject(volunteerId: number, projectId: number): Promise<Application | undefined> {
-    try {
-      const result = await db
-        .select()
-        .from(applications)
-        .where(
-          and(
-            eq(applications.volunteerId, volunteerId),
-            eq(applications.projectId, projectId)
-          )
+    const [application] = await db
+      .select()
+      .from(applications)
+      .where(
+        and(
+          eq(applications.volunteerId, volunteerId),
+          eq(applications.projectId, projectId)
         )
-        .limit(1);
-      return result[0] || undefined;
-    } catch (error) {
-      console.error("Error getting application by volunteer and project:", error);
-      return undefined;
-    }
+      );
+    return application;
   }
-
+  
   async createApplication(insertApplication: InsertApplication): Promise<Application> {
-    const result = await db
+    const [application] = await db
       .insert(applications)
-      .values({
-        projectId: insertApplication.projectId,
-        volunteerId: insertApplication.volunteerId,
-        status: "pending",
-        message: insertApplication.message || null,
-        createdAt: new Date(),
-      })
+      .values(insertApplication)
       .returning();
-    return result[0];
+    return application;
   }
-
+  
   async updateApplicationStatus(id: number, status: string): Promise<Application> {
-    const result = await db
+    const [application] = await db
       .update(applications)
-      .set({ status: status as "pending" | "approved" | "rejected" })
+      .set({ status })
       .where(eq(applications.id, id))
       .returning();
-    return result[0];
+    return application;
   }
-
-  // =============================
-  // DONATION METHODS
-  // =============================
-
+  
+  // Donation methods
   async getDonationsByProjectId(projectId: number): Promise<Donation[]> {
     return await db
       .select()
@@ -548,7 +419,7 @@ export class DatabaseStorage implements IStorage {
       .where(eq(donations.projectId, projectId))
       .orderBy(desc(donations.createdAt));
   }
-
+  
   async getDonationsByUserId(userId: number): Promise<Donation[]> {
     return await db
       .select()
@@ -556,80 +427,485 @@ export class DatabaseStorage implements IStorage {
       .where(eq(donations.donorId, userId))
       .orderBy(desc(donations.createdAt));
   }
-
+  
   async createDonation(insertDonation: InsertDonation): Promise<Donation> {
-    // Create the donation first
-    const result = await db
+    const [donation] = await db
       .insert(donations)
-      .values({
-        projectId: insertDonation.projectId,
-        donorId: insertDonation.donorId || null,
-        amount: insertDonation.amount,
-        comment: insertDonation.comment || null,
-        createdAt: new Date(),
-      })
+      .values(insertDonation)
       .returning();
-    
-    const donation = result[0];
-    
-    // Update the project's collected amount (and potentially change status)
-    await this.updateProjectCollectedAmount(donation.projectId, donation.amount);
-    
     return donation;
   }
-
-  // =============================
-  // HELPER METHODS
-  // =============================
-
+  
+  // Helper methods
   async isVolunteerAssignedToProject(volunteerId: number, projectId: number): Promise<boolean> {
-    try {
-      const result = await db
-        .select()
-        .from(applications)
-        .where(
-          and(
-            eq(applications.volunteerId, volunteerId),
-            eq(applications.projectId, projectId),
-            eq(applications.status, "approved")
-          )
+    const [application] = await db
+      .select()
+      .from(applications)
+      .where(
+        and(
+          eq(applications.volunteerId, volunteerId),
+          eq(applications.projectId, projectId),
+          eq(applications.status, "approved")
         )
-        .limit(1);
-      
-      return result.length > 0;
-    } catch (error) {
-      console.error("Error checking volunteer assignment:", error);
-      return false;
-    }
+      );
+    return !!application;
+  }
+  
+  async getVolunteersByProjectId(projectId: number): Promise<User[]> {
+    const volunteers = await db
+      .select({
+        user: users
+      })
+      .from(applications)
+      .innerJoin(users, eq(applications.volunteerId, users.id))
+      .where(
+        and(
+          eq(applications.projectId, projectId),
+          eq(applications.status, "approved")
+        )
+      );
+    
+    return volunteers.map(row => row.user);
+  }
+}
+
+export class MemStorage implements IStorage {
+  private users: Map<number, User>;
+  private projects: Map<number, Project>;
+  private tasks: Map<number, Task>;
+  private reports: Map<number, Report>;
+  private applications: Map<number, Application>;
+  private donations: Map<number, Donation>;
+  
+  currentUserId: number;
+  currentProjectId: number;
+  currentTaskId: number;
+  currentReportId: number;
+  currentApplicationId: number;
+  currentDonationId: number;
+  sessionStore: session.SessionStore;
+
+  constructor() {
+    this.users = new Map();
+    this.projects = new Map();
+    this.tasks = new Map();
+    this.reports = new Map();
+    this.applications = new Map();
+    this.donations = new Map();
+    
+    this.currentUserId = 1;
+    this.currentProjectId = 1;
+    this.currentTaskId = 1;
+    this.currentReportId = 1;
+    this.currentApplicationId = 1;
+    this.currentDonationId = 1;
+    
+    this.sessionStore = new (require('memorystore')(session))({
+      checkPeriod: 86400000,
+    });
   }
 
-  async getVolunteersByProjectId(projectId: number): Promise<User[]> {
-    try {
-      const approvedApplications = await db
-        .select({ volunteerId: applications.volunteerId })
-        .from(applications)
-        .where(
-          and(
-            eq(applications.projectId, projectId),
-            eq(applications.status, "approved")
-          )
-        );
-      
-      const volunteers = [];
-      for (const app of approvedApplications) {
-        if (app.volunteerId) {
-          const volunteer = await this.getUser(app.volunteerId);
-          if (volunteer) {
-            volunteers.push(volunteer);
-          }
-        }
+  // User methods
+  async getUser(id: number): Promise<User | undefined> {
+    return this.users.get(id);
+  }
+
+  async getUserByUsername(username: string): Promise<User | undefined> {
+    return Array.from(this.users.values()).find(
+      (user) => user.username === username,
+    );
+  }
+  
+  async getUserByEmail(email: string): Promise<User | undefined> {
+    return Array.from(this.users.values()).find(
+      (user) => user.email === email,
+    );
+  }
+  
+  async getUserByVerificationToken(token: string): Promise<User | undefined> {
+    return Array.from(this.users.values()).find(
+      (user) => user.verificationToken === token,
+    );
+  }
+
+  async createUser(insertUser: InsertUser): Promise<User> {
+    const id = this.currentUserId++;
+    const now = new Date();
+    const user: User = { 
+      ...insertUser, 
+      id, 
+      isVerified: false, 
+      createdAt: now 
+    };
+    this.users.set(id, user);
+    return user;
+  }
+  
+  async verifyUser(id: number): Promise<User> {
+    const user = this.users.get(id);
+    if (!user) {
+      throw new Error("User not found");
+    }
+    
+    const updatedUser = { 
+      ...user, 
+      isVerified: true, 
+      verificationToken: null 
+    };
+    
+    this.users.set(id, updatedUser);
+    return updatedUser;
+  }
+  
+  async blockUser(id: number): Promise<User> {
+    const user = this.users.get(id);
+    if (!user) {
+      throw new Error("User not found");
+    }
+    
+    const updatedUser = { 
+      ...user, 
+      isBlocked: true
+    };
+    
+    this.users.set(id, updatedUser);
+    return updatedUser;
+  }
+  
+  async getAllUsers(): Promise<User[]> {
+    return Array.from(this.users.values())
+      .sort((a, b) => a.username.localeCompare(b.username));
+  }
+  
+  // Project methods
+  async getProjects(options?: { status?: string; search?: string; limit?: number; offset?: number }): Promise<Project[]> {
+    let result = Array.from(this.projects.values());
+    
+    if (options) {
+      if (options.status) {
+        result = result.filter(project => project.status === options.status);
       }
       
-      return volunteers;
-    } catch (error) {
-      console.error("Error getting volunteers by project:", error);
-      return [];
+      if (options.search) {
+        const searchLower = options.search.toLowerCase();
+        result = result.filter(project => 
+          project.name.toLowerCase().includes(searchLower) || 
+          project.description.toLowerCase().includes(searchLower)
+        );
+      }
+      
+      // Sort by created date descending
+      result.sort((a, b) => {
+        return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+      });
+      
+      if (options.offset) {
+        result = result.slice(options.offset);
+      }
+      
+      if (options.limit) {
+        result = result.slice(0, options.limit);
+      }
     }
+    
+    return result;
+  }
+  
+  async getProjectById(id: number): Promise<Project | undefined> {
+    return this.projects.get(id);
+  }
+  
+  async getProjectsByCoordinatorId(coordinatorId: number): Promise<Project[]> {
+    return Array.from(this.projects.values())
+      .filter(project => project.coordinatorId === coordinatorId)
+      .sort((a, b) => {
+        return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+      });
+  }
+  
+  async getProjectsForVolunteer(volunteerId: number): Promise<Project[]> {
+    // Get all approved applications for this volunteer
+    const approvedApplications = Array.from(this.applications.values())
+      .filter(app => app.volunteerId === volunteerId && app.status === "approved");
+    
+    // Get the corresponding projects
+    return approvedApplications
+      .map(app => this.projects.get(app.projectId))
+      .filter((project): project is Project => !!project)
+      .sort((a, b) => {
+        return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+      });
+  }
+  
+  async createProject(insertProject: InsertProject): Promise<Project> {
+    const id = this.currentProjectId++;
+    const now = new Date();
+    const project: Project = { 
+      ...insertProject, 
+      id, 
+      status: "funding", 
+      collectedAmount: 0, 
+      createdAt: now, 
+      updatedAt: now 
+    };
+    this.projects.set(id, project);
+    return project;
+  }
+  
+  async updateProjectStatus(id: number, status: string): Promise<Project> {
+    const project = this.projects.get(id);
+    if (!project) {
+      throw new Error("Project not found");
+    }
+    
+    const updatedProject = { 
+      ...project, 
+      status, 
+      updatedAt: new Date() 
+    };
+    
+    this.projects.set(id, updatedProject);
+    return updatedProject;
+  }
+  
+  async updateProjectCollectedAmount(id: number, amount: number): Promise<Project> {
+    const project = this.projects.get(id);
+    if (!project) {
+      throw new Error("Project not found");
+    }
+    
+    const updatedProject = { 
+      ...project, 
+      collectedAmount: project.collectedAmount + amount, 
+      updatedAt: new Date() 
+    };
+    
+    this.projects.set(id, updatedProject);
+    return updatedProject;
+  }
+  
+  async updateProject(id: number, projectData: Partial<InsertProject>): Promise<Project> {
+    const project = this.projects.get(id);
+    if (!project) {
+      throw new Error("Project not found");
+    }
+    
+    const updatedProject = { 
+      ...project, 
+      ...projectData,
+      updatedAt: new Date() 
+    };
+    
+    this.projects.set(id, updatedProject);
+    return updatedProject;
+  }
+  
+  async deleteProject(id: number): Promise<void> {
+    if (!this.projects.has(id)) {
+      throw new Error("Project not found");
+    }
+    
+    this.projects.delete(id);
+    
+    // Remove related tasks
+    Array.from(this.tasks.entries())
+      .filter(([_, task]) => task.projectId === id)
+      .forEach(([taskId, _]) => this.tasks.delete(taskId));
+    
+    // Remove related applications
+    Array.from(this.applications.entries())
+      .filter(([_, app]) => app.projectId === id)
+      .forEach(([appId, _]) => this.applications.delete(appId));
+    
+    // Remove related donations
+    Array.from(this.donations.entries())
+      .filter(([_, donation]) => donation.projectId === id)
+      .forEach(([donationId, _]) => this.donations.delete(donationId));
+  }
+  
+  // Task methods
+  async getTaskById(id: number): Promise<Task | undefined> {
+    return this.tasks.get(id);
+  }
+  
+  async getTasksByProjectId(projectId: number): Promise<Task[]> {
+    return Array.from(this.tasks.values())
+      .filter(task => task.projectId === projectId)
+      .sort((a, b) => {
+        return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+      });
+  }
+  
+  async getTasksForVolunteer(volunteerId: number): Promise<Task[]> {
+    return Array.from(this.tasks.values())
+      .filter(task => task.volunteerId === volunteerId)
+      .sort((a, b) => {
+        return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+      });
+  }
+  
+  async createTask(insertTask: InsertTask): Promise<Task> {
+    const id = this.currentTaskId++;
+    const now = new Date();
+    const task: Task = { 
+      ...insertTask, 
+      id, 
+      status: "pending", 
+      createdAt: now, 
+      updatedAt: now 
+    };
+    this.tasks.set(id, task);
+    return task;
+  }
+  
+  async assignTaskToVolunteer(id: number, volunteerId: number): Promise<Task> {
+    const task = this.tasks.get(id);
+    if (!task) {
+      throw new Error("Task not found");
+    }
+    
+    const updatedTask = { 
+      ...task, 
+      volunteerId, 
+      status: "in_progress", 
+      updatedAt: new Date() 
+    };
+    
+    this.tasks.set(id, updatedTask);
+    return updatedTask;
+  }
+  
+  async updateTaskStatus(id: number, status: string): Promise<Task> {
+    const task = this.tasks.get(id);
+    if (!task) {
+      throw new Error("Task not found");
+    }
+    
+    const updatedTask = { 
+      ...task, 
+      status, 
+      updatedAt: new Date() 
+    };
+    
+    this.tasks.set(id, updatedTask);
+    return updatedTask;
+  }
+  
+  // Report methods
+  async getReportsByTaskId(taskId: number): Promise<Report[]> {
+    return Array.from(this.reports.values())
+      .filter(report => report.taskId === taskId)
+      .sort((a, b) => {
+        return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+      });
+  }
+  
+  async createReport(insertReport: InsertReport): Promise<Report> {
+    const id = this.currentReportId++;
+    const now = new Date();
+    const report: Report = { 
+      ...insertReport, 
+      id, 
+      createdAt: now 
+    };
+    this.reports.set(id, report);
+    return report;
+  }
+  
+  // Application methods
+  async getApplicationById(id: number): Promise<Application | undefined> {
+    return this.applications.get(id);
+  }
+  
+  async getApplicationsByProjectId(projectId: number): Promise<Application[]> {
+    return Array.from(this.applications.values())
+      .filter(application => application.projectId === projectId)
+      .sort((a, b) => {
+        return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+      });
+  }
+  
+  async getApplicationByVolunteerAndProject(volunteerId: number, projectId: number): Promise<Application | undefined> {
+    return Array.from(this.applications.values())
+      .find(app => app.volunteerId === volunteerId && app.projectId === projectId);
+  }
+  
+  async createApplication(insertApplication: InsertApplication): Promise<Application> {
+    const id = this.currentApplicationId++;
+    const now = new Date();
+    const application: Application = { 
+      ...insertApplication, 
+      id, 
+      status: "pending", 
+      createdAt: now 
+    };
+    this.applications.set(id, application);
+    return application;
+  }
+  
+  async updateApplicationStatus(id: number, status: string): Promise<Application> {
+    const application = this.applications.get(id);
+    if (!application) {
+      throw new Error("Application not found");
+    }
+    
+    const updatedApplication = { 
+      ...application, 
+      status 
+    };
+    
+    this.applications.set(id, updatedApplication);
+    return updatedApplication;
+  }
+  
+  // Donation methods
+  async getDonationsByProjectId(projectId: number): Promise<Donation[]> {
+    return Array.from(this.donations.values())
+      .filter(donation => donation.projectId === projectId)
+      .sort((a, b) => {
+        return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+      });
+  }
+  
+  async getDonationsByUserId(userId: number): Promise<Donation[]> {
+    return Array.from(this.donations.values())
+      .filter(donation => donation.donorId === userId)
+      .sort((a, b) => {
+        return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+      });
+  }
+  
+  async createDonation(insertDonation: InsertDonation): Promise<Donation> {
+    const id = this.currentDonationId++;
+    const now = new Date();
+    const donation: Donation = { 
+      ...insertDonation, 
+      id, 
+      createdAt: now 
+    };
+    this.donations.set(id, donation);
+    return donation;
+  }
+  
+  // Helper methods
+  async isVolunteerAssignedToProject(volunteerId: number, projectId: number): Promise<boolean> {
+    return Array.from(this.applications.values())
+      .some(app => 
+        app.volunteerId === volunteerId && 
+        app.projectId === projectId && 
+        app.status === "approved"
+      );
+  }
+  
+  async getVolunteersByProjectId(projectId: number): Promise<User[]> {
+    // Get all approved applications for this project
+    const approvedApplications = Array.from(this.applications.values())
+      .filter(app => app.projectId === projectId && app.status === "approved");
+    
+    // Get the corresponding volunteers
+    return approvedApplications
+      .map(app => this.users.get(app.volunteerId))
+      .filter((user): user is User => !!user);
   }
 }
 
