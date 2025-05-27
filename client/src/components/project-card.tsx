@@ -19,13 +19,13 @@ export function ProjectCard({ project, coordinator }: ProjectCardProps) {
   
   // Calculate progress percentage
   const progressPercentage = Math.min(
-    Math.round((project.collectedAmount / project.targetAmount) * 100),
+    Math.round(((project.currentAmount || 0) / project.targetAmount) * 100),
     100
   );
   
   // Format the collected and target amounts
   const formattedCollected = new Intl.NumberFormat('uk-UA').format(
-    project.collectedAmount
+    project.currentAmount || 0
   );
   
   const formattedTarget = new Intl.NumberFormat('uk-UA').format(
@@ -98,14 +98,14 @@ export function ProjectCard({ project, coordinator }: ProjectCardProps) {
                 {t('projects.details.view')}
               </Button>
             </Link>
-            <Link href={project.status === 'funding' ? `/projects/${project.id}/donate` : `/projects/${project.id}`}>
+            <Link href={project.projectStatus === 'fundraising' ? `/donate/${project.id}` : `/projects/${project.id}`}>
               <Button 
                 size="sm"
                 className="text-white bg-secondary-500 hover:bg-secondary-600"
               >
-                {project.status === 'funding' 
+                {project.projectStatus === 'fundraising' 
                   ? t('home.projects.donateButton') 
-                  : t('projects.details.applyButton')}
+                  : t('projects.details.view')}
               </Button>
             </Link>
           </div>

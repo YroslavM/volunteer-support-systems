@@ -206,9 +206,19 @@ export default function ProjectDetails() {
                   className="w-full h-full object-cover"
                 />
                 <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/60 to-transparent p-4">
-                  <Badge className={`mb-2 ${getStatusColor(project.projectStatus)}`}>
-                    {t(`projects.status.${project.projectStatus}`)}
-                  </Badge>
+                  <div className="flex gap-2 mb-2">
+                    <Badge className={`${getStatusColor(project.projectStatus)}`}>
+                      {t(`projects.status.${project.projectStatus}`)}
+                    </Badge>
+                    {/* Статус модерації тільки для координаторів та модераторів */}
+                    {user && (user.role === 'coordinator' || user.role === 'moderator' || user.role === 'admin') && (
+                      <Badge variant="outline" className="bg-white/10 text-white border-white/30">
+                        {project.moderationStatus === 'pending' && 'На розгляді'}
+                        {project.moderationStatus === 'approved' && 'Схвалено'}
+                        {project.moderationStatus === 'rejected' && 'Відхилено'}
+                      </Badge>
+                    )}
+                  </div>
                   <h1 className="text-2xl font-bold text-white">{project.name}</h1>
                 </div>
               </div>

@@ -146,6 +146,19 @@ export default function ModeratorDashboard() {
     }
   };
 
+  const getProjectStatusBadge = (projectStatus: string) => {
+    switch (projectStatus) {
+      case "fundraising":
+        return <Badge variant="outline" className="text-blue-600 border-blue-600">Збір коштів</Badge>;
+      case "in_progress":
+        return <Badge variant="outline" className="text-orange-600 border-orange-600">У процесі</Badge>;
+      case "completed":
+        return <Badge variant="outline" className="text-green-600 border-green-600">Завершено</Badge>;
+      default:
+        return <Badge variant="outline">{projectStatus}</Badge>;
+    }
+  };
+
   const filterButtons = [
     { value: "pending", label: "На розгляді", icon: <Clock className="h-4 w-4" /> },
     { value: "approved", label: "Схвалені", icon: <Check className="h-4 w-4" /> },
@@ -226,7 +239,8 @@ export default function ModeratorDashboard() {
                   <TableHead>Координатор</TableHead>
                   <TableHead>Сума</TableHead>
                   <TableHead>Дата створення</TableHead>
-                  <TableHead>Статус</TableHead>
+                  <TableHead>Статус проекту</TableHead>
+                  <TableHead>Статус модерації</TableHead>
                   <TableHead className="text-right">Дії</TableHead>
                 </TableRow>
               </TableHeader>
@@ -237,6 +251,7 @@ export default function ModeratorDashboard() {
                     <TableCell>Координатор ID: {project.coordinatorId}</TableCell>
                     <TableCell>{new Intl.NumberFormat('uk-UA', { style: 'currency', currency: 'UAH' }).format(project.targetAmount)}</TableCell>
                     <TableCell>{new Date(project.createdAt).toLocaleDateString('uk-UA')}</TableCell>
+                    <TableCell>{getProjectStatusBadge(project.projectStatus)}</TableCell>
                     <TableCell>{getStatusBadge(project.moderationStatus)}</TableCell>
                     <TableCell className="text-right">
                       <div className="flex justify-end gap-2">
