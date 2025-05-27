@@ -70,13 +70,12 @@ function hasRole(roles: string[]) {
   };
 }
 
-// Helper function to check if user is a moderator (using admin role)
+// Helper function to check if user is a moderator
 function isModerator(req: Request): boolean {
-  // We're using admin role for moderators as we don't have a separate moderator role in the user role enum
   if (DEV_MODE) {
-    return req.body.userRole === "admin" || req.user?.role === "admin";
+    return req.body.userRole === "moderator" || req.body.userRole === "admin" || req.user?.role === "moderator" || req.user?.role === "admin";
   }
-  return req.user?.role === "admin";
+  return req.user?.role === "moderator" || req.user?.role === "admin";
 }
 
 // Middleware to check if user is a moderator
@@ -149,7 +148,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       const { moderationStatus, comment } = z.object({
         moderationStatus: z.enum(["approved", "rejected"]),
-        comment: z.string().optional(),
+        comment: z.string().nullable().optional(),
       }).parse(req.body);
       
       const project = await storage.getProjectById(id);
