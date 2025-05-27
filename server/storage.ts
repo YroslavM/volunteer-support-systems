@@ -238,13 +238,36 @@ export class DatabaseStorage implements IStorage {
   }
   
   async updateProjectCollectedAmount(id: number, amount: number): Promise<Project> {
+    // First, get the current project to check status and amounts
+    const currentProject = await this.getProjectById(id);
+    if (!currentProject) {
+      throw new Error("Project not found");
+    }
+
+    // Calculate new collected amount
+    const newCollectedAmount = currentProject.collectedAmount + amount;
+    
+    // Determine if status should change from "funding" to "in_progress"
+    const shouldChangeStatus = 
+      currentProject.status === "funding" && 
+      newCollectedAmount >= currentProject.targetAmount;
+
+    const updateData: any = { 
+      collectedAmount: newCollectedAmount,
+      updatedAt: new Date()
+    };
+
+    // Auto-change status if funding goal is reached
+    if (shouldChangeStatus) {
+      updateData.status = "in_progress";
+    }
+
     const [project] = await db
       .update(projects)
-      .set({ 
-        collectedAmount: sql`${projects.collectedAmount} + ${amount}`
-      })
+      .set(updateData)
       .where(eq(projects.id, id))
       .returning();
+    
     return project;
   }
   
@@ -461,10 +484,15 @@ export class DatabaseStorage implements IStorage {
   }
   
   async createDonation(insertDonation: InsertDonation): Promise<Donation> {
+    // Create the donation first
     const [donation] = await db
       .insert(donations)
       .values(insertDonation)
       .returning();
+    
+    // Update the project's collected amount and potentially change status
+    await this.updateProjectCollectedAmount(donation.projectId, donation.amount);
+    
     return donation;
   }
   
