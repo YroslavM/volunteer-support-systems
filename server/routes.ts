@@ -564,6 +564,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
+  // Get applications for current user (volunteer)
+  app.get("/api/user/applications", hasRole(["volunteer"]), async (req, res, next) => {
+    try {
+      const userId = getUserId(req);
+      
+      // Get all applications from the volunteer
+      const applications = await storage.getApplicationsByVolunteerId(userId);
+      
+      res.json(applications);
+    } catch (error) {
+      next(error);
+    }
+  });
+  
   // Update application status (coordinator only)
   app.patch("/api/applications/:id/status", hasRole(["coordinator", "admin"]), async (req, res, next) => {
     try {

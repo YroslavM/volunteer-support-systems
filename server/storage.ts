@@ -66,6 +66,7 @@ export interface IStorage {
   // Application methods
   getApplicationById(id: number): Promise<Application | undefined>;
   getApplicationsByProjectId(projectId: number): Promise<Application[]>;
+  getApplicationsByVolunteerId(volunteerId: number): Promise<Application[]>;
   getApplicationByVolunteerAndProject(volunteerId: number, projectId: number): Promise<Application | undefined>;
   createApplication(application: InsertApplication): Promise<Application>;
   updateApplicationStatus(id: number, status: string): Promise<Application>;
