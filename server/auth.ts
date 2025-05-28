@@ -85,16 +85,24 @@ export function setupAuth(app: Express) {
   // Register endpoint
   app.post("/api/register", async (req, res, next) => {
     try {
-      const registerSchema = insertUserSchema.extend({
-        confirmPassword: z.string()
+      const registerSchema = z.object({
+        email: z.string().email("Некоректний email"),
+        username: z.string().min(1, "Ім'я користувача обов'язкове"),
+        password: z.string().min(6, "Пароль повинен містити мінімум 6 символів"),
+        confirmPassword: z.string(),
+        role: z.enum(["volunteer", "coordinator", "donor"]),
+        firstName: z.string().min(1, "Ім'я обов'язкове"),
+        lastName: z.string().min(1, "Прізвище обов'язкове"),
+        bio: z.string().default(""),
+        region: z.string().min(1, "Область обов'язкова"),
+        city: z.string().min(1, "Місто обов'язкове"),
+        phoneNumber: z.string().min(1, "Номер телефону обов'язковий"),
+        gender: z.enum(["Чоловіча", "Жіноча", "Інше"]),
+        birthDate: z.string().min(1, "Дата народження обов'язкова"),
       })
       .refine(data => data.password === data.confirmPassword, {
         message: "Паролі не співпадають",
         path: ["confirmPassword"],
-      })
-      .refine(data => ["volunteer", "coordinator", "donor"].includes(data.role), {
-        message: "Вибрана роль недоступна для реєстрації",
-        path: ["role"],
       });
 
       const validatedData = registerSchema.parse(req.body);
@@ -120,8 +128,17 @@ export function setupAuth(app: Express) {
       const hashedPassword = await hashPassword(userData.password);
       const verificationToken = generateVerificationToken();
 
+      // Конвертуємо gender значення для відповідності схемі бази даних
+      const genderMap: Record<string, string> = {
+        "male": "Чоловіча",
+        "female": "Жіноча", 
+        "other": "Інше"
+      };
+
       const user = await storage.createUser({
         ...userData,
+        bio: userData.bio || "",
+        gender: genderMap[userData.gender] || userData.gender,
         password: hashedPassword,
         verificationToken
       });
