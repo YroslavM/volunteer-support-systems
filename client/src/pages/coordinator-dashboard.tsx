@@ -275,15 +275,21 @@ export default function CoordinatorDashboard() {
                           return (
                             <div
                               key={application.id}
-                              className="bg-white rounded-lg border p-4"
+                              className="bg-white rounded-lg border p-6 shadow-sm"
                             >
-                              <div className="flex flex-col sm:flex-row justify-between">
-                                <div>
-                                  <div className="flex items-center mb-2">
-                                    <AccountCircle className="text-gray-400 mr-2" />
+                              <div className="flex flex-col space-y-4">
+                                <div className="flex items-center justify-between">
+                                  <div className="flex items-center space-x-3">
+                                    <div className="w-12 h-12 rounded-full bg-blue-100 flex items-center justify-center">
+                                      <span className="text-lg font-semibold text-blue-700">
+                                        {application.volunteer?.firstName?.[0] || 'В'}
+                                      </span>
+                                    </div>
                                     <div>
                                       <h3 className="font-medium text-lg text-gray-900">
-                                        Волонтер #{application.volunteerId}
+                                        {application.volunteer ? 
+                                          `${application.volunteer.lastName} ${application.volunteer.firstName}` 
+                                          : `Волонтер #${application.volunteerId}`}
                                       </h3>
                                       <div className="text-sm text-gray-500">
                                         {project ? (
@@ -294,33 +300,81 @@ export default function CoordinatorDashboard() {
                                       </div>
                                     </div>
                                   </div>
-                                  {application.message && (
-                                    <p className="text-gray-600 mb-2 p-3 bg-gray-50 rounded-md">
-                                      {application.message}
-                                    </p>
-                                  )}
-                                  <div className="text-sm text-gray-500">
-                                    Дата подання: {formatDate(application.createdAt)}
+                                  <div className="flex space-x-2">
+                                    {application.status === 'pending' && (
+                                      <>
+                                        <Button 
+                                          size="sm" 
+                                          className="bg-green-600 hover:bg-green-700"
+                                          onClick={() => handleApplicationStatus(application.id, 'approved')}
+                                        >
+                                          Прийняти
+                                        </Button>
+                                        <Button 
+                                          size="sm" 
+                                          variant="destructive"
+                                          onClick={() => handleApplicationStatus(application.id, 'rejected')}
+                                        >
+                                          Відхилити
+                                        </Button>
+                                      </>
+                                    )}
+                                    {application.status === 'approved' && (
+                                      <Badge className="bg-green-100 text-green-800">Прийнято</Badge>
+                                    )}
+                                    {application.status === 'rejected' && (
+                                      <Badge className="bg-red-100 text-red-800">Відхилено</Badge>
+                                    )}
                                   </div>
                                 </div>
-                                <div className="mt-4 sm:mt-0 flex items-center">
-                                  <Button
-                                    size="sm"
-                                    className="bg-green-600 hover:bg-green-700 flex items-center mr-2"
-                                    onClick={() => handleApplicationStatus(application.id, "approved")}
-                                  >
-                                    <CheckCircle className="mr-1 h-4 w-4" />
-                                    {t("dashboard.coordinator.approveButton")}
-                                  </Button>
-                                  <Button
-                                    size="sm"
-                                    variant="outline"
-                                    className="border-red-300 text-red-600 hover:bg-red-50 flex items-center"
-                                    onClick={() => handleApplicationStatus(application.id, "rejected")}
-                                  >
-                                    <Cancel className="mr-1 h-4 w-4" />
-                                    {t("dashboard.coordinator.rejectButton")}
-                                  </Button>
+
+                                {/* Детальна інформація про волонтера */}
+                                {application.volunteer && (
+                                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 p-4 bg-gray-50 rounded-lg">
+                                    <div>
+                                      <span className="text-sm font-medium text-gray-600">Стать:</span>
+                                      <p className="text-sm text-gray-900">{application.volunteer.gender}</p>
+                                    </div>
+                                    <div>
+                                      <span className="text-sm font-medium text-gray-600">Дата народження:</span>
+                                      <p className="text-sm text-gray-900">
+                                        {new Date(application.volunteer.birthDate).toLocaleDateString('uk-UA')}
+                                      </p>
+                                    </div>
+                                    <div>
+                                      <span className="text-sm font-medium text-gray-600">Область:</span>
+                                      <p className="text-sm text-gray-900">{application.volunteer.region}</p>
+                                    </div>
+                                    <div>
+                                      <span className="text-sm font-medium text-gray-600">Місто:</span>
+                                      <p className="text-sm text-gray-900">{application.volunteer.city}</p>
+                                    </div>
+                                    <div>
+                                      <span className="text-sm font-medium text-gray-600">Email:</span>
+                                      <p className="text-sm text-gray-900">{application.volunteer.email}</p>
+                                    </div>
+                                    <div>
+                                      <span className="text-sm font-medium text-gray-600">Телефон:</span>
+                                      <p className="text-sm text-gray-900">{application.volunteer.phoneNumber}</p>
+                                    </div>
+                                    <div className="md:col-span-2 lg:col-span-3">
+                                      <span className="text-sm font-medium text-gray-600">Про себе:</span>
+                                      <p className="text-sm text-gray-900 mt-1">{application.volunteer.bio}</p>
+                                    </div>
+                                  </div>
+                                )}
+
+                                {application.message && (
+                                  <div className="p-3 bg-blue-50 rounded-md">
+                                    <span className="text-sm font-medium text-blue-800">Повідомлення:</span>
+                                    <p className="text-sm text-blue-700 mt-1">
+                                      {application.message}
+                                    </p>
+                                  </div>
+                                )}
+                                
+                                <div className="text-sm text-gray-500">
+                                  Дата подання: {formatDate(application.createdAt)}
                                 </div>
                               </div>
                             </div>
