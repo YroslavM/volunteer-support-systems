@@ -2,8 +2,16 @@ import { QueryClient, QueryFunction } from "@tanstack/react-query";
 
 async function throwIfResNotOk(res: Response) {
   if (!res.ok) {
-    const text = (await res.text()) || res.statusText;
-    throw new Error(`${res.status}: ${text}`);
+    try {
+      const text = await res.text();
+      // Перевіряємо, чи це HTML помилка (наприклад, 404 сторінка)
+      if (text.includes('<!DOCTYPE') || text.includes('<html')) {
+        throw new Error(`${res.status}: Помилка сервера`);
+      }
+      throw new Error(`${res.status}: ${text || res.statusText}`);
+    } catch (parseError) {
+      throw new Error(`${res.status}: ${res.statusText}`);
+    }
   }
 }
 
@@ -47,7 +55,9 @@ export const queryClient = new QueryClient({
       queryFn: getQueryFn({ on401: "throw" }),
       refetchInterval: false,
       refetchOnWindowFocus: false,
-      staleTime: Infinity,
+      refetchOnMount: false,
+      refetchOnReconnect: false,
+      staleTime: 5 * 60 * 1000, // 5 хвилин
       retry: false,
     },
     mutations: {

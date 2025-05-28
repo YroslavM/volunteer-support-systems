@@ -52,7 +52,7 @@ function Router() {
         <ProtectedRoute component={AdminDashboard} roles={["admin"]} />
       </Route>
       <Route path="/dashboard/moderator">
-        <ProtectedRoute component={ModeratorDashboard} roles={["admin"]} />
+        <ProtectedRoute component={ModeratorDashboard} roles={["moderator", "admin"]} />
       </Route>
       <Route path="/profile">
         <ProtectedRoute component={ProfilePage} />
