@@ -32,6 +32,7 @@ export default function VolunteerDashboard() {
     createdAt: new Date().toISOString()
   };
   const [activeTab, setActiveTab] = useState("current-tasks");
+  const [applicationFilter, setApplicationFilter] = useState<"all" | "pending" | "approved" | "rejected">("pending");
 
   // Fetch volunteer's tasks
   const { data: tasks, isLoading: tasksLoading } = useQuery<SelectTask[]>({
@@ -119,20 +120,125 @@ export default function VolunteerDashboard() {
             <Card className="shadow-sm">
               <CardHeader className="pb-3">
                 <Tabs defaultValue={activeTab} onValueChange={setActiveTab}>
-                  <TabsList className="grid grid-cols-3">
+                  <TabsList className="grid grid-cols-4">
                     <TabsTrigger value="current-tasks" className="flex items-center">
                       <Assignment className="mr-2 h-4 w-4" />
                       {t("dashboard.volunteer.currentTasks")}
+                    </TabsTrigger>
+                    <TabsTrigger value="my-applications" className="flex items-center">
+                      <AssignmentTurnedIn className="mr-2 h-4 w-4" />
+                      Мої заявки
                     </TabsTrigger>
                     <TabsTrigger value="available-projects" className="flex items-center">
                       <Search className="mr-2 h-4 w-4" />
                       {t("dashboard.volunteer.availableProjects")}
                     </TabsTrigger>
                     <TabsTrigger value="completed-tasks" className="flex items-center">
-                      <AssignmentTurnedIn className="mr-2 h-4 w-4" />
+                      <FolderOpen className="mr-2 h-4 w-4" />
                       {t("dashboard.volunteer.completedTasks")}
                     </TabsTrigger>
                   </TabsList>
+
+                  {/* My Applications Tab */}
+                  <TabsContent value="my-applications" className="border-t pt-4">
+                    <div className="mb-4">
+                      <div className="flex space-x-2">
+                        <Button
+                          variant={applicationFilter === "pending" ? "default" : "outline"}
+                          size="sm"
+                          onClick={() => setApplicationFilter("pending")}
+                        >
+                          На розгляді
+                        </Button>
+                        <Button
+                          variant={applicationFilter === "approved" ? "default" : "outline"}
+                          size="sm"
+                          onClick={() => setApplicationFilter("approved")}
+                        >
+                          Схвалені
+                        </Button>
+                        <Button
+                          variant={applicationFilter === "rejected" ? "default" : "outline"}
+                          size="sm"
+                          onClick={() => setApplicationFilter("rejected")}
+                        >
+                          Відхилені
+                        </Button>
+                        <Button
+                          variant={applicationFilter === "all" ? "default" : "outline"}
+                          size="sm"
+                          onClick={() => setApplicationFilter("all")}
+                        >
+                          Усі заявки
+                        </Button>
+                      </div>
+                    </div>
+
+                    {applicationsLoading ? (
+                      <div className="flex justify-center items-center py-10">
+                        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                      </div>
+                    ) : !applications || applications.length === 0 ? (
+                      <div className="text-center py-10">
+                        <AssignmentTurnedIn className="mx-auto h-12 w-12 text-gray-400" />
+                        <h3 className="mt-2 text-sm font-medium text-gray-900">Немає заявок</h3>
+                        <p className="mt-1 text-sm text-gray-500">
+                          Ви ще не подавали заявок на участь у проєктах
+                        </p>
+                      </div>
+                    ) : (
+                      <div className="space-y-4">
+                        {applications
+                          .filter(app => applicationFilter === "all" || app.status === applicationFilter)
+                          .map((application) => {
+                            const project = availableProjects?.find(p => p.id === application.projectId);
+                            
+                            return (
+                              <div
+                                key={application.id}
+                                className="bg-white rounded-lg border p-4 shadow-sm"
+                              >
+                                <div className="flex items-center justify-between">
+                                  <div className="flex items-center space-x-3">
+                                    <div>
+                                      <h3 className="font-medium text-lg text-gray-900">
+                                        {project?.name || `Проєкт #${application.projectId}`}
+                                      </h3>
+                                      <p className="text-sm text-gray-500">
+                                        Подано: {new Date(application.createdAt).toLocaleDateString('uk-UA')}
+                                      </p>
+                                      {application.message && (
+                                        <p className="text-sm text-gray-600 mt-1">
+                                          {application.message}
+                                        </p>
+                                      )}
+                                    </div>
+                                  </div>
+                                  <div className="flex items-center space-x-2">
+                                    {application.status === 'pending' && (
+                                      <Badge className="bg-yellow-100 text-yellow-800">На розгляді</Badge>
+                                    )}
+                                    {application.status === 'approved' && (
+                                      <Badge className="bg-green-100 text-green-800">Схвалено</Badge>
+                                    )}
+                                    {application.status === 'rejected' && (
+                                      <Badge className="bg-red-100 text-red-800">Відхилено</Badge>
+                                    )}
+                                    {application.status === 'approved' && project && (
+                                      <Link href={`/projects/${project.id}`}>
+                                        <Button size="sm" variant="outline">
+                                          Переглянути проєкт
+                                        </Button>
+                                      </Link>
+                                    )}
+                                  </div>
+                                </div>
+                              </div>
+                            );
+                          })}
+                      </div>
+                    )}
+                  </TabsContent>
 
                   {/* Current Tasks Tab */}
                   <TabsContent value="current-tasks" className="border-t pt-4">
