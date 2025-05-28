@@ -614,8 +614,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Update the project's collected amount
       await storage.updateProjectCollectedAmount(projectId, data.amount);
       
-      // Check if project has reached its target amount
-      if (project.collectedAmount + data.amount >= project.targetAmount) {
+      // Get updated project data to check if target is reached
+      const updatedProject = await storage.getProjectById(projectId);
+      if (updatedProject && updatedProject.collectedAmount >= updatedProject.targetAmount) {
         await storage.updateProjectStatus(projectId, "in_progress");
       }
       
