@@ -381,6 +381,14 @@ export class DatabaseStorage implements IStorage {
       .where(eq(applications.projectId, projectId))
       .orderBy(desc(applications.createdAt));
   }
+
+  async getApplicationsByVolunteerId(volunteerId: number): Promise<Application[]> {
+    return await db
+      .select()
+      .from(applications)
+      .where(eq(applications.volunteerId, volunteerId))
+      .orderBy(desc(applications.createdAt));
+  }
   
   async getApplicationByVolunteerAndProject(volunteerId: number, projectId: number): Promise<Application | undefined> {
     const [application] = await db
@@ -821,6 +829,14 @@ export class MemStorage implements IStorage {
   async getApplicationsByProjectId(projectId: number): Promise<Application[]> {
     return Array.from(this.applications.values())
       .filter(application => application.projectId === projectId)
+      .sort((a, b) => {
+        return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+      });
+  }
+
+  async getApplicationsByVolunteerId(volunteerId: number): Promise<Application[]> {
+    return Array.from(this.applications.values())
+      .filter(application => application.volunteerId === volunteerId)
       .sort((a, b) => {
         return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
       });
