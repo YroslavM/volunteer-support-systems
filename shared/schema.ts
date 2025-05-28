@@ -27,6 +27,11 @@ export const users = pgTable("users", {
   role: userRoleEnum("role").notNull(),
   firstName: text("first_name"),
   lastName: text("last_name"),
+  bio: text("bio").notNull(),
+  region: text("region").notNull(),
+  city: text("city").notNull(),
+  phoneNumber: text("phone_number").notNull(),
+  gender: text("gender").notNull(),
   isVerified: boolean("is_verified").default(false).notNull(),
   isBlocked: boolean("is_blocked").default(false).notNull(),
   verificationToken: text("verification_token"),
@@ -165,7 +170,25 @@ export const donationsRelations = relations(donations, ({ one }) => ({
 }));
 
 // Zod schemas for validation
-export const insertUserSchema = createInsertSchema(users).omit({ id: true, createdAt: true });
+export const insertUserSchema = createInsertSchema(users).omit({ id: true, createdAt: true }).extend({
+  bio: z.string().min(10, "Опис має містити мінімум 10 символів").max(500, "Опис не може перевищувати 500 символів"),
+  region: z.string().min(1, "Область є обов'язковою"),
+  city: z.string().min(1, "Місто є обов'язковим"),
+  phoneNumber: z.string().regex(/^\+380\d{9}$/, "Номер телефону має бути у форматі +380XXXXXXXXX"),
+  gender: z.enum(["Чоловіча", "Жіноча", "Інше"], { 
+    errorMap: () => ({ message: "Оберіть стать" }) 
+  }),
+  confirmPassword: z.string().optional()
+}).refine((data) => {
+  if (data.confirmPassword && data.password !== data.confirmPassword) {
+    return false;
+  }
+  return true;
+}, {
+  message: "Паролі не співпадають",
+  path: ["confirmPassword"]
+});
+
 export const selectUserSchema = createSelectSchema(users);
 
 export const insertProjectSchema = createInsertSchema(projects).omit({ 
