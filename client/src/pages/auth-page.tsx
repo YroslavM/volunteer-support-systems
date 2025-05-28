@@ -512,6 +512,138 @@ export default function AuthPage() {
                         )}
                       />
 
+                      {/* Bio field */}
+                      <FormField
+                        control={registerForm.control}
+                        name="bio"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Про себе</FormLabel>
+                            <FormControl>
+                              <Textarea 
+                                placeholder="Розкажіть коротко про себе, ваш досвід та мотивацію (мінімум 10 символів)"
+                                className="min-h-[80px]"
+                                {...field} 
+                              />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+
+                      {/* Region and City */}
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <FormField
+                          control={registerForm.control}
+                          name="region"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Область</FormLabel>
+                              <Select 
+                                onValueChange={field.onChange} 
+                                defaultValue={field.value}
+                              >
+                                <FormControl>
+                                  <SelectTrigger>
+                                    <SelectValue placeholder="Оберіть область" />
+                                  </SelectTrigger>
+                                </FormControl>
+                                <SelectContent>
+                                  <SelectItem value="Київська область">Київська область</SelectItem>
+                                  <SelectItem value="Львівська область">Львівська область</SelectItem>
+                                  <SelectItem value="Харківська область">Харківська область</SelectItem>
+                                  <SelectItem value="Одеська область">Одеська область</SelectItem>
+                                  <SelectItem value="Дніпропетровська область">Дніпропетровська область</SelectItem>
+                                  <SelectItem value="Запорізька область">Запорізька область</SelectItem>
+                                  <SelectItem value="Полтавська область">Полтавська область</SelectItem>
+                                  <SelectItem value="Вінницька область">Вінницька область</SelectItem>
+                                  <SelectItem value="Житомирська область">Житомирська область</SelectItem>
+                                  <SelectItem value="Чернігівська область">Чернігівська область</SelectItem>
+                                  <SelectItem value="Сумська область">Сумська область</SelectItem>
+                                  <SelectItem value="Черкаська область">Черкаська область</SelectItem>
+                                  <SelectItem value="Кіровоградська область">Кіровоградська область</SelectItem>
+                                  <SelectItem value="Миколаївська область">Миколаївська область</SelectItem>
+                                  <SelectItem value="Херсонська область">Херсонська область</SelectItem>
+                                  <SelectItem value="Волинська область">Волинська область</SelectItem>
+                                  <SelectItem value="Рівненська область">Рівненська область</SelectItem>
+                                  <SelectItem value="Тернопільська область">Тернопільська область</SelectItem>
+                                  <SelectItem value="Хмельницька область">Хмельницька область</SelectItem>
+                                  <SelectItem value="Чернівецька область">Чернівецька область</SelectItem>
+                                  <SelectItem value="Івано-Франківська область">Івано-Франківська область</SelectItem>
+                                  <SelectItem value="Закарпатська область">Закарпатська область</SelectItem>
+                                  <SelectItem value="Луганська область">Луганська область</SelectItem>
+                                  <SelectItem value="Донецька область">Донецька область</SelectItem>
+                                  <SelectItem value="АР Крим">АР Крим</SelectItem>
+                                </SelectContent>
+                              </Select>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                        <FormField
+                          control={registerForm.control}
+                          name="city"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Місто</FormLabel>
+                              <FormControl>
+                                <Input 
+                                  placeholder="Введіть назву міста"
+                                  {...field} 
+                                />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                      </div>
+
+                      {/* Phone and Gender */}
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <FormField
+                          control={registerForm.control}
+                          name="phoneNumber"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Номер телефону</FormLabel>
+                              <FormControl>
+                                <Input 
+                                  type="tel"
+                                  placeholder="+380XXXXXXXXX"
+                                  {...field} 
+                                />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                        <FormField
+                          control={registerForm.control}
+                          name="gender"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Стать</FormLabel>
+                              <Select 
+                                onValueChange={field.onChange} 
+                                defaultValue={field.value}
+                              >
+                                <FormControl>
+                                  <SelectTrigger>
+                                    <SelectValue placeholder="Оберіть стать" />
+                                  </SelectTrigger>
+                                </FormControl>
+                                <SelectContent>
+                                  <SelectItem value="Чоловіча">Чоловіча</SelectItem>
+                                  <SelectItem value="Жіноча">Жіноча</SelectItem>
+                                  <SelectItem value="Інше">Інше</SelectItem>
+                                </SelectContent>
+                              </Select>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                      </div>
+
                       <Button 
                         type="submit" 
                         variant="default"
