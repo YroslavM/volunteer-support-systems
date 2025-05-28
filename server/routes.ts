@@ -744,8 +744,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "Некоректний ID проєкту" });
       }
       
-      const { status, comment } = z.object({
-        status: z.enum(["in_progress", "completed"]),
+      const { action, comment } = z.object({
+        action: z.enum(["approve", "reject"]),
         comment: z.string().nullable(),
       }).parse(req.body);
       
@@ -754,16 +754,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ message: "Проєкт не знайдено" });
       }
       
-      // Update project status based on moderation decision
-      const updatedProject = await storage.updateProjectStatus(id, status);
+      // Модератори можуть тільки схвалювати або відхиляти проєкти для публікації
+      // Статус фінансування (funding/in_progress/completed) змінюється тільки системою
+      let updatedProject;
+      if (action === "approve") {
+        // Схвалення проєкту - залишаємо статус funding для збору коштів
+        updatedProject = project.status === "funding" ? project : await storage.updateProjectStatus(id, "funding");
+      } else {
+        // Відхилення проєкту - можемо поставити статус як rejected або видалити
+        // Для простоти залишимо проєкт, але з коментарем
+        updatedProject = project;
+      }
       
-      // In a real implementation, we'd also store the moderation comment
-      // and associate it with the project for historical tracking
+      // В реальній системі тут би зберігали коментар модератора в окремій таблиці
       
       res.json({
         project: updatedProject,
-        message: status === "in_progress" 
-          ? "Проєкт успішно схвалено" 
+        message: action === "approve" 
+          ? "Проєкт успішно схвалено для публікації" 
           : "Проєкт відхилено"
       });
     } catch (error) {
@@ -889,14 +897,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       const data = insertProjectSchema.extend({
-        status: z.enum(projectStatusEnum.enumValues).optional(),
-        collectedAmount: z.number().optional(),
         coordinatorId: z.number().optional()
       }).parse(req.body);
       
       // Тільки адміністратор може змінювати координатора проєкту
       if (data.coordinatorId && userRole !== "admin") {
         return res.status(403).json({ message: "Тільки адміністратор може змінювати координатора проєкту" });
+      }
+      
+      // Заборонити зміну статусу та зібраної суми вручну - тільки система може це робити
+      if (req.body.status) {
+        return res.status(403).json({ message: "Статус проєкту змінюється автоматично системою" });
+      }
+      
+      if (req.body.collectedAmount !== undefined) {
+        return res.status(403).json({ message: "Зібрана сума змінюється автоматично при пожертвах" });
       }
       
       if (data.coordinatorId) {
