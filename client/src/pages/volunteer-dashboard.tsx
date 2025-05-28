@@ -48,9 +48,16 @@ export default function VolunteerDashboard() {
   const { data: applications, isLoading: applicationsLoading } = useQuery<SelectApplication[]>({
     queryKey: ["/api/user/applications"],
     queryFn: async () => {
-      const res = await fetch(`/api/user/applications`);
-      if (!res.ok) return [];
-      return res.json();
+      const res = await fetch(`/api/user/applications`, {
+        credentials: 'include'
+      });
+      if (!res.ok) {
+        console.error('Failed to fetch applications:', res.status);
+        return [];
+      }
+      const data = await res.json();
+      console.log('Applications data:', data);
+      return data;
     },
   });
 
@@ -178,11 +185,10 @@ export default function VolunteerDashboard() {
                       </div>
                     ) : (
                       <div className="space-y-4">
-                        {applications
+                        {(applications || [])
                           .filter(app => applicationFilter === "all" || app.status === applicationFilter)
                           .map((application) => {
-                            const project = availableProjects?.find(p => p.id === application.projectId);
-                            
+                            console.log('Rendering application:', application);
                             return (
                               <div
                                 key={application.id}
@@ -192,10 +198,10 @@ export default function VolunteerDashboard() {
                                   <div className="flex items-center space-x-3">
                                     <div>
                                       <h3 className="font-medium text-lg text-gray-900">
-                                        {project?.name || `Проєкт #${application.projectId}`}
+                                        Проєкт #{application.projectId}
                                       </h3>
                                       <p className="text-sm text-gray-500">
-                                        Подано: {new Date(application.createdAt).toLocaleDateString('uk-UA')}
+                                        Подано: {formatDate(application.createdAt?.toString())}
                                       </p>
                                       {application.message && (
                                         <p className="text-sm text-gray-600 mt-1">
@@ -213,13 +219,6 @@ export default function VolunteerDashboard() {
                                     )}
                                     {application.status === 'rejected' && (
                                       <Badge className="bg-red-100 text-red-800">Відхилено</Badge>
-                                    )}
-                                    {application.status === 'approved' && project && (
-                                      <Link href={`/projects/${project.id}`}>
-                                        <Button size="sm" variant="outline">
-                                          Переглянути проєкт
-                                        </Button>
-                                      </Link>
                                     )}
                                   </div>
                                 </div>
