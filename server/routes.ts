@@ -693,7 +693,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
       
       // Update project collected amount
-      await storage.updateProjectCollectedAmount(donationData.projectId, project.collectedAmount + donationData.amount);
+      await storage.updateProjectCollectedAmount(donationData.projectId, donationData.amount);
+      
+      // Get updated project data to check if target is reached
+      const updatedProject = await storage.getProjectById(donationData.projectId);
+      if (updatedProject && updatedProject.collectedAmount >= updatedProject.targetAmount) {
+        await storage.updateProjectStatus(donationData.projectId, "in_progress");
+      }
       
       res.status(201).json(donation);
     } catch (error) {
