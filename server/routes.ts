@@ -536,7 +536,29 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       const applications = await storage.getApplicationsByProjectId(projectId);
-      res.json(applications);
+      
+      // Додаємо інформацію про волонтерів до заявок
+      const applicationsWithVolunteers = await Promise.all(
+        applications.map(async (application) => {
+          const volunteer = await storage.getUser(application.volunteerId);
+          return {
+            ...application,
+            volunteer: volunteer ? {
+              firstName: volunteer.firstName,
+              lastName: volunteer.lastName,
+              gender: volunteer.gender,
+              birthDate: volunteer.birthDate,
+              region: volunteer.region,
+              city: volunteer.city,
+              bio: volunteer.bio,
+              email: volunteer.email,
+              phoneNumber: volunteer.phoneNumber
+            } : null
+          };
+        })
+      );
+      
+      res.json(applicationsWithVolunteers);
     } catch (error) {
       next(error);
     }
