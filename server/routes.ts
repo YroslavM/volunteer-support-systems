@@ -499,10 +499,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "Ви вже подали заявку на цей проєкт" });
       }
       
-      const data = insertApplicationSchema.parse(req.body);
+      // Не потрібно використовувати insertApplicationSchema, оскільки projectId і volunteerId додаються автоматично
+      const { message } = req.body;
       
       const application = await storage.createApplication({
-        ...data,
+        message: message || `Заявка від волонтера`,
         projectId,
         volunteerId: req.user!.id,
       });
