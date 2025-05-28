@@ -66,6 +66,11 @@ const registerSchema = z.object({
   gender: z.enum(["Чоловіча", "Жіноча", "Інше"], { 
     required_error: "Оберіть стать" 
   }),
+  birthDate: z.string().min(1, "Дата народження є обов'язковою").refine((date) => {
+    const birthDate = new Date(date);
+    const today = new Date();
+    return birthDate <= today;
+  }, { message: "Дата народження не може бути в майбутньому" }),
 }).refine((data) => data.password === data.confirmPassword, {
   message: "Паролі не співпадають",
   path: ["confirmPassword"],
@@ -240,6 +245,7 @@ export default function AuthPage() {
       city: "",
       phoneNumber: "+380",
       gender: "Чоловіча",
+      birthDate: "",
     },
   });
 
@@ -264,6 +270,7 @@ export default function AuthPage() {
       city: values.city,
       phoneNumber: values.phoneNumber,
       gender: values.gender,
+      birthDate: values.birthDate,
     });
   };
 
@@ -385,35 +392,47 @@ export default function AuthPage() {
                 <TabsContent value="register">
                   <Form {...registerForm}>
                     <form onSubmit={registerForm.handleSubmit(onRegisterSubmit)} className="space-y-4">
-                      <FormField
-                        control={registerForm.control}
-                        name="email"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel htmlFor="register-email">{t('auth.email')}</FormLabel>
-                            <FormControl>
-                              <Input 
-                                id="register-email"
-                                type="email" 
-                                placeholder="email@example.com" 
-                                autoComplete="email" 
-                                {...field} 
-                              />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
+                      {/* 1. Прізвище та Ім'я */}
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <FormField
+                          control={registerForm.control}
+                          name="lastName"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Прізвище *</FormLabel>
+                              <FormControl>
+                                <Input placeholder="Введіть прізвище" {...field} />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                        <FormField
+                          control={registerForm.control}
+                          name="firstName"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Ім'я *</FormLabel>
+                              <FormControl>
+                                <Input placeholder="Введіть ім'я" {...field} />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                      </div>
+
+                      {/* 2. Ім'я користувача */}
                       <FormField
                         control={registerForm.control}
                         name="username"
                         render={({ field }) => (
                           <FormItem>
-                            <FormLabel htmlFor="register-username">{t('auth.username')}</FormLabel>
+                            <FormLabel htmlFor="register-username">Ім'я користувача *</FormLabel>
                             <FormControl>
                               <Input 
                                 id="register-username"
-                                placeholder={t('auth.username')} 
+                                placeholder="Введіть ім'я користувача" 
                                 autoComplete="username" 
                                 {...field} 
                               />
@@ -422,89 +441,27 @@ export default function AuthPage() {
                           </FormItem>
                         )}
                       />
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <FormField
-                          control={registerForm.control}
-                          name="firstName"
-                          render={({ field }) => (
-                            <FormItem>
-                              <FormLabel>{t('auth.firstName')}</FormLabel>
-                              <FormControl>
-                                <Input placeholder={t('auth.firstName')} {...field} />
-                              </FormControl>
-                              <FormMessage />
-                            </FormItem>
-                          )}
-                        />
-                        <FormField
-                          control={registerForm.control}
-                          name="lastName"
-                          render={({ field }) => (
-                            <FormItem>
-                              <FormLabel>{t('auth.lastName')}</FormLabel>
-                              <FormControl>
-                                <Input placeholder={t('auth.lastName')} {...field} />
-                              </FormControl>
-                              <FormMessage />
-                            </FormItem>
-                          )}
-                        />
-                      </div>
+
+                      {/* 3. Стать */}
                       <FormField
                         control={registerForm.control}
-                        name="password"
+                        name="gender"
                         render={({ field }) => (
                           <FormItem>
-                            <FormLabel htmlFor="register-password">{t('auth.password')}</FormLabel>
-                            <FormControl>
-                              <Input 
-                                id="register-password"
-                                type="password" 
-                                autoComplete="new-password" 
-                                {...field} 
-                              />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                      <FormField
-                        control={registerForm.control}
-                        name="confirmPassword"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel htmlFor="confirm-password">{t('auth.confirmPassword')}</FormLabel>
-                            <FormControl>
-                              <Input 
-                                id="confirm-password"
-                                type="password" 
-                                autoComplete="new-password" 
-                                {...field} 
-                              />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                      <FormField
-                        control={registerForm.control}
-                        name="role"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>{t('auth.role')}</FormLabel>
+                            <FormLabel>Стать *</FormLabel>
                             <Select 
                               onValueChange={field.onChange} 
                               defaultValue={field.value}
                             >
                               <FormControl>
                                 <SelectTrigger>
-                                  <SelectValue placeholder={t('auth.role')} />
+                                  <SelectValue placeholder="Оберіть стать" />
                                 </SelectTrigger>
                               </FormControl>
                               <SelectContent>
-                                <SelectItem value="volunteer">{t('roles.volunteer')}</SelectItem>
-                                <SelectItem value="coordinator">{t('roles.coordinator')}</SelectItem>
-                                <SelectItem value="donor">{t('roles.donor')}</SelectItem>
+                                <SelectItem value="Чоловіча">Чоловіча</SelectItem>
+                                <SelectItem value="Жіноча">Жіноча</SelectItem>
+                                <SelectItem value="Інше">Інше</SelectItem>
                               </SelectContent>
                             </Select>
                             <FormMessage />
@@ -512,33 +469,14 @@ export default function AuthPage() {
                         )}
                       />
 
-                      {/* Bio field */}
-                      <FormField
-                        control={registerForm.control}
-                        name="bio"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Про себе</FormLabel>
-                            <FormControl>
-                              <Textarea 
-                                placeholder="Розкажіть коротко про себе, ваш досвід та мотивацію (мінімум 10 символів)"
-                                className="min-h-[80px]"
-                                {...field} 
-                              />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-
-                      {/* Region and City */}
+                      {/* 4. Область та Місто */}
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <FormField
                           control={registerForm.control}
                           name="region"
                           render={({ field }) => (
                             <FormItem>
-                              <FormLabel>Область</FormLabel>
+                              <FormLabel>Область *</FormLabel>
                               <Select 
                                 onValueChange={field.onChange} 
                                 defaultValue={field.value}
@@ -585,7 +523,7 @@ export default function AuthPage() {
                           name="city"
                           render={({ field }) => (
                             <FormItem>
-                              <FormLabel>Місто</FormLabel>
+                              <FormLabel>Місто *</FormLabel>
                               <FormControl>
                                 <Input 
                                   placeholder="Введіть назву міста"
@@ -598,18 +536,78 @@ export default function AuthPage() {
                         />
                       </div>
 
-                      {/* Phone and Gender */}
+                      {/* 5. Email */}
+                      <FormField
+                        control={registerForm.control}
+                        name="email"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel htmlFor="register-email">Email *</FormLabel>
+                            <FormControl>
+                              <Input 
+                                id="register-email"
+                                type="email" 
+                                placeholder="email@example.com" 
+                                autoComplete="email" 
+                                {...field} 
+                              />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+
+                      {/* 6. Номер телефону */}
+                      <FormField
+                        control={registerForm.control}
+                        name="phoneNumber"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Номер телефону *</FormLabel>
+                            <FormControl>
+                              <Input 
+                                type="tel"
+                                placeholder="+380XXXXXXXXX"
+                                {...field} 
+                              />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+
+                      {/* 7. Дата народження */}
+                      <FormField
+                        control={registerForm.control}
+                        name="birthDate"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Дата народження *</FormLabel>
+                            <FormControl>
+                              <Input 
+                                type="date"
+                                {...field} 
+                              />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+
+                      {/* 8. Пароль та Підтвердження */}
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <FormField
                           control={registerForm.control}
-                          name="phoneNumber"
+                          name="password"
                           render={({ field }) => (
                             <FormItem>
-                              <FormLabel>Номер телефону</FormLabel>
+                              <FormLabel htmlFor="register-password">Пароль *</FormLabel>
                               <FormControl>
                                 <Input 
-                                  type="tel"
-                                  placeholder="+380XXXXXXXXX"
+                                  id="register-password"
+                                  type="password" 
+                                  placeholder="Введіть пароль"
+                                  autoComplete="new-password" 
                                   {...field} 
                                 />
                               </FormControl>
@@ -619,30 +617,70 @@ export default function AuthPage() {
                         />
                         <FormField
                           control={registerForm.control}
-                          name="gender"
+                          name="confirmPassword"
                           render={({ field }) => (
                             <FormItem>
-                              <FormLabel>Стать</FormLabel>
-                              <Select 
-                                onValueChange={field.onChange} 
-                                defaultValue={field.value}
-                              >
-                                <FormControl>
-                                  <SelectTrigger>
-                                    <SelectValue placeholder="Оберіть стать" />
-                                  </SelectTrigger>
-                                </FormControl>
-                                <SelectContent>
-                                  <SelectItem value="Чоловіча">Чоловіча</SelectItem>
-                                  <SelectItem value="Жіноча">Жіноча</SelectItem>
-                                  <SelectItem value="Інше">Інше</SelectItem>
-                                </SelectContent>
-                              </Select>
+                              <FormLabel htmlFor="confirm-password">Підтвердження пароля *</FormLabel>
+                              <FormControl>
+                                <Input 
+                                  id="confirm-password"
+                                  type="password" 
+                                  placeholder="Повторіть пароль"
+                                  autoComplete="new-password" 
+                                  {...field} 
+                                />
+                              </FormControl>
                               <FormMessage />
                             </FormItem>
                           )}
                         />
                       </div>
+
+                      {/* 9. Роль */}
+                      <FormField
+                        control={registerForm.control}
+                        name="role"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Оберіть роль *</FormLabel>
+                            <Select 
+                              onValueChange={field.onChange} 
+                              defaultValue={field.value}
+                            >
+                              <FormControl>
+                                <SelectTrigger>
+                                  <SelectValue placeholder="Оберіть вашу роль" />
+                                </SelectTrigger>
+                              </FormControl>
+                              <SelectContent>
+                                <SelectItem value="volunteer">Волонтер</SelectItem>
+                                <SelectItem value="coordinator">Координатор</SelectItem>
+                                <SelectItem value="donor">Донор</SelectItem>
+                              </SelectContent>
+                            </Select>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+
+                      {/* 10. Про себе */}
+                      <FormField
+                        control={registerForm.control}
+                        name="bio"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Про себе *</FormLabel>
+                            <FormControl>
+                              <Textarea 
+                                placeholder="Розкажіть коротко про себе, ваш досвід та мотивацію (мінімум 10 символів)"
+                                className="min-h-[80px]"
+                                {...field} 
+                              />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
 
                       <Button 
                         type="submit" 

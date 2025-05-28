@@ -32,6 +32,7 @@ export const users = pgTable("users", {
   city: text("city").notNull(),
   phoneNumber: text("phone_number").notNull(),
   gender: text("gender").notNull(),
+  birthDate: text("birth_date").notNull(),
   isVerified: boolean("is_verified").default(false).notNull(),
   isBlocked: boolean("is_blocked").default(false).notNull(),
   verificationToken: text("verification_token"),
@@ -178,6 +179,11 @@ export const insertUserSchema = createInsertSchema(users).omit({ id: true, creat
   gender: z.enum(["Чоловіча", "Жіноча", "Інше"], { 
     errorMap: () => ({ message: "Оберіть стать" }) 
   }),
+  birthDate: z.string().refine((date) => {
+    const birthDate = new Date(date);
+    const today = new Date();
+    return birthDate <= today;
+  }, { message: "Дата народження не може бути в майбутньому" }),
   confirmPassword: z.string().optional()
 }).refine((data) => {
   if (data.confirmPassword && data.password !== data.confirmPassword) {
