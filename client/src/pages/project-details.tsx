@@ -56,15 +56,24 @@ export default function ProjectDetails() {
   
   // Apply to project mutation
   const applyMutation = useMutation({
-    mutationFn: async (message: string = "") => {
-      return apiRequest("POST", `/api/projects/${projectId}/apply`, { message });
+    mutationFn: async () => {
+      if (!user) throw new Error("Користувач не авторизований");
+      
+      const applicationData = {
+        message: `Заявка від ${user.firstName} ${user.lastName}`,
+        // Дані профілю волонтера автоматично беруться з сесії користувача на бекенді
+      };
+      
+      const response = await apiRequest("POST", `/api/projects/${projectId}/apply`, applicationData);
+      return response.json();
     },
     onSuccess: () => {
       toast({
         title: "Заявку подано",
         description: "Ваша заявка успішно подана. Очікуйте на рішення координатора.",
       });
-      queryClient.invalidateQueries({ queryKey: [`/api/projects/${projectId}/applications`] });
+      queryClient.invalidateQueries({ queryKey: [`/api/user/applications`] });
+      queryClient.invalidateQueries({ queryKey: [`/api/projects/${projectId}/has-applied`] });
     },
     onError: (error: Error) => {
       toast({
@@ -126,7 +135,7 @@ export default function ProjectDetails() {
       return;
     }
     
-    applyMutation.mutate("");
+    applyMutation.mutate();
   };
   
   // Delete project
