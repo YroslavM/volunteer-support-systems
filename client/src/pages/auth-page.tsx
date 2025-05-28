@@ -35,6 +35,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Textarea } from "@/components/ui/textarea";
 import { VolunteerActivism, East } from "@mui/icons-material";
 import { Loader2 } from "lucide-react";
 
@@ -56,8 +57,15 @@ const registerSchema = z.object({
   role: z.enum(["volunteer", "coordinator", "donor"], {
     required_error: "Будь ласка, оберіть роль",
   }),
-  firstName: z.string().optional(),
-  lastName: z.string().optional(),
+  firstName: z.string().min(1, { message: "Ім'я є обов'язковим" }),
+  lastName: z.string().min(1, { message: "Прізвище є обов'язковим" }),
+  bio: z.string().min(10, "Опис має містити мінімум 10 символів").max(500, "Опис не може перевищувати 500 символів"),
+  region: z.string().min(1, "Область є обов'язковою"),
+  city: z.string().min(1, "Місто є обов'язковим"),
+  phoneNumber: z.string().regex(/^\+380\d{9}$/, "Номер телефону має бути у форматі +380XXXXXXXXX"),
+  gender: z.enum(["Чоловіча", "Жіноча", "Інше"], { 
+    required_error: "Оберіть стать" 
+  }),
 }).refine((data) => data.password === data.confirmPassword, {
   message: "Паролі не співпадають",
   path: ["confirmPassword"],
@@ -227,6 +235,11 @@ export default function AuthPage() {
       role: "volunteer",
       firstName: "",
       lastName: "",
+      bio: "",
+      region: "",
+      city: "",
+      phoneNumber: "+380",
+      gender: "Чоловіча",
     },
   });
 
@@ -246,6 +259,11 @@ export default function AuthPage() {
       role: values.role,
       firstName: values.firstName,
       lastName: values.lastName,
+      bio: values.bio,
+      region: values.region,
+      city: values.city,
+      phoneNumber: values.phoneNumber,
+      gender: values.gender,
     });
   };
 
