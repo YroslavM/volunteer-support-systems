@@ -143,14 +143,7 @@ export default function ProjectDetails() {
           <h1 className="text-3xl font-bold text-gray-900">Деталі проєкту</h1>
         </div>
 
-        {/* Інформація над основним блоком */}
-        <div className="mb-4 space-y-2">
-          <h2 className="text-2xl font-bold">{project.name}</h2>
-          <div className="flex flex-wrap gap-4 text-sm text-gray-600">
-            <span>Створено: {formatDate(project.createdAt)}</span>
-            <span>Координатор: {coordinator ? `${coordinator.firstName || coordinator.username} ${coordinator.lastName || ''}`.trim() : 'Завантаження...'}</span>
-          </div>
-        </div>
+
 
         {/* Основна інформація про проєкт */}
         <Card className="mb-6">
@@ -180,16 +173,21 @@ export default function ProjectDetails() {
                     <span className="text-gray-500">Немає зображення</span>
                   </div>
                 )}
-                
-                {/* Опис проєкту під фотографією */}
-                <div className="mt-4">
-                  <p className="text-gray-700 leading-relaxed">{project.description}</p>
-                </div>
+
               </div>
 
               {/* Блок "Зібрано коштів" справа */}
               <div className="lg:w-1/2">
                 <div className="bg-white border rounded-lg p-6 h-fit">
+                  {/* Інформація про проєкт */}
+                  <div className="mb-6 space-y-2">
+                    <h2 className="text-xl font-bold">{project.name}</h2>
+                    <div className="space-y-1 text-sm text-gray-600">
+                      <div>Створено: {formatDate(project.createdAt)}</div>
+                      <div>Координатор: {coordinator ? `${coordinator.firstName || coordinator.username} ${coordinator.lastName || ''}`.trim() : 'Завантаження...'}</div>
+                    </div>
+                  </div>
+                  
                   <h3 className="text-xl font-bold mb-2">Зібрано коштів</h3>
                   <p className="text-gray-600 mb-4">Фінансова мета проєкту</p>
                   
