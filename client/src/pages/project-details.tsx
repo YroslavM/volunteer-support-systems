@@ -105,7 +105,7 @@ export default function ProjectDetails() {
     ? Math.round((project.collectedAmount / project.targetAmount) * 100) 
     : 0;
 
-  const userApplication = applications.find(app => app.volunteerId === user?.id);
+  const userApplication = Array.isArray(applications) ? applications.find(app => app.volunteerId === user?.id) : null;
   const canApply = user?.role === 'volunteer' && !userApplication && project.status !== 'completed';
 
   const formatCurrency = (amount: number) => {
