@@ -62,6 +62,7 @@ export interface IStorage {
   createTask(task: InsertTask): Promise<Task>;
   assignTaskToVolunteer(id: number, volunteerId: number): Promise<Task>;
   updateTaskStatus(id: number, status: string): Promise<Task>;
+  deleteTask(id: number): Promise<void>;
   
   // Report methods
   getReportsByTaskId(taskId: number): Promise<Report[]>;
@@ -357,6 +358,10 @@ export class DatabaseStorage implements IStorage {
       .where(eq(tasks.id, id))
       .returning();
     return task;
+  }
+
+  async deleteTask(id: number): Promise<void> {
+    await db.delete(tasks).where(eq(tasks.id, id));
   }
   
   // Report methods

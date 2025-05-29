@@ -396,6 +396,63 @@ export async function registerRoutes(app: Express): Promise<Server> {
       next(error);
     }
   });
+
+  // Отримати всі завдання координатора
+  app.get("/api/coordinator/tasks", hasRole(["coordinator", "admin"]), async (req, res, next) => {
+    try {
+      const userId = getUserId(req);
+      
+      // Отримуємо проєкти координатора
+      const projects = await storage.getProjectsByCoordinatorId(userId);
+      const projectIds = projects.map(p => p.id);
+      
+      // Отримуємо всі завдання для цих проєктів
+      const allTasks = [];
+      for (const projectId of projectIds) {
+        const tasks = await storage.getTasksByProjectId(projectId);
+        // Додаємо інформацію про проєкт до кожного завдання
+        const tasksWithProject = tasks.map(task => ({
+          ...task,
+          project: projects.find(p => p.id === task.projectId)
+        }));
+        allTasks.push(...tasksWithProject);
+      }
+      
+      res.json(allTasks);
+    } catch (error) {
+      next(error);
+    }
+  });
+
+  // Видалити завдання
+  app.delete("/api/tasks/:id", hasRole(["coordinator", "admin"]), async (req, res, next) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ message: "Некоректний ID завдання" });
+      }
+      
+      const task = await storage.getTaskById(id);
+      if (!task) {
+        return res.status(404).json({ message: "Завдання не знайдено" });
+      }
+      
+      const project = await storage.getProjectById(task.projectId);
+      if (!project) {
+        return res.status(404).json({ message: "Проєкт не знайдено" });
+      }
+      
+      // Check if user is the coordinator of this project
+      if (project.coordinatorId !== req.user!.id && req.user!.role !== "admin") {
+        return res.status(403).json({ message: "Ви не є координатором цього проєкту" });
+      }
+      
+      await storage.deleteTask(id);
+      res.json({ message: "Завдання успішно видалено" });
+    } catch (error) {
+      next(error);
+    }
+  });
   
   // =========================
   // Report Routes
