@@ -104,7 +104,6 @@ export const donations = pgTable("donations", {
   donorId: integer("donor_id").references(() => users.id),
   amount: doublePrecision("amount").notNull(),
   comment: text("comment"),
-  anonymous: boolean("anonymous").default(false).notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
