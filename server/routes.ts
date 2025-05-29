@@ -588,7 +588,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       // Check if user is assigned to this task
-      if (task.volunteerId !== req.user!.id) {
+      if (task.assignedVolunteerId !== req.user!.id) {
         return res.status(403).json({ message: "Ви не призначені до цього завдання" });
       }
       

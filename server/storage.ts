@@ -345,7 +345,7 @@ export class DatabaseStorage implements IStorage {
   async assignTaskToVolunteer(id: number, volunteerId: number): Promise<Task> {
     const [task] = await db
       .update(tasks)
-      .set({ volunteerId, status: "in_progress" })
+      .set({ assignedVolunteerId: volunteerId, status: "in_progress" })
       .where(eq(tasks.id, id))
       .returning();
     return task;
