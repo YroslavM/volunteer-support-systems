@@ -18,6 +18,7 @@ import AdminDashboard from "@/pages/admin-dashboard";
 import ModeratorDashboard from "@/pages/moderator-dashboard";
 import ProfilePage from "@/pages/profile-page";
 import CreateProject from "@/pages/create-project";
+import CreateTaskPage from "@/pages/create-task-page";
 import AboutPage from "@/pages/about-page";
 import ContactsPage from "@/pages/contacts-page";
 import PrivacyPage from "@/pages/privacy-page";
@@ -59,6 +60,9 @@ function Router() {
       </Route>
       <Route path="/create-project">
         <ProtectedRoute component={CreateProject} roles={["coordinator", "admin"]} />
+      </Route>
+      <Route path="/projects/:projectId/tasks/create">
+        <ProtectedRoute component={CreateTaskPage} roles={["coordinator", "admin"]} />
       </Route>
       
       <Route component={NotFound} />

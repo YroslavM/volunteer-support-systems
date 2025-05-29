@@ -172,8 +172,8 @@ export const tasksRelations = relations(tasks, ({ one, many }) => ({
     fields: [tasks.projectId],
     references: [projects.id],
   }),
-  volunteer: one(users, {
-    fields: [tasks.volunteerId],
+  assignedVolunteer: one(users, {
+    fields: [tasks.assignedVolunteerId],
     references: [users.id],
     relationName: "volunteer_tasks"
   }),
