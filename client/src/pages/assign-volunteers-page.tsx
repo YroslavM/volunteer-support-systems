@@ -329,26 +329,42 @@ export default function AssignVolunteersPage() {
         <CardContent>
           {filteredApplications.length === 0 ? (
             <p className="text-center text-muted-foreground py-8">
-              Немає доступних волонтерів для призначення
+              {allSlotsFilled 
+                ? "Усі місця на завданні зайняті" 
+                : "Немає доступних волонтерів для призначення"
+              }
             </p>
           ) : (
             <div className="space-y-4">
               {filteredApplications.map((application) => {
                 const volunteer = application.volunteer;
                 const skillsMatch = checkSkillsMatch(volunteer, task.requiredSkills);
+                const isAlreadyAssigned = assignedVolunteers.some(av => 
+                  av.volunteerId === volunteer.id || av.volunteer?.id === volunteer.id
+                );
                 
                 return (
                   <div 
                     key={volunteer.id} 
-                    className="flex items-start space-x-4 p-4 border rounded-lg hover:bg-gray-50"
+                    className={`flex items-start space-x-4 p-4 border rounded-lg ${
+                      isAlreadyAssigned ? "bg-green-50 border-green-200" : "hover:bg-gray-50"
+                    }`}
                   >
-                    <Checkbox
-                      checked={selectedVolunteers.has(volunteer.id)}
-                      onCheckedChange={(checked) => 
-                        handleVolunteerSelect(volunteer.id, checked as boolean)
-                      }
-                      className="mt-1"
-                    />
+                    {isAlreadyAssigned ? (
+                      <div className="mt-1 flex items-center">
+                        <CheckCircle className="h-5 w-5 text-green-600" />
+                        <span className="text-sm text-green-600 ml-2 font-medium">Уже призначено</span>
+                      </div>
+                    ) : (
+                      <Checkbox
+                        checked={selectedVolunteers.has(volunteer.id)}
+                        onCheckedChange={(checked) => 
+                          handleVolunteerSelect(volunteer.id, checked as boolean)
+                        }
+                        className="mt-1"
+                        disabled={allSlotsFilled}
+                      />
+                    )}
                     
                     <div className="flex-1">
                       <div className="flex items-center gap-2 mb-2">
