@@ -500,15 +500,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ message: "Завдання не знайдено" });
       }
       
-      // Поки що повертаємо порожній масив, оскільки поле assignedVolunteerId в схемі містить тільки одного волонтера
-      // В майбутньому можна розширити до підтримки кількох волонтерів
+      // Повертаємо призначених волонтерів
       const assignedVolunteers = [];
       if (task.assignedVolunteerId) {
         const volunteer = await storage.getUser(task.assignedVolunteerId);
         if (volunteer) {
           assignedVolunteers.push({
             volunteerId: volunteer.id,
-            volunteer: volunteer
+            volunteer: volunteer,
+            assignedAt: task.updatedAt // використовуємо дату оновлення як дату призначення
           });
         }
       }
@@ -550,6 +550,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const application = await storage.getApplicationByVolunteerAndProject(volunteerId, task.projectId);
       if (!application || application.status !== "approved") {
         return res.status(400).json({ message: "Волонтер не має схваленої заявки на цей проєкт" });
+      }
+      
+      // Перевіряємо, чи волонтер уже призначений до цього завдання
+      if (task.assignedVolunteerId === volunteerId) {
+        return res.status(400).json({ message: "Цей волонтер уже призначений до завдання" });
+      }
+      
+      // Перевіряємо, чи є вільні місця на завданні
+      const currentAssignedCount = task.assignedVolunteerId ? 1 : 0;
+      if (currentAssignedCount >= task.volunteersNeeded) {
+        return res.status(400).json({ message: "Усі місця для волонтерів вже зайняті" });
       }
       
       const updatedTask = await storage.assignTaskToVolunteer(taskId, volunteerId);

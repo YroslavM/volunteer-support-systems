@@ -132,7 +132,7 @@ export default function AssignVolunteersPage() {
     const matchesRegion = regionFilter === "all" || volunteer.region === regionFilter;
     
     // Виключаємо вже призначених волонтерів
-    const isAlreadyAssigned = assignedVolunteers.some(av => av.volunteerId === volunteer.id);
+    const isAlreadyAssigned = assignedVolunteers.some(av => av.volunteerId === volunteer.id || av.volunteer?.id === volunteer.id);
     
     return matchesSearch && matchesStatus && matchesRegion && !isAlreadyAssigned;
   });
@@ -162,9 +162,24 @@ export default function AssignVolunteersPage() {
       });
       return;
     }
+
+    // Перевіряємо, чи не перевищуємо ліміт
+    const remainingSlots = task ? task.volunteersNeeded - assignedVolunteers.length : 0;
+    if (selectedVolunteers.size > remainingSlots) {
+      toast({
+        title: "Помилка",
+        description: `Можна призначити лише ${remainingSlots} волонтер(ів). Усі місця зайняті.`,
+        variant: "destructive",
+      });
+      return;
+    }
     
     assignVolunteersMutation.mutate(Array.from(selectedVolunteers));
   };
+
+  // Обчислюємо доступні місця
+  const remainingSlots = task ? task.volunteersNeeded - assignedVolunteers.length : 0;
+  const allSlotsFilled = remainingSlots <= 0;
 
   const checkSkillsMatch = (volunteer: Volunteer, requiredSkills: string | null) => {
     if (!requiredSkills || !volunteer.bio) return null;
@@ -241,8 +256,9 @@ export default function AssignVolunteersPage() {
             </div>
             <div>
               <p className="text-sm font-medium">Залишилось призначити</p>
-              <p className="text-lg text-orange-600">
-                {Math.max(0, task.volunteersNeeded - assignedVolunteers.length)}
+              <p className={`text-lg ${remainingSlots > 0 ? "text-orange-600" : "text-green-600"}`}>
+                {remainingSlots}
+                {remainingSlots === 0 && " (Усі місця зайняті)"}
               </p>
             </div>
           </div>
@@ -391,12 +407,14 @@ export default function AssignVolunteersPage() {
         
         <Button
           onClick={handleAssignSelected}
-          disabled={selectedVolunteers.size === 0 || assignVolunteersMutation.isPending}
+          disabled={selectedVolunteers.size === 0 || assignVolunteersMutation.isPending || allSlotsFilled}
           className="flex items-center"
         >
           <UserCheck className="mr-2 h-4 w-4" />
           {assignVolunteersMutation.isPending 
             ? "Призначення..." 
+            : allSlotsFilled
+            ? "Усі місця зайняті"
             : `Призначити вибраних (${selectedVolunteers.size})`
           }
         </Button>
