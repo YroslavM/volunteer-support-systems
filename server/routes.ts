@@ -384,7 +384,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Check if user is the coordinator of this project or the assigned volunteer
       const isCoordinator = req.user!.role === "coordinator" && project.coordinatorId === req.user!.id;
-      const isAssignedVolunteer = req.user!.role === "volunteer" && task.volunteerId === req.user!.id;
+      const isAssignedVolunteer = req.user!.role === "volunteer" && task.assignedVolunteerId === req.user!.id;
       
       if (!isCoordinator && !isAssignedVolunteer) {
         return res.status(403).json({ message: "Недостатньо прав для цієї дії" });
@@ -628,7 +628,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Check if user is the coordinator of this project or the assigned volunteer
       const isCoordinator = req.user!.role === "coordinator" && project.coordinatorId === req.user!.id;
-      const isAssignedVolunteer = req.user!.role === "volunteer" && task.volunteerId === req.user!.id;
+      const isAssignedVolunteer = req.user!.role === "volunteer" && task.assignedVolunteerId === req.user!.id;
       
       if (!isCoordinator && !isAssignedVolunteer) {
         return res.status(403).json({ message: "Недостатньо прав для цієї дії" });
