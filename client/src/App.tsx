@@ -22,6 +22,7 @@ import CreateTaskPage from "@/pages/create-task-page";
 import CoordinatorTasksManagement from "@/pages/coordinator-tasks-management";
 import AssignVolunteersPage from "@/pages/assign-volunteers-page";
 import CoordinatorTasksPage from "@/pages/coordinator-tasks";
+import TaskDetailsPage from "@/pages/task-details-page";
 import AboutPage from "@/pages/about-page";
 import ContactsPage from "@/pages/contacts-page";
 import PrivacyPage from "@/pages/privacy-page";
@@ -72,6 +73,9 @@ function Router() {
       </Route>
       <Route path="/coordinator/tasks/:taskId/assign">
         <ProtectedRoute component={AssignVolunteersPage} roles={["coordinator", "admin"]} />
+      </Route>
+      <Route path="/tasks/:taskId">
+        <ProtectedRoute component={TaskDetailsPage} roles={["volunteer", "coordinator", "admin"]} />
       </Route>
 
       
