@@ -93,13 +93,8 @@ export default function CreateTaskPage() {
       });
       queryClient.invalidateQueries({ queryKey: [`/api/projects/${projectIdNum}/tasks`] });
       
-      if (assignNow) {
-        // Переходимо до сторінки призначення волонтерів
-        setLocation(`/tasks/${task.id}/assign`);
-      } else {
-        // Повертаємося до панелі координатора
-        setLocation(`/coordinator`);
-      }
+      // Повертаємося до координаторської панелі
+      setLocation(`/coordinator`);
     },
     onError: (error: Error) => {
       toast({
