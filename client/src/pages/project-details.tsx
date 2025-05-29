@@ -21,49 +21,31 @@ export default function ProjectDetails() {
   // Отримуємо ID проєкту з URL
   const projectId = window.location.pathname.split('/').pop();
 
-  // Запити до API
+  // Запити для отримання даних
   const { data: project, isLoading: isProjectLoading } = useQuery<Project>({
-    queryKey: ["/api/projects", projectId],
-    queryFn: () => 
-      fetch(`/api/projects/${projectId}`)
-        .then(res => res.json()),
-  });
-
-  const { data: coordinator } = useQuery({
-    queryKey: ["/api/users", project?.coordinatorId],
-    queryFn: () => 
-      fetch(`/api/users/${project?.coordinatorId}`)
-        .then(res => res.json()),
-    enabled: !!project?.coordinatorId,
-  });
-
-  const { data: donations = [], isLoading: isDonationsLoading } = useQuery<Donation[]>({
-    queryKey: ["/api/projects", projectId, "donations"],
-    queryFn: () => 
-      fetch(`/api/projects/${projectId}/donations`)
-        .then(res => res.json()),
-  });
-
-  const { data: reports = [], isLoading: isReportsLoading } = useQuery<ProjectReport[]>({
-    queryKey: ["/api/projects", projectId, "reports"],
-    queryFn: () => 
-      fetch(`/api/projects/${projectId}/reports`)
-        .then(res => res.json()),
+    queryKey: [`/api/projects/${projectId}`],
+    enabled: !!projectId,
   });
 
   const { data: applications = [] } = useQuery<Application[]>({
-    queryKey: ["/api/projects", projectId, "applications"],
-    queryFn: () => 
-      fetch(`/api/projects/${projectId}/applications`)
-        .then(res => res.json()),
+    queryKey: [`/api/projects/${projectId}/applications`],
+    enabled: !!projectId,
+  });
+
+  const { data: donations = [] } = useQuery<Donation[]>({
+    queryKey: [`/api/projects/${projectId}/donations`],
+    enabled: !!projectId,
+  });
+
+  const { data: reports = [] } = useQuery<ProjectReport[]>({
+    queryKey: [`/api/projects/${projectId}/reports`],
+    enabled: !!projectId,
   });
 
   // Мутація для подачі заявки
   const applyMutation = useMutation({
     mutationFn: async () => {
-      const res = await apiRequest("POST", `/api/projects/${projectId}/apply`, {
-        message: `Заявка від ${user!.firstName || user!.username}`
-      });
+      const res = await apiRequest("POST", `/api/projects/${projectId}/apply`);
       return res.json();
     },
     onSuccess: () => {
@@ -81,8 +63,6 @@ export default function ProjectDetails() {
       });
     },
   });
-
-
 
   if (isProjectLoading) {
     return (
@@ -107,311 +87,271 @@ export default function ProjectDetails() {
     ? Math.round((project.collectedAmount / project.targetAmount) * 100) 
     : 0;
 
-  const userApplication = Array.isArray(applications) ? applications.find(app => app.volunteerId === user?.id) : null;
-  const canApply = user?.role === 'volunteer' && !userApplication && project.status !== 'completed';
+  const statusBadgeColor = {
+    funding: "bg-blue-100 text-blue-800",
+    in_progress: "bg-yellow-100 text-yellow-800",
+    completed: "bg-green-100 text-green-800",
+  }[project.status] || "bg-gray-100 text-gray-800";
 
-  const formatCurrency = (amount: number) => {
+  const statusText = {
+    funding: "Збір коштів",
+    in_progress: "В процесі",
+    completed: "Завершено",
+  }[project.status] || project.status;
+
+  // Перевіряємо чи може користувач подавати заявку
+  const userApplication = applications?.find(app => app.volunteerId === user?.id);
+  const canApply = user?.role === "volunteer" && 
+                   project.status === "funding" && 
+                   !userApplication;
+
+  // Функція форматування валюти
+  function formatCurrency(amount: number): string {
     return new Intl.NumberFormat('uk-UA', {
-      style: 'currency',
-      currency: 'UAH'
+      style: 'decimal',
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 0,
     }).format(amount);
-  };
+  }
 
-  const formatDate = (dateString: string | Date) => {
-    const date = typeof dateString === 'string' ? new Date(dateString) : dateString;
-    return date.toLocaleDateString('uk-UA', {
+  // Функція форматування дати
+  function formatDate(dateString: string): string {
+    return new Date(dateString).toLocaleDateString('uk-UA', {
       year: 'numeric',
       month: 'long',
       day: 'numeric'
     });
-  };
+  }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 p-4">
-      <div className="max-w-6xl mx-auto">
-        {/* Заголовок з кнопкою назад */}
-        <div className="flex items-center gap-4 mb-6">
+    <div className="min-h-screen bg-gray-50">
+      <div className="container mx-auto px-4 py-8">
+        {/* Кнопка повернення */}
+        <div className="flex items-center mb-6">
           <Button
-            variant="outline"
-            size="sm"
-            onClick={() => setLocation("/")}
-            className="flex items-center gap-2"
+            variant="ghost"
+            className="flex items-center gap-2 text-gray-600 hover:text-gray-800"
+            onClick={() => setLocation("/projects")}
           >
-            <ArrowLeft className="h-4 w-4" />
-            Назад
+            <ArrowLeft className="h-5 w-5" />
+            Повернутися до проєктів
           </Button>
-          <h1 className="text-3xl font-bold text-gray-900">Деталі проєкту</h1>
         </div>
 
-
-
-        {/* Основна інформація про проєкт */}
-        <Card className="mb-6">
-          <CardContent className="p-6">
-            <div className="flex flex-col lg:flex-row gap-6">
-              {/* Фотографія проєкту зліва */}
-              <div className="lg:w-1/2">
-                {project.imageUrl ? (
-                  <div className="relative">
-                    <img
-                      src={project.imageUrl}
-                      alt={project.name}
-                      className="w-full h-64 lg:h-80 object-cover rounded-lg"
-                    />
-                    <Badge 
-                      className="absolute top-4 left-4"
-                      variant={
-                        project.status === 'funding' ? 'default' :
-                        project.status === 'in_progress' ? 'secondary' : 'outline'
-                      }
-                    >
-                      {project.status === 'funding' ? 'Збір коштів' :
-                       project.status === 'in_progress' ? 'У процесі' : 'Завершено'}
-                    </Badge>
-                    <div className="absolute bottom-4 left-4 bg-black bg-opacity-70 text-white px-3 py-1 rounded text-lg font-semibold">
-                      {project.name}
-                    </div>
-                  </div>
-                ) : (
-                  <div className="w-full h-64 lg:h-80 bg-gray-200 rounded-lg flex items-center justify-center">
-                    <span className="text-gray-500">Немає зображення</span>
-                  </div>
-                )}
-
+        {/* Основний контент */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+          {/* Ліва колонка - зображення проєкту */}
+          <div className="lg:col-span-2">
+            {project.imageUrl && (
+              <div className="rounded-lg overflow-hidden mb-6">
+                <img
+                  src={project.imageUrl}
+                  alt={project.name}
+                  className="w-full h-64 lg:h-80 object-cover"
+                />
               </div>
+            )}
 
-              {/* Блок "Зібрано коштів" справа */}
-              <div className="lg:w-1/2">
-                <div className="bg-white border rounded-lg p-6 h-fit">
-                  {/* Інформація про проєкт */}
-                  <div className="mb-6 space-y-2">
-                    <h2 className="text-xl font-bold">{project.name}</h2>
-                    <div className="space-y-1 text-sm text-gray-600">
-                      <div>Створено: {formatDate(project.createdAt)}</div>
-                      <div>Координатор: {coordinator ? `${coordinator.firstName || coordinator.username} ${coordinator.lastName || ''}`.trim() : 'Завантаження...'}</div>
-                    </div>
-                  </div>
-                  
-                  <h3 className="text-xl font-bold mb-2">Зібрано коштів</h3>
-                  <p className="text-gray-600 mb-4">Фінансова мета проєкту</p>
-                  
-                  <div className="mb-4">
-                    <div className="text-3xl font-bold mb-1">
-                      {formatCurrency(project.collectedAmount)}
-                    </div>
-                    <p className="text-gray-600">
-                      Зібрано {progressPercentage}% від необхідної суми
+            {/* Вкладки з контентом */}
+            <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+              <TabsList className="grid w-full grid-cols-4">
+                <TabsTrigger value="about">Про проєкт</TabsTrigger>
+                <TabsTrigger value="donors">Донори</TabsTrigger>
+                <TabsTrigger value="reports">Звіти</TabsTrigger>
+                <TabsTrigger value="comments">Коментарі</TabsTrigger>
+              </TabsList>
+
+              <TabsContent value="about" className="mt-6">
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <FileText className="h-5 w-5" />
+                      Опис проєкту
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <p className="text-gray-700 leading-relaxed whitespace-pre-wrap">
+                      {project.description}
                     </p>
-                  </div>
-                  
-                  <div className="mb-4">
-                    <Progress value={progressPercentage} className="h-2 mb-2" />
-                    <div className="flex justify-between text-sm text-gray-600">
-                      <span>0 ₴</span>
-                      <span>{formatCurrency(project.targetAmount)}</span>
-                    </div>
-                  </div>
+                  </CardContent>
+                </Card>
+              </TabsContent>
 
-                  {/* Кнопки дії */}
-                  <div className="mt-6 space-y-3">
-                    {/* Кнопка донату - тільки для проєктів зі статусом "funding" */}
-                    {project.status === 'funding' && (
-                      <Button 
-                        className="w-full flex items-center gap-2 bg-green-600 hover:bg-green-700"
-                        size="lg"
-                        onClick={() => setLocation(`/donate/${projectId}`)}
-                      >
-                        <Heart className="h-5 w-5" />
-                        Надати допомогу
-                      </Button>
-                    )}
-
-                    {/* Кнопка заявки - тільки для волонтерів */}
-                    {canApply && (
-                      <Button 
-                        onClick={() => applyMutation.mutate()}
-                        disabled={applyMutation.isPending}
-                        className="w-full flex items-center gap-2"
-                        size="lg"
-                        variant="outline"
-                      >
-                        <Users className="h-5 w-5" />
-                        {applyMutation.isPending ? "Подача заявки..." : "Подати заявку"}
-                      </Button>
-                    )}
-                    
-                    {userApplication && (
-                      <div className="text-center">
-                        <Badge variant={
-                          userApplication.status === 'pending' ? 'default' :
-                          userApplication.status === 'approved' ? 'secondary' : 'destructive'
-                        } className="text-base py-2 px-4">
-                          Заявка: {
-                            userApplication.status === 'pending' ? 'На розгляді' :
-                            userApplication.status === 'approved' ? 'Схвалено' : 'Відхилено'
-                          }
-                        </Badge>
+              <TabsContent value="donors" className="mt-6">
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <Heart className="h-5 w-5" />
+                      Донори ({donations?.length || 0})
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    {donations && donations.length > 0 ? (
+                      <div className="space-y-4">
+                        {donations.map((donation) => (
+                          <div key={donation.id} className="flex justify-between items-center p-3 border rounded-lg">
+                            <div>
+                              <p className="font-medium">Анонімний донор</p>
+                              <p className="text-sm text-gray-500">
+                                {formatDate(donation.createdAt.toString())}
+                              </p>
+                              {donation.comment && (
+                                <p className="text-sm text-gray-600 mt-1">"{donation.comment}"</p>
+                              )}
+                            </div>
+                            <div className="text-right">
+                              <p className="font-bold text-green-600">
+                                {formatCurrency(donation.amount)} грн
+                              </p>
+                            </div>
+                          </div>
+                        ))}
                       </div>
+                    ) : (
+                      <p className="text-gray-500 text-center py-8">
+                        Поки що немає донорів
+                      </p>
                     )}
-                  </div>
-                </div>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+                  </CardContent>
+                </Card>
+              </TabsContent>
 
-        {/* Вкладки */}
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="grid w-full grid-cols-4">
-            <TabsTrigger value="about" className="flex items-center gap-2">
-              <FileText className="h-4 w-4" />
-              Про проєкт
-            </TabsTrigger>
-            <TabsTrigger value="donors" className="flex items-center gap-2">
-              <Heart className="h-4 w-4" />
-              Донори
-            </TabsTrigger>
-            <TabsTrigger value="reports" className="flex items-center gap-2">
-              <Upload className="h-4 w-4" />
-              Звіти
-            </TabsTrigger>
-            <TabsTrigger value="comments" className="flex items-center gap-2">
-              <Users className="h-4 w-4" />
-              Коментарі
-            </TabsTrigger>
-          </TabsList>
-
-          {/* Вміст вкладки "Про проєкт" */}
-          <TabsContent value="about" className="mt-6">
-            <Card>
-              <CardHeader>
-                <CardTitle>Деталі проєкту</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  <div>
-                    <h4 className="font-semibold mb-2">Опис</h4>
-                    <p className="text-gray-700">{project.description}</p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          {/* Вміст вкладки "Донори" */}
-          <TabsContent value="donors" className="mt-6">
-            <Card>
-              <CardHeader>
-                <CardTitle>Список донорів</CardTitle>
-                <CardDescription>
-                  Загалом донорів: {donations.length}
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                {isDonationsLoading ? (
-                  <div className="text-center py-8">
-                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
-                  </div>
-                ) : !donations || donations.length === 0 ? (
-                  <div className="text-center py-8 text-gray-500">
-                    Поки що немає донорів
-                  </div>
-                ) : (
-                  <div className="space-y-4">
-                    {Array.isArray(donations) && donations.map((donation) => (
-                      <div key={donation.id} className="flex justify-between items-center p-4 bg-gray-50 rounded-lg">
-                        <div>
-                          <p className="font-medium">
-                            {donation.donorId ? "Донор" : "Анонімний донор"}
-                          </p>
-                          {donation.comment && (
-                            <p className="text-sm text-gray-600 mt-1">{donation.comment}</p>
-                          )}
-                          <p className="text-xs text-gray-500 mt-1">
-                            {formatDate(donation.createdAt)}
-                          </p>
-                        </div>
-                        <div className="text-right">
-                          <p className="font-bold text-green-600">
-                            {formatCurrency(donation.amount)}
-                          </p>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          {/* Вміст вкладки "Звіти" */}
-          <TabsContent value="reports" className="mt-6">
-            <Card>
-              <CardHeader>
-                <CardTitle>Звіти та документи</CardTitle>
-                <CardDescription>
-                  Звіти про виконання проєкту
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                {isReportsLoading ? (
-                  <div className="text-center py-8">
-                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
-                  </div>
-                ) : reports.length === 0 ? (
-                  <div className="text-center py-8 text-gray-500">
-                    Поки що немає звітів
-                  </div>
-                ) : (
-                  <div className="space-y-4">
-                    {reports.map((report) => (
-                      <div key={report.id} className="p-4 bg-gray-50 rounded-lg">
-                        <div className="flex justify-between items-start">
-                          <div className="flex-1">
-                            <h4 className="font-semibold">{report.title}</h4>
-                            <p className="text-gray-600 mt-1">{report.description}</p>
-                            <p className="text-sm text-gray-500 mt-2">
-                              Період: {report.period}
-                            </p>
+              <TabsContent value="reports" className="mt-6">
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <Upload className="h-5 w-5" />
+                      Звіти проєкту
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    {reports && reports.length > 0 ? (
+                      <div className="space-y-4">
+                        {reports.map((report) => (
+                          <div key={report.id} className="p-4 border rounded-lg">
+                            <h3 className="font-medium mb-2">{report.title}</h3>
+                            <p className="text-sm text-gray-600 mb-2">{report.description}</p>
                             <p className="text-xs text-gray-500">
-                              Створено: {formatDate(report.createdAt)}
+                              Період: {report.period} | Дата: {formatDate(report.createdAt.toString())}
                             </p>
                           </div>
-                          {report.fileUrl && (
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => window.open(report.fileUrl!, '_blank')}
-                            >
-                              Завантажити
-                            </Button>
-                          )}
-                        </div>
+                        ))}
                       </div>
-                    ))}
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-          </TabsContent>
+                    ) : (
+                      <p className="text-gray-500 text-center py-8">
+                        Поки що немає звітів
+                      </p>
+                    )}
+                  </CardContent>
+                </Card>
+              </TabsContent>
 
-          {/* Вміст вкладки "Коментарі" */}
-          <TabsContent value="comments" className="mt-6">
+              <TabsContent value="comments" className="mt-6">
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Коментарі</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <p className="text-gray-500 text-center py-8">
+                      Коментарі будуть додані в майбутніх оновленнях
+                    </p>
+                  </CardContent>
+                </Card>
+              </TabsContent>
+            </Tabs>
+          </div>
+
+          {/* Права колонка - інформація та дії */}
+          <div className="space-y-6">
             <Card>
               <CardHeader>
-                <CardTitle>Коментарі</CardTitle>
-                <CardDescription>
-                  Обговорення проєкту
-                </CardDescription>
+                <div className="flex items-center justify-between">
+                  <CardTitle className="text-xl">{project.name}</CardTitle>
+                  <Badge className={statusBadgeColor}>
+                    {statusText}
+                  </Badge>
+                </div>
               </CardHeader>
-              <CardContent>
-                <div className="text-center py-8 text-gray-500">
-                  Функція коментарів буде додана пізніше
+              
+              <CardContent className="space-y-6">
+                {/* Прогрес збору коштів */}
+                <div>
+                  <div className="flex justify-between items-center mb-2">
+                    <span className="text-sm font-medium">Прогрес збору</span>
+                    <span className="text-sm text-gray-500">{progressPercentage}%</span>
+                  </div>
+                  <Progress value={progressPercentage} className="mb-3" />
+                  <div className="flex justify-between text-sm">
+                    <span className="text-gray-600">
+                      Зібрано: {formatCurrency(project.collectedAmount)} грн
+                    </span>
+                    <span className="font-medium">
+                      Мета: {formatCurrency(project.targetAmount)} грн
+                    </span>
+                  </div>
+                </div>
+
+                {/* Інформація проєкту */}
+                <div className="space-y-3 pt-4 border-t">
+                  <div className="flex items-center gap-2 text-sm text-gray-600">
+                    <Calendar className="h-4 w-4" />
+                    <span>Створено: {formatDate(project.createdAt.toString())}</span>
+                  </div>
+                  
+                  <div className="flex items-center gap-2 text-sm text-gray-600">
+                    <Target className="h-4 w-4" />
+                    <span>Статус: {statusText}</span>
+                  </div>
+
+                  <div className="flex items-center gap-2 text-sm text-gray-600">
+                    <Users className="h-4 w-4" />
+                    <span>Заявок: {applications?.length || 0}</span>
+                  </div>
+                </div>
+
+                {/* Кнопки дії */}
+                <div className="mt-6 space-y-3">
+                  {/* Кнопка донату - тільки для проєктів зі статусом "funding" */}
+                  {project.status === 'funding' && (
+                    <Button 
+                      className="w-full flex items-center gap-2 bg-green-600 hover:bg-green-700"
+                      size="lg"
+                      onClick={() => setLocation(`/donate/${projectId}`)}
+                    >
+                      <Heart className="h-5 w-5" />
+                      Надати допомогу
+                    </Button>
+                  )}
+
+                  {/* Кнопка заявки - тільки для волонтерів */}
+                  {canApply && (
+                    <Button 
+                      className="w-full"
+                      variant="outline"
+                      onClick={() => applyMutation.mutate()}
+                      disabled={applyMutation.isPending}
+                    >
+                      {applyMutation.isPending ? "Подача заявки..." : "Подати заявку на участь"}
+                    </Button>
+                  )}
+
+                  {/* Інформація про заявку */}
+                  {userApplication && (
+                    <div className="text-center p-3 bg-blue-50 rounded-lg">
+                      <p className="text-sm text-blue-700">
+                        Ваша заявка: {
+                          userApplication.status === "pending" ? "На розгляді" :
+                          userApplication.status === "approved" ? "Схвалена" :
+                          "Відхилена"
+                        }
+                      </p>
+                    </div>
+                  )}
                 </div>
               </CardContent>
             </Card>
-          </TabsContent>
-        </Tabs>
+          </div>
+        </div>
       </div>
     </div>
   );
