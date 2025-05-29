@@ -1,464 +1,396 @@
 import { useState } from "react";
-import { useLocation, Link } from "wouter";
-import { useTranslation } from "react-i18next";
+import { useLocation } from "wouter";
 import { useQuery, useMutation } from "@tanstack/react-query";
-import { useAuth } from "@/hooks/use-auth";
-import { apiRequest, queryClient } from "@/lib/queryClient";
 import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Progress } from "@/components/ui/progress";
+import { useAuth } from "@/hooks/use-auth";
 import { useToast } from "@/hooks/use-toast";
-import { 
-  SelectProject, 
-  SelectUser
-} from "@shared/schema";
-import { 
-  AttachMoney, 
-  Group, 
-  ArrowBack,
-  Edit,
-  Delete
-} from "@mui/icons-material";
-import { Loader2, AlertTriangle, HeartHandshake } from "lucide-react";
+import { Project, Application, Donation, ProjectReport } from "@shared/schema";
+import { queryClient, apiRequest } from "@/lib/queryClient";
+import { ArrowLeft, Users, Target, Calendar, FileText, Heart, Upload } from "lucide-react";
 
 export default function ProjectDetails() {
-  const [location] = useLocation();
-  // В wouter location - це рядок шляху
-  const pathParts = location ? location.split("/") : [];
-  const projectId = pathParts.length > 2 ? parseInt(pathParts[2]) : null;
-  const { t } = useTranslation();
+  const [, setLocation] = useLocation();
   const { user } = useAuth();
   const { toast } = useToast();
-  const [, navigate] = useLocation();
-  
-  // Queries
-  const { data: project, isLoading: projectLoading } = useQuery<SelectProject>({
-    queryKey: [`/api/projects/${projectId}`],
-    enabled: !!projectId,
+  const [activeTab, setActiveTab] = useState("about");
+
+  // Отримуємо ID проєкту з URL
+  const projectId = window.location.pathname.split('/').pop();
+
+  // Запити до API
+  const { data: project, isLoading: isProjectLoading } = useQuery<Project>({
+    queryKey: ["/api/projects", projectId],
+    queryFn: () => 
+      fetch(`/api/projects/${projectId}`)
+        .then(res => res.json()),
   });
-  
-  const { data: coordinator, isLoading: coordinatorLoading } = useQuery<SelectUser>({
-    queryKey: ["/api/users", project?.coordinatorId],
-    enabled: !!project?.coordinatorId,
-    queryFn: async () => {
-      const res = await fetch(`/api/users/${project?.coordinatorId}`);
-      if (!res.ok) return null;
-      return res.json();
-    }
+
+  const { data: donations = [], isLoading: isDonationsLoading } = useQuery<Donation[]>({
+    queryKey: ["/api/projects", projectId, "donations"],
+    queryFn: () => 
+      fetch(`/api/projects/${projectId}/donations`)
+        .then(res => res.json()),
   });
-  
-  // Apply to project mutation
+
+  const { data: reports = [], isLoading: isReportsLoading } = useQuery<ProjectReport[]>({
+    queryKey: ["/api/projects", projectId, "reports"],
+    queryFn: () => 
+      fetch(`/api/projects/${projectId}/reports`)
+        .then(res => res.json()),
+  });
+
+  const { data: applications = [] } = useQuery<Application[]>({
+    queryKey: ["/api/projects", projectId, "applications"],
+    queryFn: () => 
+      fetch(`/api/projects/${projectId}/applications`)
+        .then(res => res.json()),
+  });
+
+  // Мутація для подачі заявки
   const applyMutation = useMutation({
     mutationFn: async () => {
-      if (!user) throw new Error("Користувач не авторизований");
-      
-      const applicationData = {
-        message: `Заявка від ${user.firstName} ${user.lastName}`,
-        // Дані профілю волонтера автоматично беруться з сесії користувача на бекенді
-      };
-      
-      const response = await apiRequest("POST", `/api/projects/${projectId}/apply`, applicationData);
-      return response.json();
+      const res = await apiRequest("POST", "/api/applications", {
+        projectId: parseInt(projectId!),
+        volunteerId: user!.id,
+        message: `Заявка від ${user!.firstName || user!.username}`
+      });
+      return res.json();
     },
     onSuccess: () => {
       toast({
-        title: "Заявку подано",
-        description: "Ваша заявка успішно подана. Очікуйте на рішення координатора.",
+        title: "Заявка подана успішно",
+        description: "Координатор розгляне вашу заявку найближчим часом",
       });
-      queryClient.invalidateQueries({ queryKey: [`/api/user/applications`] });
-      queryClient.invalidateQueries({ queryKey: [`/api/projects/${projectId}/has-applied`] });
+      queryClient.invalidateQueries({ queryKey: ["/api/projects", projectId, "applications"] });
     },
     onError: (error: Error) => {
       toast({
-        title: "Помилка",
+        title: "Помилка при подачі заявки",
         description: error.message,
         variant: "destructive",
       });
     },
   });
-  
-  // Check if current volunteer has already applied
-  const { data: hasApplied } = useQuery<boolean>({
-    queryKey: [`/api/projects/${projectId}/has-applied`],
-    enabled: !!projectId && !!user && user.role === "volunteer",
-    queryFn: async () => {
-      try {
-        const res = await fetch(`/api/user/applications?projectId=${projectId}`);
-        if (!res.ok) return false;
-        const applications = await res.json();
-        return applications.length > 0;
-      } catch (error) {
-        return false;
-      }
-    }
-  });
-  
-  // Delete project mutation
-  const deleteMutation = useMutation({
-    mutationFn: async () => {
-      return apiRequest("DELETE", `/api/projects/${projectId}`);
-    },
-    onSuccess: () => {
-      toast({
-        title: "Проєкт видалено",
-        description: "Проєкт було успішно видалено.",
-      });
-      // Перенаправлення на сторінку проєктів або на дашборд координатора
-      setTimeout(() => {
-        if (user?.role === 'coordinator') {
-          navigate("/dashboard/coordinator");
-        } else {
-          navigate("/projects");
-        }
-      }, 1500);
-    },
-    onError: (error: Error) => {
-      toast({
-        title: "Помилка видалення",
-        description: error.message,
-        variant: "destructive",
-      });
-    },
-  });
-  
-  // Apply to project
-  const handleApply = () => {
-    if (!user) {
-      navigate("/auth");
-      return;
-    }
-    
-    applyMutation.mutate();
-  };
-  
-  // Delete project
-  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
-  
-  const handleDelete = () => {
-    if (showDeleteConfirm) {
-      deleteMutation.mutate();
-    } else {
-      setShowDeleteConfirm(true);
-      // Авто-закриття діалогу підтвердження через 5 секунд
-      setTimeout(() => setShowDeleteConfirm(false), 5000);
-    }
-  };
-  
-  // Calculate progress percentage
-  const progressPercentage = project 
-    ? Math.min(Math.round((project.collectedAmount / project.targetAmount) * 100), 100)
-    : 0;
-  
-  // Get status badge color
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'funding':
-        return 'bg-blue-100 text-blue-800';
-      case 'in_progress':
-        return 'bg-yellow-100 text-yellow-800';
-      case 'completed':
-        return 'bg-green-100 text-green-800';
-      default:
-        return 'bg-gray-100 text-gray-800';
-    }
-  };
-  
-  // Loading state
-  if (projectLoading) {
+
+  if (isProjectLoading) {
     return (
-      <div className="flex justify-center items-center min-h-[60vh]">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
       </div>
     );
   }
-  
-  // Project not found
+
   if (!project) {
     return (
-      <div className="max-w-7xl mx-auto px-4 py-12 sm:px-6 lg:px-8">
+      <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
-          <h1 className="text-3xl font-bold text-gray-900 mb-4">Проєкт не знайдено</h1>
-          <p className="text-gray-600 mb-8">Проєкт не існує або був видалений.</p>
-          <Link href="/projects">
-            <Button>Повернутися до проєктів</Button>
-          </Link>
+          <h2 className="text-2xl font-bold mb-4">Проєкт не знайдено</h2>
+          <Button onClick={() => setLocation("/")}>Повернутися на головну</Button>
         </div>
       </div>
     );
   }
 
+  const progressPercentage = project.targetAmount > 0 
+    ? Math.round((project.collectedAmount / project.targetAmount) * 100) 
+    : 0;
+
+  const userApplication = applications.find(app => app.volunteerId === user?.id);
+  const canApply = user?.role === 'volunteer' && !userApplication && project.status !== 'completed';
+
+  const formatCurrency = (amount: number) => {
+    return new Intl.NumberFormat('uk-UA', {
+      style: 'currency',
+      currency: 'UAH'
+    }).format(amount);
+  };
+
+  const formatDate = (dateString: string) => {
+    return new Date(dateString).toLocaleDateString('uk-UA', {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric'
+    });
+  };
+
   return (
-    <div className="bg-gray-50 py-10">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <Link href="/projects">
-          <Button variant="ghost" className="mb-4 flex items-center">
-            <ArrowBack className="mr-2 h-4 w-4" />
-            {t('common.back')}
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 p-4">
+      <div className="max-w-6xl mx-auto">
+        {/* Заголовок з кнопкою назад */}
+        <div className="flex items-center gap-4 mb-6">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setLocation("/")}
+            className="flex items-center gap-2"
+          >
+            <ArrowLeft className="h-4 w-4" />
+            Назад
           </Button>
-        </Link>
-        
-        <div className="grid md:grid-cols-3 gap-8">
-          {/* Left column - project details */}
-          <div className="col-span-2">
-            <div className="bg-white rounded-lg shadow-md overflow-hidden">
-              <div className="h-64 bg-gray-300 relative">
-                <img 
-                  src={project.imageUrl || "https://images.unsplash.com/photo-1593113630400-ea4288922497?ixlib=rb-1.2.1&auto=format&fit=crop&w=1950&q=80"} 
-                  alt={project.name} 
-                  className="w-full h-full object-cover"
-                />
-                <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/60 to-transparent p-4">
-                  <Badge className={`mb-2 ${getStatusColor(project.status)}`}>
-                    {t(`projects.status.${project.status}`)}
+          <h1 className="text-3xl font-bold text-gray-900">Деталі проєкту</h1>
+        </div>
+
+        {/* Основна інформація про проєкт */}
+        <Card className="mb-6">
+          <CardHeader>
+            <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-4">
+              <div className="flex-1">
+                <CardTitle className="text-2xl mb-2">{project.name}</CardTitle>
+                <CardDescription className="text-base">
+                  {project.description}
+                </CardDescription>
+                <div className="flex items-center gap-4 mt-4">
+                  <Badge variant={
+                    project.status === 'funding' ? 'default' :
+                    project.status === 'in_progress' ? 'secondary' : 'outline'
+                  }>
+                    {project.status === 'funding' ? 'Збір коштів' :
+                     project.status === 'in_progress' ? 'Виконується' : 'Завершено'}
                   </Badge>
-                  <h1 className="text-2xl font-bold text-white">{project.name}</h1>
+                  <span className="text-sm text-gray-500 flex items-center gap-1">
+                    <Calendar className="h-4 w-4" />
+                    Створено {formatDate(project.createdAt)}
+                  </span>
                 </div>
               </div>
-              <div className="p-6">
-                <p className="text-gray-700 mb-6 whitespace-pre-line">{project.description}</p>
-                
-                {project.status === 'funding' && (
-                  <div className="mb-6">
-                    <div className="flex justify-between mb-2">
-                      <span className="text-gray-600">{t('home.projects.collected')}: {project.collectedAmount.toLocaleString('uk-UA')} ₴</span>
-                      <span className="font-medium">{t('home.projects.target')}: {project.targetAmount.toLocaleString('uk-UA')} ₴</span>
-                    </div>
-                    <Progress value={progressPercentage} className="h-2" />
-                  </div>
+              
+              {project.imageUrl && (
+                <div className="lg:w-64 lg:h-48">
+                  <img
+                    src={project.imageUrl}
+                    alt={project.name}
+                    className="w-full h-full object-cover rounded-lg"
+                  />
+                </div>
+              )}
+            </div>
+          </CardHeader>
+          
+          <CardContent>
+            <div className="grid md:grid-cols-2 gap-6">
+              {/* Прогрес збору коштів */}
+              <div>
+                <div className="flex justify-between items-center mb-2">
+                  <span className="text-sm font-medium">Збір коштів</span>
+                  <span className="text-sm text-gray-500">{progressPercentage}%</span>
+                </div>
+                <Progress value={progressPercentage} className="mb-2" />
+                <div className="flex justify-between text-sm">
+                  <span>Зібрано: {formatCurrency(project.collectedAmount)}</span>
+                  <span>Мета: {formatCurrency(project.targetAmount)}</span>
+                </div>
+              </div>
+
+              {/* Кнопка дії */}
+              <div className="flex justify-end items-center">
+                {canApply && (
+                  <Button 
+                    onClick={() => applyMutation.mutate()}
+                    disabled={applyMutation.isPending}
+                    className="flex items-center gap-2"
+                  >
+                    <Users className="h-4 w-4" />
+                    {applyMutation.isPending ? "Подача заявки..." : "Подати заявку"}
+                  </Button>
                 )}
                 
-                <div className="mt-6 flex flex-wrap gap-3">
-                  {/* Кнопка "Підтримати" для всіх користувачів, якщо проект у стані збору коштів */}
-                  {project.status === 'funding' && (
-                    <Link href={`/donate/${project.id}`}>
-                      <Button className="bg-green-600 hover:bg-green-700 text-white flex items-center">
-                        <HeartHandshake className="mr-2 h-5 w-5" />
-                        Підтримати
-                      </Button>
-                    </Link>
-                  )}
-                  
-                  {/* Кнопки для волонтерів */}
-                  {user && user.role === 'volunteer' && project.status === 'in_progress' && hasApplied === false && (
-                    <Button 
-                      onClick={handleApply} 
-                      disabled={applyMutation.isPending}
-                      className="flex items-center"
-                    >
-                      {applyMutation.isPending ? (
-                        <>
-                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                          {t('common.loading')}
-                        </>
-                      ) : (
-                        <>
-                          <Group className="mr-2" />
-                          {t('projects.details.applyButton')}
-                        </>
-                      )}
-                    </Button>
-                  )}
-                  
-                  {user && user.role === 'volunteer' && hasApplied && (
-                    <Badge variant="outline" className="py-2 px-3">
-                      Заявку подано
-                    </Badge>
-                  )}
-                  
-                  {/* Координаторські кнопки */}
-                  {user && user.role === 'coordinator' && project.coordinatorId === user.id && (
-                    <>
-                      <Link href={`/projects/${project.id}/edit`}>
-                        <Button variant="outline" className="flex items-center">
-                          <Edit className="mr-2 h-4 w-4" />
-                          Редагувати проєкт
-                        </Button>
-                      </Link>
-                      <Button 
-                        variant="destructive" 
-                        className="flex items-center"
-                        onClick={handleDelete}
-                        disabled={deleteMutation.isPending}
-                      >
-                        {deleteMutation.isPending ? (
-                          <>
-                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                            Видалення...
-                          </>
-                        ) : showDeleteConfirm ? (
-                          <>
-                            <AlertTriangle className="mr-2 h-4 w-4" />
-                            Підтвердити видалення
-                          </>
-                        ) : (
-                          <>
-                            <Delete className="mr-2 h-4 w-4" />
-                            Видалити проєкт
-                          </>
-                        )}
-                      </Button>
-                    </>
-                  )}
-                  
-                  {/* Адмінські кнопки */}
-                  {user && user.role === 'admin' && (
-                    <>
-                      <Link href={`/projects/${project.id}/edit`}>
-                        <Button variant="outline" className="flex items-center bg-amber-100">
-                          <Edit className="mr-2 h-4 w-4" />
-                          Редагувати проєкт (Адмін)
-                        </Button>
-                      </Link>
-                      <Button 
-                        variant="destructive" 
-                        className="flex items-center"
-                        onClick={handleDelete}
-                        disabled={deleteMutation.isPending}
-                      >
-                        {deleteMutation.isPending ? (
-                          <>
-                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                            Видалення...
-                          </>
-                        ) : showDeleteConfirm ? (
-                          <>
-                            <AlertTriangle className="mr-2 h-4 w-4" />
-                            Підтвердити видалення (Адмін)
-                          </>
-                        ) : (
-                          <>
-                            <Delete className="mr-2 h-4 w-4" />
-                            Видалити проєкт (Адмін)
-                          </>
-                        )}
-                      </Button>
-                    </>
-                  )}
-                </div>
+                {userApplication && (
+                  <Badge variant={
+                    userApplication.status === 'pending' ? 'default' :
+                    userApplication.status === 'approved' ? 'secondary' : 'destructive'
+                  }>
+                    Заявка: {
+                      userApplication.status === 'pending' ? 'На розгляді' :
+                      userApplication.status === 'approved' ? 'Схвалено' : 'Відхилено'
+                    }
+                  </Badge>
+                )}
               </div>
             </div>
-          </div>
-          
-          {/* Right column - project details */}
-          <div>
-            <Card className="shadow-md">
+          </CardContent>
+        </Card>
+
+        {/* Вкладки */}
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+          <TabsList className="grid w-full grid-cols-4">
+            <TabsTrigger value="about" className="flex items-center gap-2">
+              <FileText className="h-4 w-4" />
+              Про проєкт
+            </TabsTrigger>
+            <TabsTrigger value="donors" className="flex items-center gap-2">
+              <Heart className="h-4 w-4" />
+              Донори
+            </TabsTrigger>
+            <TabsTrigger value="reports" className="flex items-center gap-2">
+              <Upload className="h-4 w-4" />
+              Звіти
+            </TabsTrigger>
+            <TabsTrigger value="comments" className="flex items-center gap-2">
+              <Users className="h-4 w-4" />
+              Коментарі
+            </TabsTrigger>
+          </TabsList>
+
+          {/* Вміст вкладки "Про проєкт" */}
+          <TabsContent value="about" className="mt-6">
+            <Card>
               <CardHeader>
-                <CardTitle>Зібрано коштів</CardTitle>
-                <CardDescription>Фінансова мета проекту</CardDescription>
+                <CardTitle>Деталі проєкту</CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="text-3xl font-bold">{project.collectedAmount.toLocaleString('uk-UA')} ₴</div>
-                <div className="text-sm text-gray-500 mt-1">
-                  Зібрано {progressPercentage}% від необхідної суми
-                </div>
-                
-                <div className="mt-6">
-                  <Progress value={progressPercentage} className="h-2 mb-2" />
-                  <div className="flex justify-between text-sm">
-                    <span>0 ₴</span>
-                    <span>{project.targetAmount.toLocaleString('uk-UA')} ₴</span>
+                <div className="space-y-4">
+                  <div>
+                    <h4 className="font-semibold mb-2">Опис</h4>
+                    <p className="text-gray-700">{project.description}</p>
                   </div>
-                </div>
-                
-                {project.status === 'funding' && (
-                  <div className="mt-6">
-                    <Link href={`/donate/${project.id}`}>
-                      <Button className="w-full bg-green-600 hover:bg-green-700 text-white">
-                        Підтримати проєкт
-                      </Button>
-                    </Link>
+                  
+                  <div className="grid md:grid-cols-2 gap-4">
+                    <div>
+                      <h4 className="font-semibold mb-2">Цільова сума</h4>
+                      <p className="text-2xl font-bold text-green-600">
+                        {formatCurrency(project.targetAmount)}
+                      </p>
+                    </div>
+                    
+                    <div>
+                      <h4 className="font-semibold mb-2">Зібрано коштів</h4>
+                      <p className="text-2xl font-bold text-blue-600">
+                        {formatCurrency(project.collectedAmount)}
+                      </p>
+                    </div>
                   </div>
-                )}
+
+                  {project.bankDetails && (
+                    <div>
+                      <h4 className="font-semibold mb-2">Банківські реквізити</h4>
+                      <p className="text-gray-700 font-mono bg-gray-50 p-3 rounded">
+                        {project.bankDetails}
+                      </p>
+                    </div>
+                  )}
+                </div>
               </CardContent>
             </Card>
-            
-            <Card className="mt-6 shadow-md">
+          </TabsContent>
+
+          {/* Вміст вкладки "Донори" */}
+          <TabsContent value="donors" className="mt-6">
+            <Card>
               <CardHeader>
-                <CardTitle>Координатор проєкту</CardTitle>
-                <CardDescription>Контактна особа</CardDescription>
+                <CardTitle>Список донорів</CardTitle>
+                <CardDescription>
+                  Загалом донорів: {donations.length}
+                </CardDescription>
               </CardHeader>
               <CardContent>
-                {coordinatorLoading ? (
-                  <div className="flex justify-center py-4">
-                    <Loader2 className="h-6 w-6 animate-spin text-primary" />
+                {isDonationsLoading ? (
+                  <div className="text-center py-8">
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
                   </div>
-                ) : coordinator ? (
-                  <div className="flex items-center space-x-4">
-                    <div className="w-12 h-12 rounded-full bg-gray-200 flex items-center justify-center">
-                      <span className="text-lg font-semibold text-gray-700">
-                        {coordinator.firstName?.[0] || coordinator.username[0]}
-                      </span>
-                    </div>
-                    <div>
-                      <div className="font-medium">
-                        {coordinator.firstName && coordinator.lastName 
-                          ? `${coordinator.firstName} ${coordinator.lastName}` 
-                          : coordinator.username}
-                      </div>
-                      <div className="text-sm text-gray-500">{coordinator.email}</div>
-                    </div>
+                ) : donations.length === 0 ? (
+                  <div className="text-center py-8 text-gray-500">
+                    Поки що немає донорів
                   </div>
                 ) : (
-                  <div className="text-gray-500">Інформація про координатора недоступна</div>
+                  <div className="space-y-4">
+                    {donations.map((donation) => (
+                      <div key={donation.id} className="flex justify-between items-center p-4 bg-gray-50 rounded-lg">
+                        <div>
+                          <p className="font-medium">
+                            {donation.donorId ? "Донор" : "Анонімний донор"}
+                          </p>
+                          {donation.comment && (
+                            <p className="text-sm text-gray-600 mt-1">{donation.comment}</p>
+                          )}
+                          <p className="text-xs text-gray-500 mt-1">
+                            {formatDate(donation.createdAt)}
+                          </p>
+                        </div>
+                        <div className="text-right">
+                          <p className="font-bold text-green-600">
+                            {formatCurrency(donation.amount)}
+                          </p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
                 )}
-                
-                <Button variant="outline" className="w-full mt-4">
-                  Зв'язатися
-                </Button>
               </CardContent>
             </Card>
-            
-            <Card className="mt-6 shadow-md">
+          </TabsContent>
+
+          {/* Вміст вкладки "Звіти" */}
+          <TabsContent value="reports" className="mt-6">
+            <Card>
               <CardHeader>
-                <CardTitle>Поділитися</CardTitle>
-                <CardDescription>Розповісти про проєкт</CardDescription>
+                <CardTitle>Звіти та документи</CardTitle>
+                <CardDescription>
+                  Звіти про виконання проєкту
+                </CardDescription>
               </CardHeader>
               <CardContent>
-                <div className="flex space-x-2 justify-center">
-                  <Button variant="outline" size="icon" className="w-9 h-9 rounded-full">
-                    <span className="text-lg">F</span>
-                  </Button>
-                  <Button variant="outline" size="icon" className="w-9 h-9 rounded-full">
-                    <span className="text-lg">T</span>
-                  </Button>
-                  <Button variant="outline" size="icon" className="w-9 h-9 rounded-full">
-                    <span className="text-lg">TG</span>
-                  </Button>
-                </div>
-                
-                <div className="mt-3 border rounded p-2 text-sm">
-                  <code className="text-xs break-all">
-                    https://volunteerhub.com/projects/{project.id}
-                  </code>
-                  <Button 
-                    variant="ghost" 
-                    size="sm" 
-                    className="ml-2 h-6 px-2 text-xs"
-                    onClick={() => {
-                      navigator.clipboard.writeText(
-                        `https://volunteerhub.com/projects/${project.id}`
-                      );
-                      toast({
-                        title: "Скопійовано",
-                        description: "Посилання скопійовано в буфер обміну",
-                        duration: 2000,
-                      });
-                    }}
-                  >
-                    Копіювати
-                  </Button>
+                {isReportsLoading ? (
+                  <div className="text-center py-8">
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
+                  </div>
+                ) : reports.length === 0 ? (
+                  <div className="text-center py-8 text-gray-500">
+                    Поки що немає звітів
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                    {reports.map((report) => (
+                      <div key={report.id} className="p-4 bg-gray-50 rounded-lg">
+                        <div className="flex justify-between items-start">
+                          <div className="flex-1">
+                            <h4 className="font-semibold">{report.name}</h4>
+                            <p className="text-gray-600 mt-1">{report.description}</p>
+                            <p className="text-sm text-gray-500 mt-2">
+                              Період: {report.period}
+                            </p>
+                            <p className="text-xs text-gray-500">
+                              Створено: {formatDate(report.createdAt)}
+                            </p>
+                          </div>
+                          {report.fileUrl && (
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => window.open(report.fileUrl!, '_blank')}
+                            >
+                              Завантажити
+                            </Button>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          {/* Вміст вкладки "Коментарі" */}
+          <TabsContent value="comments" className="mt-6">
+            <Card>
+              <CardHeader>
+                <CardTitle>Коментарі</CardTitle>
+                <CardDescription>
+                  Обговорення проєкту
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="text-center py-8 text-gray-500">
+                  Функція коментарів буде додана пізніше
                 </div>
               </CardContent>
             </Card>
-          </div>
-        </div>
+          </TabsContent>
+        </Tabs>
       </div>
     </div>
   );

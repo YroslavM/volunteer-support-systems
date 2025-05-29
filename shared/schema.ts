@@ -107,6 +107,20 @@ export const donations = pgTable("donations", {
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
+// Project reports table
+export const projectReports = pgTable("project_reports", {
+  id: serial("id").primaryKey(),
+  projectId: integer("project_id").references(() => projects.id).notNull(),
+  title: text("title").notNull(),
+  description: text("description"),
+  period: text("period"),
+  fileUrl: text("file_url"),
+  fileName: text("file_name"),
+  isPublic: boolean("is_public").default(true).notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
 // Define relations
 export const usersRelations = relations(users, ({ many }) => ({
   projects: many(projects, { relationName: "coordinator_projects" }),
@@ -124,6 +138,7 @@ export const projectsRelations = relations(projects, ({ one, many }) => ({
   tasks: many(tasks),
   applications: many(applications),
   donations: many(donations),
+  reports: many(projectReports),
 }));
 
 export const tasksRelations = relations(tasks, ({ one, many }) => ({
@@ -167,6 +182,13 @@ export const donationsRelations = relations(donations, ({ one }) => ({
     fields: [donations.donorId],
     references: [users.id],
     relationName: "donor_donations"
+  }),
+}));
+
+export const projectReportsRelations = relations(projectReports, ({ one }) => ({
+  project: one(projects, {
+    fields: [projectReports.projectId],
+    references: [projects.id],
   }),
 }));
 
@@ -219,6 +241,9 @@ export const selectApplicationSchema = createSelectSchema(applications);
 export const insertDonationSchema = createInsertSchema(donations).omit({ id: true, createdAt: true });
 export const selectDonationSchema = createSelectSchema(donations);
 
+export const insertProjectReportSchema = createInsertSchema(projectReports).omit({ id: true, createdAt: true, updatedAt: true });
+export const selectProjectReportSchema = createSelectSchema(projectReports);
+
 // Types
 export type User = typeof users.$inferSelect;
 export type InsertUser = z.infer<typeof insertUserSchema>;
@@ -243,3 +268,7 @@ export type SelectApplication = z.infer<typeof selectApplicationSchema>;
 export type Donation = typeof donations.$inferSelect;
 export type InsertDonation = z.infer<typeof insertDonationSchema>;
 export type SelectDonation = z.infer<typeof selectDonationSchema>;
+
+export type ProjectReport = typeof projectReports.$inferSelect;
+export type InsertProjectReport = z.infer<typeof insertProjectReportSchema>;
+export type SelectProjectReport = z.infer<typeof selectProjectReportSchema>;

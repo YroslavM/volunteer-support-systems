@@ -1,10 +1,12 @@
 import { 
   users, 
   projects, 
+  projectModerations,
   tasks, 
   reports, 
   applications, 
   donations,
+  projectReports,
   type User, 
   type InsertUser, 
   type Project,
@@ -16,7 +18,9 @@ import {
   type Application, 
   type InsertApplication, 
   type Donation, 
-  type InsertDonation
+  type InsertDonation,
+  type ProjectReport,
+  type InsertProjectReport
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, and, like, or, sql, gte, lte, isNull, desc } from "drizzle-orm";
@@ -75,6 +79,10 @@ export interface IStorage {
   getDonationsByProjectId(projectId: number): Promise<Donation[]>;
   getDonationsByUserId(userId: number): Promise<Donation[]>;
   createDonation(donation: InsertDonation): Promise<Donation>;
+  
+  // Project Report methods
+  getProjectReportsByProjectId(projectId: number): Promise<ProjectReport[]>;
+  createProjectReport(report: InsertProjectReport): Promise<ProjectReport>;
   
   // Helper methods
   isVolunteerAssignedToProject(volunteerId: number, projectId: number): Promise<boolean>;
@@ -443,6 +451,22 @@ export class DatabaseStorage implements IStorage {
       .values(insertDonation)
       .returning();
     return donation;
+  }
+
+  async getProjectReportsByProjectId(projectId: number): Promise<ProjectReport[]> {
+    return await db
+      .select()
+      .from(projectReports)
+      .where(eq(projectReports.projectId, projectId))
+      .orderBy(desc(projectReports.createdAt));
+  }
+
+  async createProjectReport(insertProjectReport: InsertProjectReport): Promise<ProjectReport> {
+    const [report] = await db
+      .insert(projectReports)
+      .values(insertProjectReport)
+      .returning();
+    return report;
   }
   
   // Helper methods

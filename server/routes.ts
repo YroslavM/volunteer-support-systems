@@ -1177,6 +1177,44 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // =========================
+  // Donation Routes
+  // =========================
+  
+  // Get donations for a project
+  app.get("/api/projects/:projectId/donations", async (req, res, next) => {
+    try {
+      const projectId = parseInt(req.params.projectId);
+      if (isNaN(projectId)) {
+        return res.status(400).json({ message: "Некоректний ID проєкту" });
+      }
+      
+      const donations = await storage.getDonationsByProjectId(projectId);
+      res.json(donations);
+    } catch (error) {
+      next(error);
+    }
+  });
+
+  // =========================
+  // Project Report Routes
+  // =========================
+  
+  // Get reports for a project
+  app.get("/api/projects/:projectId/reports", async (req, res, next) => {
+    try {
+      const projectId = parseInt(req.params.projectId);
+      if (isNaN(projectId)) {
+        return res.status(400).json({ message: "Некоректний ID проєкту" });
+      }
+      
+      const reports = await storage.getProjectReportsByProjectId(projectId);
+      res.json(reports);
+    } catch (error) {
+      next(error);
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }
