@@ -61,9 +61,7 @@ export default function ProjectDetails() {
   // Мутація для подачі заявки
   const applyMutation = useMutation({
     mutationFn: async () => {
-      const res = await apiRequest("POST", "/api/applications", {
-        projectId: parseInt(projectId!),
-        volunteerId: user!.id,
+      const res = await apiRequest("POST", `/api/projects/${projectId}/apply`, {
         message: `Заявка від ${user!.firstName || user!.username}`
       });
       return res.json();
@@ -212,14 +210,29 @@ export default function ProjectDetails() {
                     </div>
                   </div>
 
-                  {/* Кнопка дії */}
-                  <div className="mt-6">
+                  {/* Кнопки дії */}
+                  <div className="mt-6 space-y-3">
+                    {/* Кнопка донату - для всіх користувачів */}
+                    <Button 
+                      className="w-full flex items-center gap-2 bg-green-600 hover:bg-green-700"
+                      size="lg"
+                      onClick={() => {
+                        // Тут буде логіка для донатів
+                        alert("Функція донатів буде додана пізніше");
+                      }}
+                    >
+                      <Heart className="h-5 w-5" />
+                      Надати допомогу
+                    </Button>
+
+                    {/* Кнопка заявки - тільки для волонтерів */}
                     {canApply && (
                       <Button 
                         onClick={() => applyMutation.mutate()}
                         disabled={applyMutation.isPending}
                         className="w-full flex items-center gap-2"
                         size="lg"
+                        variant="outline"
                       >
                         <Users className="h-5 w-5" />
                         {applyMutation.isPending ? "Подача заявки..." : "Подати заявку"}
@@ -298,13 +311,13 @@ export default function ProjectDetails() {
                   <div className="text-center py-8">
                     <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
                   </div>
-                ) : donations.length === 0 ? (
+                ) : !donations || donations.length === 0 ? (
                   <div className="text-center py-8 text-gray-500">
                     Поки що немає донорів
                   </div>
                 ) : (
                   <div className="space-y-4">
-                    {donations.map((donation) => (
+                    {Array.isArray(donations) && donations.map((donation) => (
                       <div key={donation.id} className="flex justify-between items-center p-4 bg-gray-50 rounded-lg">
                         <div>
                           <p className="font-medium">

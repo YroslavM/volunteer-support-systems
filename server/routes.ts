@@ -485,7 +485,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       // Check if project is in a valid state for applications
-      if (project.status !== "in_progress") {
+      if (project.status !== "in_progress" && project.status !== "funding") {
         return res.status(400).json({ message: "Проєкт не приймає заявки в даний момент" });
       }
       
