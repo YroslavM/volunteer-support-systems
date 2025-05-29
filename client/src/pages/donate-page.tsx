@@ -69,7 +69,8 @@ export default function DonatePage() {
     mutationFn: async (data: DonationForm) => {
       const res = await apiRequest("POST", `/api/projects/${projectId}/donate`, {
         amount: data.amount,
-        comment: data.comment || null
+        comment: data.comment || null,
+        anonymous: data.anonymous
       });
       return res.json();
     },
@@ -192,14 +193,21 @@ export default function DonatePage() {
                             placeholder="10000"
                             min="1"
                             max={remainingAmount}
-                            className="text-right pr-8 h-12 text-lg"
+                            className="text-left pl-3 pr-8 h-12 text-lg [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                             {...field}
                             onChange={(e) => {
                               let value = Number(e.target.value);
-                              // Автоматично обмежуємо значення
-                              if (value < 1) value = 1;
+                              // Заблокуємо від'ємні числа
+                              if (value < 0) value = 0;
+                              // Автоматично обмежуємо максимальне значення
                               if (value > remainingAmount) value = remainingAmount;
                               field.onChange(value);
+                            }}
+                            onKeyDown={(e) => {
+                              // Заблокуємо введення мінуса
+                              if (e.key === '-' || e.key === 'e' || e.key === 'E') {
+                                e.preventDefault();
+                              }
                             }}
                           />
                           <span className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500">₴</span>
@@ -222,9 +230,10 @@ export default function DonatePage() {
                         <FormLabel className="text-base font-medium">Email</FormLabel>
                         <FormControl>
                           <Input
-                            placeholder="your@email.com"
-                            className="h-12"
-                            {...field}
+                            value={user?.email || ""}
+                            className="h-12 bg-gray-50"
+                            disabled
+                            readOnly
                           />
                         </FormControl>
                         <p className="text-xs text-gray-500">
