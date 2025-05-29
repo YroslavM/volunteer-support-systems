@@ -20,6 +20,7 @@ import ProfilePage from "@/pages/profile-page";
 import CreateProject from "@/pages/create-project";
 import CreateTaskPage from "@/pages/create-task-page";
 import CoordinatorTasksManagement from "@/pages/coordinator-tasks-management";
+import AssignVolunteersPage from "@/pages/assign-volunteers-page";
 import CoordinatorTasksPage from "@/pages/coordinator-tasks";
 import AboutPage from "@/pages/about-page";
 import ContactsPage from "@/pages/contacts-page";
@@ -68,6 +69,9 @@ function Router() {
       </Route>
       <Route path="/coordinator/tasks">
         <ProtectedRoute component={CoordinatorTasksManagement} roles={["coordinator", "admin"]} />
+      </Route>
+      <Route path="/coordinator/tasks/:taskId/assign">
+        <ProtectedRoute component={AssignVolunteersPage} roles={["coordinator", "admin"]} />
       </Route>
 
       

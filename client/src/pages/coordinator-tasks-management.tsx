@@ -300,7 +300,12 @@ export default function CoordinatorTasksManagement() {
                     Редагувати
                   </Button>
                   
-                  <Button size="sm" variant="outline" className="flex items-center">
+                  <Button 
+                    size="sm" 
+                    variant="outline" 
+                    className="flex items-center"
+                    onClick={() => setLocation(`/coordinator/tasks/${task.id}/assign`)}
+                  >
                     <Users className="mr-1 h-3 w-3" />
                     Призначити волонтерів
                   </Button>

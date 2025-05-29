@@ -453,6 +453,111 @@ export async function registerRoutes(app: Express): Promise<Server> {
       next(error);
     }
   });
+
+  // Отримати інформацію про завдання
+  app.get("/api/tasks/:id", hasRole(["coordinator", "volunteer", "admin"]), async (req, res, next) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ message: "Некоректний ID завдання" });
+      }
+      
+      const task = await storage.getTaskById(id);
+      if (!task) {
+        return res.status(404).json({ message: "Завдання не знайдено" });
+      }
+      
+      const project = await storage.getProjectById(task.projectId);
+      if (!project) {
+        return res.status(404).json({ message: "Проєкт не знайдено" });
+      }
+      
+      // Додаємо інформацію про проєкт
+      const taskWithProject = {
+        ...task,
+        project: {
+          id: project.id,
+          name: project.name
+        }
+      };
+      
+      res.json(taskWithProject);
+    } catch (error) {
+      next(error);
+    }
+  });
+
+  // Отримати призначених волонтерів для завдання
+  app.get("/api/tasks/:id/assigned-volunteers", hasRole(["coordinator", "admin"]), async (req, res, next) => {
+    try {
+      const taskId = parseInt(req.params.id);
+      if (isNaN(taskId)) {
+        return res.status(400).json({ message: "Некоректний ID завдання" });
+      }
+      
+      const task = await storage.getTaskById(taskId);
+      if (!task) {
+        return res.status(404).json({ message: "Завдання не знайдено" });
+      }
+      
+      // Поки що повертаємо порожній масив, оскільки поле assignedVolunteerId в схемі містить тільки одного волонтера
+      // В майбутньому можна розширити до підтримки кількох волонтерів
+      const assignedVolunteers = [];
+      if (task.assignedVolunteerId) {
+        const volunteer = await storage.getUser(task.assignedVolunteerId);
+        if (volunteer) {
+          assignedVolunteers.push({
+            volunteerId: volunteer.id,
+            volunteer: volunteer
+          });
+        }
+      }
+      
+      res.json(assignedVolunteers);
+    } catch (error) {
+      next(error);
+    }
+  });
+
+  // Призначити волонтера до завдання
+  app.post("/api/tasks/:id/assign", hasRole(["coordinator", "admin"]), async (req, res, next) => {
+    try {
+      const taskId = parseInt(req.params.id);
+      if (isNaN(taskId)) {
+        return res.status(400).json({ message: "Некоректний ID завдання" });
+      }
+      
+      const { volunteerId } = z.object({
+        volunteerId: z.number(),
+      }).parse(req.body);
+      
+      const task = await storage.getTaskById(taskId);
+      if (!task) {
+        return res.status(404).json({ message: "Завдання не знайдено" });
+      }
+      
+      const project = await storage.getProjectById(task.projectId);
+      if (!project) {
+        return res.status(404).json({ message: "Проєкт не знайдено" });
+      }
+      
+      // Перевіряємо, чи користувач є координатором проєкту
+      if (project.coordinatorId !== req.user!.id && req.user!.role !== "admin") {
+        return res.status(403).json({ message: "Ви не є координатором цього проєкту" });
+      }
+      
+      // Перевіряємо, чи волонтер подав заявку на проєкт
+      const application = await storage.getApplicationByVolunteerAndProject(volunteerId, task.projectId);
+      if (!application || application.status !== "approved") {
+        return res.status(400).json({ message: "Волонтер не має схваленої заявки на цей проєкт" });
+      }
+      
+      const updatedTask = await storage.assignTaskToVolunteer(taskId, volunteerId);
+      res.json(updatedTask);
+    } catch (error) {
+      next(error);
+    }
+  });
   
   // =========================
   // Report Routes
