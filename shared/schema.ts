@@ -15,6 +15,9 @@ export const moderationStatusEnum = pgEnum('moderation_status', ['pending', 'app
 // Enum for task status
 export const taskStatusEnum = pgEnum('task_status', ['pending', 'in_progress', 'completed']);
 
+// Enum for task type
+export const taskTypeEnum = pgEnum('task_type', ['collection', 'on_site', 'event_organization', 'online_support', 'other']);
+
 // Enum for application status
 export const applicationStatusEnum = pgEnum('application_status', ['pending', 'approved', 'rejected']);
 
@@ -68,12 +71,19 @@ export const projectModerations = pgTable("project_moderations", {
 // Tasks table
 export const tasks = pgTable("tasks", {
   id: serial("id").primaryKey(),
-  title: text("title").notNull(),
+  name: text("name").notNull(),
   description: text("description").notNull(),
+  type: taskTypeEnum("type").notNull(),
   projectId: integer("project_id").references(() => projects.id).notNull(),
-  volunteerId: integer("volunteer_id").references(() => users.id),
+  assignedVolunteerId: integer("assigned_volunteer_id").references(() => users.id),
   status: taskStatusEnum("status").default('pending').notNull(),
   deadline: timestamp("deadline"),
+  location: text("location"),
+  volunteersNeeded: integer("volunteers_needed").default(1).notNull(),
+  requiredSkills: text("required_skills"),
+  requiresExpenses: boolean("requires_expenses").default(false).notNull(),
+  estimatedAmount: doublePrecision("estimated_amount"),
+  expensePurpose: text("expense_purpose"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
@@ -82,9 +92,25 @@ export const tasks = pgTable("tasks", {
 export const reports = pgTable("reports", {
   id: serial("id").primaryKey(),
   taskId: integer("task_id").references(() => tasks.id).notNull(),
-  imageUrl: text("image_url"),
-  comment: text("comment"),
+  volunteerId: integer("volunteer_id").references(() => users.id).notNull(),
+  // Основні поля звіту
+  description: text("description"),
+  imageUrls: text("image_urls").array(),
+  
+  // Фінансові поля (для завдань з витратами)
+  receivedAmount: doublePrecision("received_amount"),
+  spentAmount: doublePrecision("spent_amount"),
+  remainingAmount: doublePrecision("remaining_amount"),
+  expensePurpose: text("expense_purpose"),
+  receiptUrls: text("receipt_urls").array(),
+  financialConfirmed: boolean("financial_confirmed").default(false),
+  
+  // Статус звіту
+  status: text("status").default('pending').notNull(), // pending, approved, needs_clarification
+  coordinatorComment: text("coordinator_comment"),
+  
   createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
 
 // Volunteer applications
