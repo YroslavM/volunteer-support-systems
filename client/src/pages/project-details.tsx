@@ -29,6 +29,14 @@ export default function ProjectDetails() {
         .then(res => res.json()),
   });
 
+  const { data: coordinator } = useQuery({
+    queryKey: ["/api/users", project?.coordinatorId],
+    queryFn: () => 
+      fetch(`/api/users/${project?.coordinatorId}`)
+        .then(res => res.json()),
+    enabled: !!project?.coordinatorId,
+  });
+
   const { data: donations = [], isLoading: isDonationsLoading } = useQuery<Donation[]>({
     queryKey: ["/api/projects", projectId, "donations"],
     queryFn: () => 
@@ -109,8 +117,9 @@ export default function ProjectDetails() {
     }).format(amount);
   };
 
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('uk-UA', {
+  const formatDate = (dateString: string | Date) => {
+    const date = typeof dateString === 'string' ? new Date(dateString) : dateString;
+    return date.toLocaleDateString('uk-UA', {
       year: 'numeric',
       month: 'long',
       day: 'numeric'
@@ -137,77 +146,90 @@ export default function ProjectDetails() {
         {/* Основна інформація про проєкт */}
         <Card className="mb-6">
           <CardHeader>
-            <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-4">
-              <div className="flex-1">
-                <CardTitle className="text-2xl mb-2">{project.name}</CardTitle>
-                <CardDescription className="text-base">
-                  {project.description}
-                </CardDescription>
-                <div className="flex items-center gap-4 mt-4">
-                  <Badge variant={
-                    project.status === 'funding' ? 'default' :
-                    project.status === 'in_progress' ? 'secondary' : 'outline'
-                  }>
-                    {project.status === 'funding' ? 'Збір коштів' :
-                     project.status === 'in_progress' ? 'Виконується' : 'Завершено'}
-                  </Badge>
-                  <span className="text-sm text-gray-500 flex items-center gap-1">
+            <div className="space-y-4">
+              {/* Назва проєкту та ключова інформація */}
+              <div>
+                <CardTitle className="text-3xl mb-3">{project.name}</CardTitle>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm text-gray-600">
+                  <div className="flex items-center gap-2">
                     <Calendar className="h-4 w-4" />
-                    Створено {formatDate(project.createdAt)}
-                  </span>
+                    <span>Створено: {formatDate(project.createdAt)}</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Users className="h-4 w-4" />
+                    <span>Координатор: {coordinator ? `${coordinator.firstName || coordinator.username} ${coordinator.lastName || ''}`.trim() : 'Завантаження...'}</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Badge variant={
+                      project.status === 'funding' ? 'default' :
+                      project.status === 'in_progress' ? 'secondary' : 'outline'
+                    }>
+                      {project.status === 'funding' ? 'Збір коштів' :
+                       project.status === 'in_progress' ? 'Виконується' : 'Завершено'}
+                    </Badge>
+                  </div>
                 </div>
               </div>
               
-              {project.imageUrl && (
-                <div className="lg:w-64 lg:h-48">
-                  <img
-                    src={project.imageUrl}
-                    alt={project.name}
-                    className="w-full h-full object-cover rounded-lg"
-                  />
-                </div>
-              )}
+              {/* Опис проєкту */}
+              <CardDescription className="text-base leading-relaxed">
+                {project.description}
+              </CardDescription>
             </div>
           </CardHeader>
           
           <CardContent>
-            <div className="grid md:grid-cols-2 gap-6">
-              {/* Прогрес збору коштів */}
-              <div>
-                <div className="flex justify-between items-center mb-2">
-                  <span className="text-sm font-medium">Збір коштів</span>
-                  <span className="text-sm text-gray-500">{progressPercentage}%</span>
-                </div>
-                <Progress value={progressPercentage} className="mb-2" />
-                <div className="flex justify-between text-sm">
-                  <span>Зібрано: {formatCurrency(project.collectedAmount)}</span>
-                  <span>Мета: {formatCurrency(project.targetAmount)}</span>
+            <div className="flex flex-col lg:flex-row gap-6">
+              {/* Компактна інформація про збір коштів */}
+              <div className="lg:flex-1">
+                <div className="bg-blue-50 rounded-lg p-6">
+                  <h3 className="text-lg font-semibold mb-4 text-blue-900">Зібрано коштів</h3>
+                  <div className="text-sm text-blue-700 mb-2">Фінансова мета проєкту</div>
+                  
+                  <div className="flex items-baseline gap-4 mb-4">
+                    <div className="text-3xl font-bold text-blue-600">
+                      {formatCurrency(project.collectedAmount)}
+                    </div>
+                    <div className="text-blue-500">
+                      Зібрано {progressPercentage}% від необхідної суми
+                    </div>
+                  </div>
+                  
+                  <Progress value={progressPercentage} className="mb-3" />
+                  
+                  <div className="flex justify-between text-sm text-blue-600">
+                    <span>0 ₴</span>
+                    <span>{formatCurrency(project.targetAmount)}</span>
+                  </div>
                 </div>
               </div>
 
               {/* Кнопка дії */}
-              <div className="flex justify-end items-center">
+              <div className="lg:w-64 flex flex-col justify-center">
                 {canApply && (
                   <Button 
                     onClick={() => applyMutation.mutate()}
                     disabled={applyMutation.isPending}
-                    className="flex items-center gap-2"
+                    className="w-full flex items-center gap-2"
+                    size="lg"
                   >
-                    <Users className="h-4 w-4" />
+                    <Users className="h-5 w-5" />
                     {applyMutation.isPending ? "Подача заявки..." : "Подати заявку"}
                   </Button>
                 )}
                 
                 {userApplication && (
-                  <Badge variant={
-                    userApplication.status === 'pending' ? 'default' :
-                    userApplication.status === 'approved' ? 'secondary' : 'destructive'
-                  }>
-                    Заявка: {
-                      userApplication.status === 'pending' ? 'На розгляді' :
-                      userApplication.status === 'approved' ? 'Схвалено' : 'Відхилено'
-                    }
-                  </Badge>
+                  <div className="text-center">
+                    <Badge variant={
+                      userApplication.status === 'pending' ? 'default' :
+                      userApplication.status === 'approved' ? 'secondary' : 'destructive'
+                    } className="text-base py-2 px-4">
+                      Заявка: {
+                        userApplication.status === 'pending' ? 'На розгляді' :
+                        userApplication.status === 'approved' ? 'Схвалено' : 'Відхилено'
+                      }
+                    </Badge>
+                  </div>
                 )}
               </div>
             </div>
@@ -347,7 +369,7 @@ export default function ProjectDetails() {
                       <div key={report.id} className="p-4 bg-gray-50 rounded-lg">
                         <div className="flex justify-between items-start">
                           <div className="flex-1">
-                            <h4 className="font-semibold">{report.name}</h4>
+                            <h4 className="font-semibold">{report.title}</h4>
                             <p className="text-gray-600 mt-1">{report.description}</p>
                             <p className="text-sm text-gray-500 mt-2">
                               Період: {report.period}
