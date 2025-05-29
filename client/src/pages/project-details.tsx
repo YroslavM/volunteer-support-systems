@@ -290,6 +290,11 @@ export default function ProjectDetails() {
                           </Button>
                         </DialogTrigger>
                         <DialogContent className="sm:max-w-[500px] p-6">
+                          <DialogHeader className="hidden">
+                            <DialogTitle>Допомога проєкту</DialogTitle>
+                            <DialogDescription>Форма для надання допомоги проєкту</DialogDescription>
+                          </DialogHeader>
+                          
                           <div className="flex items-center mb-4">
                             <ArrowLeft className="h-5 w-5 mr-2 cursor-pointer" onClick={() => setDonationDialogOpen(false)} />
                             <span className="text-sm text-gray-600">Повернутися до проєкту</span>
