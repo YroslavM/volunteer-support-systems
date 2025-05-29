@@ -220,10 +220,10 @@ export default function CoordinatorDashboard() {
                                     {t("dashboard.coordinator.volunteersButton")}
                                   </Button>
                                 </Link>
-                                <Link href={`/projects/${project.id}/tasks`}>
+                                <Link href={`/projects/${project.id}/tasks/create`}>
                                   <Button size="sm" variant="outline" className="flex items-center">
                                     <Assignment className="mr-1 h-4 w-4" />
-                                    {t("dashboard.coordinator.tasksButton")}
+                                    Створити завдання
                                   </Button>
                                 </Link>
                                 {project.status === "funding" && (
