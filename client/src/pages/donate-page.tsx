@@ -84,10 +84,15 @@ export default function DonatePage() {
       setLocation(`/projects/${projectId}`);
     },
     onError: (error: Error) => {
+      let errorMessage = error.message;
+      if (error.message.includes("502") || error.message.includes("Bad Gateway")) {
+        errorMessage = "Помилка з'єднання з сервером (502: Bad Gateway). Спробуйте пізніше.";
+      }
       toast({
         title: "Помилка при здійсненні донату",
-        description: error.message,
+        description: errorMessage,
         variant: "destructive",
+        duration: 5000,
       });
     },
   });
@@ -185,9 +190,17 @@ export default function DonatePage() {
                           <Input
                             type="number"
                             placeholder="10000"
+                            min="1"
+                            max={remainingAmount}
                             className="text-right pr-8 h-12 text-lg"
                             {...field}
-                            onChange={(e) => field.onChange(Number(e.target.value))}
+                            onChange={(e) => {
+                              let value = Number(e.target.value);
+                              // Автоматично обмежуємо значення
+                              if (value < 1) value = 1;
+                              if (value > remainingAmount) value = remainingAmount;
+                              field.onChange(value);
+                            }}
                           />
                           <span className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500">₴</span>
                         </div>
@@ -299,7 +312,13 @@ export default function DonatePage() {
                   <Button
                     type="submit"
                     className="w-full bg-green-600 hover:bg-green-700 h-12 text-lg"
-                    disabled={donateMutation.isPending}
+                    disabled={
+                      donateMutation.isPending ||
+                      !donationForm.watch("amount") ||
+                      donationForm.watch("amount") < 1 ||
+                      !donationForm.watch("email") ||
+                      !donationForm.watch("agreeToTerms")
+                    }
                   >
                     <Heart className="h-5 w-5 mr-2" />
                     {donateMutation.isPending ? "Обробка..." : "Надіслати допомогу"}

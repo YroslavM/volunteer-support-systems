@@ -637,19 +637,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "Проєкт не приймає пожертви в даний момент" });
       }
       
-      const data = insertDonationSchema.parse(req.body);
+      // Validate only the request body fields, projectId comes from URL
+      const bodyData = insertDonationSchema.omit({ projectId: true }).parse(req.body);
       
       // In a real app, we would integrate with a payment processor here
       // For this demo, we'll just create the donation record
       
       const donation = await storage.createDonation({
-        ...data,
+        ...bodyData,
         projectId,
         donorId: req.user!.id,
       });
       
       // Update the project's collected amount
-      await storage.updateProjectCollectedAmount(projectId, data.amount);
+      await storage.updateProjectCollectedAmount(projectId, bodyData.amount);
       
       // Get updated project data to check if target is reached
       const updatedProject = await storage.getProjectById(projectId);
