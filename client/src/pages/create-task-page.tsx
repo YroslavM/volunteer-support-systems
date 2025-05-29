@@ -54,14 +54,12 @@ export default function CreateTaskPage() {
   // Отримуємо дані проєкту
   const { data: project, isLoading: projectLoading } = useQuery({
     queryKey: [`/api/projects/${projectIdNum}`],
-    queryFn: getQueryFn(),
     enabled: !!projectId && !isNaN(projectIdNum),
   });
 
   // Отримуємо заявки волонтерів для проєкту
   const { data: applications } = useQuery({
     queryKey: [`/api/projects/${projectIdNum}/applications`],
-    queryFn: getQueryFn(),
     enabled: !!projectId && !isNaN(projectIdNum),
   });
 
