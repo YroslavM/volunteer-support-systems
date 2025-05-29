@@ -1,0 +1,41 @@
+Uncaught TypeError: Cannot destructure property 'on401' of 'undefined' as it is undefined.
+    at getQueryFn (queryClient.ts:38:13)
+    at CoordinatorTasksPage (coordinator-tasks.tsx:76:14)
+    at renderWithHooks (chunk-RPCDYKBN.js?v=699d647c:11548:26)
+    at mountIndeterminateComponent (chunk-RPCDYKBN.js?v=699d647c:14926:21)
+    at beginWork (chunk-RPCDYKBN.js?v=699d647c:15914:22)
+    at HTMLUnknownElement.callCallback2 (chunk-RPCDYKBN.js?v=699d647c:3674:22)
+    at Object.invokeGuardedCallbackDev (chunk-RPCDYKBN.js?v=699d647c:3699:24)
+    at invokeGuardedCallback (chunk-RPCDYKBN.js?v=699d647c:3733:39)
+    at beginWork$1 (chunk-RPCDYKBN.js?v=699d647c:19765:15)
+    at performUnitOfWork (chunk-RPCDYKBN.js?v=699d647c:19198:20)Understand this error
+chunk-RPCDYKBN.js?v=699d647c:14032 The above error occurred in the <CoordinatorTasksPage> component:
+
+    at CoordinatorTasksPage (https://c95607fe-9bf9-4f74-bd5f-ebcacfe2edd8-00-2fk834352y0tv.spock.replit.dev/src/pages/coordinator-tasks.tsx:55:20)
+    at ProtectedRoute (https://c95607fe-9bf9-4f74-bd5f-ebcacfe2edd8-00-2fk834352y0tv.spock.replit.dev/src/lib/protected-route.tsx:23:14)
+    at Route (https://c95607fe-9bf9-4f74-bd5f-ebcacfe2edd8-00-2fk834352y0tv.spock.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/wouter.js?v=699d647c:323:16)
+    at Switch (https://c95607fe-9bf9-4f74-bd5f-ebcacfe2edd8-00-2fk834352y0tv.spock.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/wouter.js?v=699d647c:379:17)
+    at Router
+    at main
+    at div
+    at Provider (https://c95607fe-9bf9-4f74-bd5f-ebcacfe2edd8-00-2fk834352y0tv.spock.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-OXZDJRWN.js?v=699d647c:38:15)
+    at TooltipProvider (https://c95607fe-9bf9-4f74-bd5f-ebcacfe2edd8-00-2fk834352y0tv.spock.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/@radix-ui_react-tooltip.js?v=699d647c:61:5)
+    at AuthProvider (https://c95607fe-9bf9-4f74-bd5f-ebcacfe2edd8-00-2fk834352y0tv.spock.replit.dev/src/hooks/use-auth.tsx:26:32)
+    at App
+    at AuthProvider (https://c95607fe-9bf9-4f74-bd5f-ebcacfe2edd8-00-2fk834352y0tv.spock.replit.dev/src/hooks/use-auth.tsx?v=bx2610WGEXNxdWQmf0ZvS:26:32)
+    at QueryClientProvider (https://c95607fe-9bf9-4f74-bd5f-ebcacfe2edd8-00-2fk834352y0tv.spock.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/@tanstack_react-query.js?v=699d647c:2805:3)
+
+Consider adding an error boundary to your tree to customize error handling behavior.
+Visit https://reactjs.org/link/error-boundaries to learn more about error boundaries.
+logCapturedError @ chunk-RPCDYKBN.js?v=699d647c:14032Understand this error
+chunk-RPCDYKBN.js?v=699d647c:9129 Uncaught TypeError: Cannot destructure property 'on401' of 'undefined' as it is undefined.
+    at getQueryFn (queryClient.ts:38:13)
+    at CoordinatorTasksPage (coordinator-tasks.tsx:76:14)
+    at renderWithHooks (chunk-RPCDYKBN.js?v=699d647c:11548:26)
+    at mountIndeterminateComponent (chunk-RPCDYKBN.js?v=699d647c:14926:21)
+    at beginWork (chunk-RPCDYKBN.js?v=699d647c:15914:22)
+    at beginWork$1 (chunk-RPCDYKBN.js?v=699d647c:19753:22)
+    at performUnitOfWork (chunk-RPCDYKBN.js?v=699d647c:19198:20)
+    at workLoopSync (chunk-RPCDYKBN.js?v=699d647c:19137:13)
+    at renderRootSync (chunk-RPCDYKBN.js?v=699d647c:19116:15)
+    at recoverFromConcurrentError (chunk-RPCDYKBN.js?v=699d647c:18736:28)

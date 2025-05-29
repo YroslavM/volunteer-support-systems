@@ -58,12 +58,13 @@ export default function CreateTaskPage() {
   });
 
   // Отримуємо заявки волонтерів для проєкту
-  const { data: applications } = useQuery({
+  const { data: applications = [] } = useQuery<any[]>({
     queryKey: [`/api/projects/${projectIdNum}/applications`],
+    queryFn: getQueryFn({ on401: "returnNull" }),
     enabled: !!projectId && !isNaN(projectIdNum),
   });
 
-  const approvedApplications = applications?.filter((app: any) => app.status === 'approved') || [];
+  const approvedApplications = Array.isArray(applications) ? applications.filter((app: any) => app.status === 'approved') : [];
 
   const taskForm = useForm<CreateTaskForm>({
     resolver: zodResolver(createTaskSchema),

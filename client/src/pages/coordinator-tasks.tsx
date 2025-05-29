@@ -73,7 +73,7 @@ export default function CoordinatorTasksPage() {
   // Завантаження проєктів координатора
   const { data: projects } = useQuery<Project[]>({
     queryKey: [`/api/projects/coordinator/${user?.id}`],
-    queryFn: getQueryFn(),
+    queryFn: getQueryFn({ on401: "returnNull" }),
     enabled: !!user?.id,
   });
 

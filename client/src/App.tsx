@@ -65,9 +65,7 @@ function Router() {
       <Route path="/projects/:projectId/tasks/create">
         <ProtectedRoute component={CreateTaskPage} roles={["coordinator", "admin"]} />
       </Route>
-      <Route path="/coordinator/tasks">
-        <ProtectedRoute component={CoordinatorTasksPage} roles={["coordinator", "admin"]} />
-      </Route>
+
       
       <Route component={NotFound} />
     </Switch>

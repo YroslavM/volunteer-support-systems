@@ -430,12 +430,15 @@ export default function CoordinatorDashboard() {
                       {t("dashboard.coordinator.createProjectButton")}
                     </Button>
                   </Link>
-                  <Link href="/coordinator/tasks">
-                    <Button variant="outline" className="w-full flex items-center justify-center">
-                      <Assignment className="mr-2 h-4 w-4" />
-                      Мої завдання
-                    </Button>
-                  </Link>
+                  <Button 
+                    variant="outline" 
+                    className="w-full flex items-center justify-center opacity-50"
+                    disabled
+                    title="Функція управління завданнями буде доступна найближчим часом"
+                  >
+                    <Assignment className="mr-2 h-4 w-4" />
+                    Мої завдання (скоро)
+                  </Button>
                 </div>
               </CardContent>
             </Card>
