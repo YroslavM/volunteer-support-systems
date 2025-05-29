@@ -423,11 +423,17 @@ export default function CoordinatorDashboard() {
                   </div>
                 </div>
                 
-                <div className="mt-6">
+                <div className="mt-6 space-y-3">
                   <Link href="/create-project">
                     <Button className="w-full flex items-center justify-center">
                       <Add className="mr-2 h-4 w-4" />
                       {t("dashboard.coordinator.createProjectButton")}
+                    </Button>
+                  </Link>
+                  <Link href="/coordinator/tasks">
+                    <Button variant="outline" className="w-full flex items-center justify-center">
+                      <Assignment className="mr-2 h-4 w-4" />
+                      Мої завдання
                     </Button>
                   </Link>
                 </div>

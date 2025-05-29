@@ -93,8 +93,8 @@ export default function CreateTaskPage() {
       });
       queryClient.invalidateQueries({ queryKey: [`/api/projects/${projectIdNum}/tasks`] });
       
-      // Повертаємося до координаторської панелі
-      setLocation(`/coordinator`);
+      // Переходимо на сторінку управління завданнями
+      setLocation(`/coordinator/tasks`);
     },
     onError: (error: Error) => {
       toast({
