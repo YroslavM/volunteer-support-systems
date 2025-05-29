@@ -82,6 +82,39 @@ export default function ProjectDetails() {
     },
   });
 
+  // Мутація для донатів
+  const donateMutation = useMutation({
+    mutationFn: async () => {
+      const amount = prompt("Введіть суму донату (грн):");
+      if (!amount || isNaN(Number(amount)) || Number(amount) <= 0) {
+        throw new Error("Некоректна сума");
+      }
+      
+      const comment = prompt("Коментар (необов'язково):");
+      
+      const res = await apiRequest("POST", `/api/projects/${projectId}/donate`, {
+        amount: Number(amount),
+        comment: comment || null
+      });
+      return res.json();
+    },
+    onSuccess: () => {
+      toast({
+        title: "Донат успішно здійснено",
+        description: "Дякуємо за підтримку проєкту!",
+      });
+      queryClient.invalidateQueries({ queryKey: [`/api/projects/${projectId}`] });
+      queryClient.invalidateQueries({ queryKey: [`/api/projects/${projectId}/donations`] });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Помилка при здійсненні донату",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+
   if (isProjectLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -212,18 +245,18 @@ export default function ProjectDetails() {
 
                   {/* Кнопки дії */}
                   <div className="mt-6 space-y-3">
-                    {/* Кнопка донату - для всіх користувачів */}
-                    <Button 
-                      className="w-full flex items-center gap-2 bg-green-600 hover:bg-green-700"
-                      size="lg"
-                      onClick={() => {
-                        // Тут буде логіка для донатів
-                        alert("Функція донатів буде додана пізніше");
-                      }}
-                    >
-                      <Heart className="h-5 w-5" />
-                      Надати допомогу
-                    </Button>
+                    {/* Кнопка донату - тільки для проєктів зі статусом "funding" */}
+                    {project.status === 'funding' && (
+                      <Button 
+                        className="w-full flex items-center gap-2 bg-green-600 hover:bg-green-700"
+                        size="lg"
+                        onClick={() => donateMutation.mutate()}
+                        disabled={donateMutation.isPending}
+                      >
+                        <Heart className="h-5 w-5" />
+                        {donateMutation.isPending ? "Обробка..." : "Надати допомогу"}
+                      </Button>
+                    )}
 
                     {/* Кнопка заявки - тільки для волонтерів */}
                     {canApply && (
