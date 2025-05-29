@@ -160,9 +160,13 @@ export default function ProjectDetails() {
                     />
                     <Badge 
                       className="absolute top-4 left-4"
-                      variant={project.status === 'funding' ? 'default' : 'secondary'}
+                      variant={
+                        project.status === 'funding' ? 'default' :
+                        project.status === 'in_progress' ? 'secondary' : 'outline'
+                      }
                     >
-                      {project.status === 'funding' ? 'У процесі' : 'Завершено'}
+                      {project.status === 'funding' ? 'Збір коштів' :
+                       project.status === 'in_progress' ? 'У процесі' : 'Завершено'}
                     </Badge>
                     <div className="absolute bottom-4 left-4 bg-black bg-opacity-70 text-white px-3 py-1 rounded text-lg font-semibold">
                       {project.name}
@@ -275,31 +279,6 @@ export default function ProjectDetails() {
                     <h4 className="font-semibold mb-2">Опис</h4>
                     <p className="text-gray-700">{project.description}</p>
                   </div>
-                  
-                  <div className="grid md:grid-cols-2 gap-4">
-                    <div>
-                      <h4 className="font-semibold mb-2">Цільова сума</h4>
-                      <p className="text-2xl font-bold text-green-600">
-                        {formatCurrency(project.targetAmount)}
-                      </p>
-                    </div>
-                    
-                    <div>
-                      <h4 className="font-semibold mb-2">Зібрано коштів</h4>
-                      <p className="text-2xl font-bold text-blue-600">
-                        {formatCurrency(project.collectedAmount)}
-                      </p>
-                    </div>
-                  </div>
-
-                  {project.bankDetails && (
-                    <div>
-                      <h4 className="font-semibold mb-2">Банківські реквізити</h4>
-                      <p className="text-gray-700 font-mono bg-gray-50 p-3 rounded">
-                        {project.bankDetails}
-                      </p>
-                    </div>
-                  )}
                 </div>
               </CardContent>
             </Card>
