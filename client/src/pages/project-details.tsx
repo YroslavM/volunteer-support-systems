@@ -143,94 +143,102 @@ export default function ProjectDetails() {
           <h1 className="text-3xl font-bold text-gray-900">Деталі проєкту</h1>
         </div>
 
+        {/* Інформація над основним блоком */}
+        <div className="mb-4 space-y-2">
+          <h2 className="text-2xl font-bold">{project.name}</h2>
+          <div className="flex flex-wrap gap-4 text-sm text-gray-600">
+            <span>Створено: {formatDate(project.createdAt)}</span>
+            <span>Координатор: {coordinator ? `${coordinator.firstName || coordinator.username} ${coordinator.lastName || ''}`.trim() : 'Завантаження...'}</span>
+          </div>
+        </div>
+
         {/* Основна інформація про проєкт */}
         <Card className="mb-6">
-          <CardHeader>
-            <div className="space-y-4">
-              {/* Назва проєкту та ключова інформація */}
-              <div>
-                <CardTitle className="text-3xl mb-3">{project.name}</CardTitle>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm text-gray-600">
-                  <div className="flex items-center gap-2">
-                    <Calendar className="h-4 w-4" />
-                    <span>Створено: {formatDate(project.createdAt)}</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <Users className="h-4 w-4" />
-                    <span>Координатор: {coordinator ? `${coordinator.firstName || coordinator.username} ${coordinator.lastName || ''}`.trim() : 'Завантаження...'}</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <Badge variant={
-                      project.status === 'funding' ? 'default' :
-                      project.status === 'in_progress' ? 'secondary' : 'outline'
-                    }>
-                      {project.status === 'funding' ? 'Збір коштів' :
-                       project.status === 'in_progress' ? 'Виконується' : 'Завершено'}
-                    </Badge>
-                  </div>
-                </div>
-              </div>
-              
-              {/* Опис проєкту */}
-              <CardDescription className="text-base leading-relaxed">
-                {project.description}
-              </CardDescription>
-            </div>
-          </CardHeader>
-          
-          <CardContent>
+          <CardContent className="p-6">
             <div className="flex flex-col lg:flex-row gap-6">
-              {/* Компактна інформація про збір коштів */}
-              <div className="lg:flex-1">
-                <div className="bg-blue-50 rounded-lg p-6">
-                  <h3 className="text-lg font-semibold mb-4 text-blue-900">Зібрано коштів</h3>
-                  <div className="text-sm text-blue-700 mb-2">Фінансова мета проєкту</div>
-                  
-                  <div className="flex items-baseline gap-4 mb-4">
-                    <div className="text-3xl font-bold text-blue-600">
-                      {formatCurrency(project.collectedAmount)}
-                    </div>
-                    <div className="text-blue-500">
-                      Зібрано {progressPercentage}% від необхідної суми
+              {/* Фотографія проєкту зліва */}
+              <div className="lg:w-1/2">
+                {project.imageUrl ? (
+                  <div className="relative">
+                    <img
+                      src={project.imageUrl}
+                      alt={project.name}
+                      className="w-full h-64 lg:h-80 object-cover rounded-lg"
+                    />
+                    <Badge 
+                      className="absolute top-4 left-4"
+                      variant={project.status === 'funding' ? 'default' : 'secondary'}
+                    >
+                      {project.status === 'funding' ? 'У процесі' : 'Завершено'}
+                    </Badge>
+                    <div className="absolute bottom-4 left-4 bg-black bg-opacity-70 text-white px-3 py-1 rounded text-lg font-semibold">
+                      {project.name}
                     </div>
                   </div>
-                  
-                  <Progress value={progressPercentage} className="mb-3" />
-                  
-                  <div className="flex justify-between text-sm text-blue-600">
-                    <span>0 ₴</span>
-                    <span>{formatCurrency(project.targetAmount)}</span>
+                ) : (
+                  <div className="w-full h-64 lg:h-80 bg-gray-200 rounded-lg flex items-center justify-center">
+                    <span className="text-gray-500">Немає зображення</span>
                   </div>
+                )}
+                
+                {/* Опис проєкту під фотографією */}
+                <div className="mt-4">
+                  <p className="text-gray-700 leading-relaxed">{project.description}</p>
                 </div>
               </div>
 
-              {/* Кнопка дії */}
-              <div className="lg:w-64 flex flex-col justify-center">
-                {canApply && (
-                  <Button 
-                    onClick={() => applyMutation.mutate()}
-                    disabled={applyMutation.isPending}
-                    className="w-full flex items-center gap-2"
-                    size="lg"
-                  >
-                    <Users className="h-5 w-5" />
-                    {applyMutation.isPending ? "Подача заявки..." : "Подати заявку"}
-                  </Button>
-                )}
-                
-                {userApplication && (
-                  <div className="text-center">
-                    <Badge variant={
-                      userApplication.status === 'pending' ? 'default' :
-                      userApplication.status === 'approved' ? 'secondary' : 'destructive'
-                    } className="text-base py-2 px-4">
-                      Заявка: {
-                        userApplication.status === 'pending' ? 'На розгляді' :
-                        userApplication.status === 'approved' ? 'Схвалено' : 'Відхилено'
-                      }
-                    </Badge>
+              {/* Блок "Зібрано коштів" справа */}
+              <div className="lg:w-1/2">
+                <div className="bg-white border rounded-lg p-6 h-fit">
+                  <h3 className="text-xl font-bold mb-2">Зібрано коштів</h3>
+                  <p className="text-gray-600 mb-4">Фінансова мета проєкту</p>
+                  
+                  <div className="mb-4">
+                    <div className="text-3xl font-bold mb-1">
+                      {formatCurrency(project.collectedAmount)}
+                    </div>
+                    <p className="text-gray-600">
+                      Зібрано {progressPercentage}% від необхідної суми
+                    </p>
                   </div>
-                )}
+                  
+                  <div className="mb-4">
+                    <Progress value={progressPercentage} className="h-2 mb-2" />
+                    <div className="flex justify-between text-sm text-gray-600">
+                      <span>0 ₴</span>
+                      <span>{formatCurrency(project.targetAmount)}</span>
+                    </div>
+                  </div>
+
+                  {/* Кнопка дії */}
+                  <div className="mt-6">
+                    {canApply && (
+                      <Button 
+                        onClick={() => applyMutation.mutate()}
+                        disabled={applyMutation.isPending}
+                        className="w-full flex items-center gap-2"
+                        size="lg"
+                      >
+                        <Users className="h-5 w-5" />
+                        {applyMutation.isPending ? "Подача заявки..." : "Подати заявку"}
+                      </Button>
+                    )}
+                    
+                    {userApplication && (
+                      <div className="text-center">
+                        <Badge variant={
+                          userApplication.status === 'pending' ? 'default' :
+                          userApplication.status === 'approved' ? 'secondary' : 'destructive'
+                        } className="text-base py-2 px-4">
+                          Заявка: {
+                            userApplication.status === 'pending' ? 'На розгляді' :
+                            userApplication.status === 'approved' ? 'Схвалено' : 'Відхилено'
+                          }
+                        </Badge>
+                      </div>
+                    )}
+                  </div>
+                </div>
               </div>
             </div>
           </CardContent>
