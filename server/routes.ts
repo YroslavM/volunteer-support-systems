@@ -700,23 +700,29 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       const applications = await storage.getApplicationsByProjectId(projectId);
       
-      // Додаємо інформацію про волонтерів до заявок
+      // Додаємо інформацію про волонтерів та проєкт до заявок
       const applicationsWithVolunteers = await Promise.all(
         applications.map(async (application) => {
           const volunteer = await storage.getUser(application.volunteerId);
           return {
             ...application,
             volunteer: volunteer ? {
+              id: volunteer.id,
+              username: volunteer.username,
               firstName: volunteer.firstName,
               lastName: volunteer.lastName,
-              gender: volunteer.gender,
-              birthDate: volunteer.birthDate,
+              email: volunteer.email,
+              bio: volunteer.bio,
               region: volunteer.region,
               city: volunteer.city,
-              bio: volunteer.bio,
-              email: volunteer.email,
-              phoneNumber: volunteer.phoneNumber
-            } : null
+              phoneNumber: volunteer.phoneNumber,
+              gender: volunteer.gender,
+              birthDate: volunteer.birthDate
+            } : null,
+            project: {
+              id: project.id,
+              name: project.name
+            }
           };
         })
       );
