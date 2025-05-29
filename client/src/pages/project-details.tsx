@@ -1,22 +1,42 @@
 import { useState } from "react";
 import { useLocation } from "wouter";
 import { useQuery, useMutation } from "@tanstack/react-query";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Progress } from "@/components/ui/progress";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Checkbox } from "@/components/ui/checkbox";
 import { useAuth } from "@/hooks/use-auth";
 import { useToast } from "@/hooks/use-toast";
 import { Project, Application, Donation, ProjectReport } from "@shared/schema";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import { ArrowLeft, Users, Target, Calendar, FileText, Heart, Upload } from "lucide-react";
 
+// Схема для валідації форми донату
+const donationSchema = z.object({
+  amount: z.number().min(1, "Сума повинна бути більше 0"),
+  email: z.string().email("Невірний формат email"),
+  phone: z.string().min(1, "Телефон обов'язковий"),
+  comment: z.string().optional(),
+  anonymous: z.boolean().default(false),
+});
+
+type DonationForm = z.infer<typeof donationSchema>;
+
 export default function ProjectDetails() {
   const [, setLocation] = useLocation();
   const { user } = useAuth();
   const { toast } = useToast();
   const [activeTab, setActiveTab] = useState("about");
+  const [donationDialogOpen, setDonationDialogOpen] = useState(false);
 
   // Отримуємо ID проєкту з URL
   const projectId = window.location.pathname.split('/').pop();
@@ -82,19 +102,24 @@ export default function ProjectDetails() {
     },
   });
 
+  // Форма для донатів
+  const donationForm = useForm<DonationForm>({
+    resolver: zodResolver(donationSchema),
+    defaultValues: {
+      amount: 0,
+      email: user?.email || "",
+      phone: "",
+      comment: "",
+      anonymous: false,
+    },
+  });
+
   // Мутація для донатів
   const donateMutation = useMutation({
-    mutationFn: async () => {
-      const amount = prompt("Введіть суму донату (грн):");
-      if (!amount || isNaN(Number(amount)) || Number(amount) <= 0) {
-        throw new Error("Некоректна сума");
-      }
-      
-      const comment = prompt("Коментар (необов'язково):");
-      
+    mutationFn: async (data: DonationForm) => {
       const res = await apiRequest("POST", `/api/projects/${projectId}/donate`, {
-        amount: Number(amount),
-        comment: comment || null
+        amount: data.amount,
+        comment: data.comment || null
       });
       return res.json();
     },
@@ -103,6 +128,8 @@ export default function ProjectDetails() {
         title: "Донат успішно здійснено",
         description: "Дякуємо за підтримку проєкту!",
       });
+      setDonationDialogOpen(false);
+      donationForm.reset();
       queryClient.invalidateQueries({ queryKey: [`/api/projects/${projectId}`] });
       queryClient.invalidateQueries({ queryKey: [`/api/projects/${projectId}/donations`] });
     },
@@ -114,6 +141,10 @@ export default function ProjectDetails() {
       });
     },
   });
+
+  const onSubmitDonation = (data: DonationForm) => {
+    donateMutation.mutate(data);
+  };
 
   if (isProjectLoading) {
     return (
@@ -247,15 +278,152 @@ export default function ProjectDetails() {
                   <div className="mt-6 space-y-3">
                     {/* Кнопка донату - тільки для проєктів зі статусом "funding" */}
                     {project.status === 'funding' && (
-                      <Button 
-                        className="w-full flex items-center gap-2 bg-green-600 hover:bg-green-700"
-                        size="lg"
-                        onClick={() => donateMutation.mutate()}
-                        disabled={donateMutation.isPending}
-                      >
-                        <Heart className="h-5 w-5" />
-                        {donateMutation.isPending ? "Обробка..." : "Надати допомогу"}
-                      </Button>
+                      <Dialog open={donationDialogOpen} onOpenChange={setDonationDialogOpen}>
+                        <DialogTrigger asChild>
+                          <Button 
+                            className="w-full flex items-center gap-2 bg-green-600 hover:bg-green-700"
+                            size="lg"
+                          >
+                            <Heart className="h-5 w-5" />
+                            Надати допомогу
+                          </Button>
+                        </DialogTrigger>
+                        <DialogContent className="sm:max-w-[425px]">
+                          <DialogHeader>
+                            <DialogTitle>Допомога проєкту</DialogTitle>
+                            <DialogDescription className="text-green-600 font-medium">
+                              {project.name}
+                            </DialogDescription>
+                            <div className="text-center py-4">
+                              <p className="text-sm text-gray-600">Залишилося зібрати, грн</p>
+                              <p className="text-2xl font-bold text-green-600">
+                                {formatCurrency(project.targetAmount - project.collectedAmount)}
+                              </p>
+                            </div>
+                          </DialogHeader>
+                          
+                          <div className="bg-green-50 p-4 rounded-lg mb-6">
+                            <div className="flex items-center gap-2 text-green-700 mb-2">
+                              <Heart className="h-5 w-5" />
+                              <span className="font-medium">Зробити внесок</span>
+                            </div>
+                            <p className="text-sm text-green-600">
+                              Ваша допомога важлива для реалізації цього проєкту
+                            </p>
+                          </div>
+
+                          <Form {...donationForm}>
+                            <form onSubmit={donationForm.handleSubmit(onSubmitDonation)} className="space-y-4">
+                              <FormField
+                                control={donationForm.control}
+                                name="amount"
+                                render={({ field }) => (
+                                  <FormItem>
+                                    <FormLabel>Сума внеску</FormLabel>
+                                    <FormControl>
+                                      <Input
+                                        type="number"
+                                        placeholder="10000"
+                                        {...field}
+                                        onChange={(e) => field.onChange(Number(e.target.value))}
+                                      />
+                                    </FormControl>
+                                    <p className="text-xs text-gray-500">
+                                      Сума внеску не має перевищувати залишок {formatCurrency(project.targetAmount - project.collectedAmount)} грн
+                                    </p>
+                                    <FormMessage />
+                                  </FormItem>
+                                )}
+                              />
+
+                              <FormField
+                                control={donationForm.control}
+                                name="email"
+                                render={({ field }) => (
+                                  <FormItem>
+                                    <FormLabel>Email</FormLabel>
+                                    <FormControl>
+                                      <Input
+                                        placeholder="your@email.com"
+                                        {...field}
+                                      />
+                                    </FormControl>
+                                    <p className="text-xs text-gray-500">
+                                      Email не відображається публічно
+                                    </p>
+                                    <FormMessage />
+                                  </FormItem>
+                                )}
+                              />
+
+                              <FormField
+                                control={donationForm.control}
+                                name="phone"
+                                render={({ field }) => (
+                                  <FormItem>
+                                    <FormLabel>Ваш номер</FormLabel>
+                                    <FormControl>
+                                      <Input
+                                        placeholder="1"
+                                        {...field}
+                                      />
+                                    </FormControl>
+                                    <FormMessage />
+                                  </FormItem>
+                                )}
+                              />
+
+                              <FormField
+                                control={donationForm.control}
+                                name="anonymous"
+                                render={({ field }) => (
+                                  <FormItem className="flex flex-row items-start space-x-3 space-y-0">
+                                    <FormControl>
+                                      <Checkbox
+                                        checked={field.value}
+                                        onCheckedChange={field.onChange}
+                                      />
+                                    </FormControl>
+                                    <div className="space-y-1 leading-none">
+                                      <FormLabel>Анонімний внесок</FormLabel>
+                                      <p className="text-xs text-gray-500">
+                                        Ваше ім'я не буде відображатися у списку донорів
+                                      </p>
+                                    </div>
+                                  </FormItem>
+                                )}
+                              />
+
+                              <div className="border-t pt-4">
+                                <div className="flex justify-between items-center mb-4">
+                                  <span className="text-lg font-medium">Всього до сплати:</span>
+                                  <span className="text-xl font-bold text-green-600">
+                                    {formatCurrency(donationForm.watch("amount") || 0)} грн
+                                  </span>
+                                </div>
+                                
+                                <div className="flex items-center gap-2 text-sm text-gray-600 mb-4">
+                                  <Checkbox checked disabled />
+                                  <span>Я прочитав і погоджуюся з </span>
+                                  <span className="text-blue-600 underline cursor-pointer">
+                                    Правилами переказування коштів
+                                  </span>
+                                </div>
+
+                                <Button
+                                  type="submit"
+                                  className="w-full bg-green-600 hover:bg-green-700"
+                                  size="lg"
+                                  disabled={donateMutation.isPending}
+                                >
+                                  <Heart className="h-5 w-5 mr-2" />
+                                  {donateMutation.isPending ? "Обробка..." : "Надіслати допомогу"}
+                                </Button>
+                              </div>
+                            </form>
+                          </Form>
+                        </DialogContent>
+                      </Dialog>
                     )}
 
                     {/* Кнопка заявки - тільки для волонтерів */}
