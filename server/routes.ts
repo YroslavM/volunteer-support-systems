@@ -306,12 +306,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(403).json({ message: "Ви не є координатором цього проєкту" });
       }
       
-      const data = insertTaskSchema.parse(req.body);
-      
-      const task = await storage.createTask({
-        ...data,
+      const data = insertTaskSchema.parse({
+        ...req.body,
         projectId,
+        deadline: req.body.deadline ? new Date(req.body.deadline) : undefined
       });
+      
+      const task = await storage.createTask(data);
       
       res.status(201).json(task);
     } catch (error) {
