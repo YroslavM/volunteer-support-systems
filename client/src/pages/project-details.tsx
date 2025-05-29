@@ -125,8 +125,9 @@ export default function ProjectDetails() {
     },
     onSuccess: () => {
       toast({
-        title: "Донат успішно здійснено",
-        description: "Дякуємо за підтримку проєкту!",
+        title: "Успішно",
+        description: "Дякуємо за вашу пожертву! Кошти будуть передані на проєкт.",
+        duration: 5000,
       });
       setDonationDialogOpen(false);
       donationForm.reset();
@@ -288,19 +289,22 @@ export default function ProjectDetails() {
                             Надати допомогу
                           </Button>
                         </DialogTrigger>
-                        <DialogContent className="sm:max-w-[425px]">
-                          <DialogHeader>
-                            <DialogTitle>Допомога проєкту</DialogTitle>
-                            <DialogDescription className="text-green-600 font-medium">
-                              {project.name}
-                            </DialogDescription>
-                            <div className="text-center py-4">
+                        <DialogContent className="sm:max-w-[500px] p-6">
+                          <div className="flex items-center mb-4">
+                            <ArrowLeft className="h-5 w-5 mr-2 cursor-pointer" onClick={() => setDonationDialogOpen(false)} />
+                            <span className="text-sm text-gray-600">Повернутися до проєкту</span>
+                          </div>
+
+                          <div className="text-center mb-6">
+                            <h2 className="text-2xl font-bold mb-2">Допомога проєкту</h2>
+                            <h3 className="text-lg text-green-600 font-medium mb-4">{project.name}</h3>
+                            <div>
                               <p className="text-sm text-gray-600">Залишилося зібрати, грн</p>
-                              <p className="text-2xl font-bold text-green-600">
+                              <p className="text-3xl font-bold text-green-600">
                                 {formatCurrency(project.targetAmount - project.collectedAmount)}
                               </p>
                             </div>
-                          </DialogHeader>
+                          </div>
                           
                           <div className="bg-green-50 p-4 rounded-lg mb-6">
                             <div className="flex items-center gap-2 text-green-700 mb-2">
@@ -313,20 +317,24 @@ export default function ProjectDetails() {
                           </div>
 
                           <Form {...donationForm}>
-                            <form onSubmit={donationForm.handleSubmit(onSubmitDonation)} className="space-y-4">
+                            <form onSubmit={donationForm.handleSubmit(onSubmitDonation)} className="space-y-6">
                               <FormField
                                 control={donationForm.control}
                                 name="amount"
                                 render={({ field }) => (
                                   <FormItem>
-                                    <FormLabel>Сума внеску</FormLabel>
+                                    <FormLabel className="text-base font-medium">Сума внеску</FormLabel>
                                     <FormControl>
-                                      <Input
-                                        type="number"
-                                        placeholder="10000"
-                                        {...field}
-                                        onChange={(e) => field.onChange(Number(e.target.value))}
-                                      />
+                                      <div className="relative">
+                                        <Input
+                                          type="number"
+                                          placeholder="10000"
+                                          className="text-right pr-8 h-12 text-lg"
+                                          {...field}
+                                          onChange={(e) => field.onChange(Number(e.target.value))}
+                                        />
+                                        <span className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500">₴</span>
+                                      </div>
                                     </FormControl>
                                     <p className="text-xs text-gray-500">
                                       Сума внеску не має перевищувати залишок {formatCurrency(project.targetAmount - project.collectedAmount)} грн
@@ -336,42 +344,46 @@ export default function ProjectDetails() {
                                 )}
                               />
 
-                              <FormField
-                                control={donationForm.control}
-                                name="email"
-                                render={({ field }) => (
-                                  <FormItem>
-                                    <FormLabel>Email</FormLabel>
-                                    <FormControl>
-                                      <Input
-                                        placeholder="your@email.com"
-                                        {...field}
-                                      />
-                                    </FormControl>
-                                    <p className="text-xs text-gray-500">
-                                      Email не відображається публічно
-                                    </p>
-                                    <FormMessage />
-                                  </FormItem>
-                                )}
-                              />
+                              <div className="grid grid-cols-2 gap-4">
+                                <FormField
+                                  control={donationForm.control}
+                                  name="email"
+                                  render={({ field }) => (
+                                    <FormItem>
+                                      <FormLabel className="text-base font-medium">Email</FormLabel>
+                                      <FormControl>
+                                        <Input
+                                          placeholder="your@email.com"
+                                          className="h-12"
+                                          {...field}
+                                        />
+                                      </FormControl>
+                                      <p className="text-xs text-gray-500">
+                                        Email не відображається публічно
+                                      </p>
+                                      <FormMessage />
+                                    </FormItem>
+                                  )}
+                                />
 
-                              <FormField
-                                control={donationForm.control}
-                                name="phone"
-                                render={({ field }) => (
-                                  <FormItem>
-                                    <FormLabel>Ваш номер</FormLabel>
-                                    <FormControl>
-                                      <Input
-                                        placeholder="1"
-                                        {...field}
-                                      />
-                                    </FormControl>
-                                    <FormMessage />
-                                  </FormItem>
-                                )}
-                              />
+                                <FormField
+                                  control={donationForm.control}
+                                  name="phone"
+                                  render={({ field }) => (
+                                    <FormItem>
+                                      <FormLabel className="text-base font-medium">Ваш номер</FormLabel>
+                                      <FormControl>
+                                        <Input
+                                          placeholder="1"
+                                          className="h-12"
+                                          {...field}
+                                        />
+                                      </FormControl>
+                                      <FormMessage />
+                                    </FormItem>
+                                  )}
+                                />
+                              </div>
 
                               <FormField
                                 control={donationForm.control}
@@ -382,11 +394,12 @@ export default function ProjectDetails() {
                                       <Checkbox
                                         checked={field.value}
                                         onCheckedChange={field.onChange}
+                                        className="mt-1"
                                       />
                                     </FormControl>
                                     <div className="space-y-1 leading-none">
-                                      <FormLabel>Анонімний внесок</FormLabel>
-                                      <p className="text-xs text-gray-500">
+                                      <FormLabel className="text-base font-medium">Анонімний внесок</FormLabel>
+                                      <p className="text-sm text-gray-500">
                                         Ваше ім'я не буде відображатися у списку донорів
                                       </p>
                                     </div>
@@ -394,26 +407,27 @@ export default function ProjectDetails() {
                                 )}
                               />
 
-                              <div className="border-t pt-4">
+                              <div className="border-t pt-6">
                                 <div className="flex justify-between items-center mb-4">
                                   <span className="text-lg font-medium">Всього до сплати:</span>
-                                  <span className="text-xl font-bold text-green-600">
+                                  <span className="text-2xl font-bold text-green-600">
                                     {formatCurrency(donationForm.watch("amount") || 0)} грн
                                   </span>
                                 </div>
                                 
-                                <div className="flex items-center gap-2 text-sm text-gray-600 mb-4">
-                                  <Checkbox checked disabled />
-                                  <span>Я прочитав і погоджуюся з </span>
-                                  <span className="text-blue-600 underline cursor-pointer">
-                                    Правилами переказування коштів
+                                <div className="flex items-start gap-3 text-sm text-gray-600 mb-6">
+                                  <Checkbox checked disabled className="mt-0.5" />
+                                  <span>
+                                    Я прочитав і погоджуюся з{" "}
+                                    <span className="text-blue-600 underline cursor-pointer">
+                                      Правилами переказування коштів
+                                    </span>
                                   </span>
                                 </div>
 
                                 <Button
                                   type="submit"
-                                  className="w-full bg-green-600 hover:bg-green-700"
-                                  size="lg"
+                                  className="w-full bg-green-600 hover:bg-green-700 h-12 text-lg"
                                   disabled={donateMutation.isPending}
                                 >
                                   <Heart className="h-5 w-5 mr-2" />
