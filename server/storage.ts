@@ -89,11 +89,11 @@ export interface IStorage {
   getVolunteersByProjectId(projectId: number): Promise<User[]>;
   
   // Session store
-  sessionStore: session.SessionStore;
+  sessionStore: any;
 }
 
 export class DatabaseStorage implements IStorage {
-  sessionStore: session.SessionStore;
+  sessionStore: any;
   
   constructor() {
     this.sessionStore = new PostgresSessionStore({
@@ -329,7 +329,7 @@ export class DatabaseStorage implements IStorage {
     return await db
       .select()
       .from(tasks)
-      .where(eq(tasks.volunteerId, volunteerId))
+      .where(eq(tasks.assignedVolunteerId, volunteerId))
       .orderBy(desc(tasks.createdAt));
   }
   
