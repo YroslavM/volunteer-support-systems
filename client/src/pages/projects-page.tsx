@@ -305,28 +305,49 @@ export default function ProjectsPage() {
   const ProjectCard = ({ project }: { project: SelectProject }) => {
     const isCompleted = project.status === "completed";
     const isFullyFunded = project.collectedAmount >= project.targetAmount;
+    const isParticipating = user?.role === "volunteer" && userApplications.some(
+      app => app.projectId === project.id && app.status === "approved"
+    );
+    
+    // Determine card styling based on project status
+    const cardClasses = isFullyFunded && !isCompleted 
+      ? "h-full transition-shadow bg-gray-100 border-gray-300" 
+      : isCompleted
+      ? "h-full transition-shadow bg-gray-50 border-gray-200"
+      : "h-full hover:shadow-lg transition-shadow";
     
     return (
-      <Card className="h-full hover:shadow-lg transition-shadow">
+      <Card className={cardClasses}>
         {project.imageUrl && (
           <div className="aspect-video w-full overflow-hidden rounded-t-lg">
             <img 
               src={project.imageUrl} 
               alt={project.name}
-              className="w-full h-full object-cover"
+              className={`w-full h-full object-cover ${isFullyFunded || isCompleted ? 'grayscale-[50%]' : ''}`}
             />
           </div>
         )}
         
         <CardHeader className="pb-3">
           <div className="flex justify-between items-start gap-2">
-            <CardTitle className="text-lg line-clamp-2">{project.name}</CardTitle>
-            {getStatusBadge(project)}
+            <CardTitle className={`text-lg line-clamp-2 ${isFullyFunded || isCompleted ? 'text-gray-600' : ''}`}>
+              {project.name}
+            </CardTitle>
+            <div className="flex flex-col gap-1">
+              {getStatusBadge(project)}
+              {isParticipating && (
+                <Badge variant="secondary" className="bg-blue-100 text-blue-800 text-xs">
+                  Ви берете участь
+                </Badge>
+              )}
+            </div>
           </div>
         </CardHeader>
         
         <CardContent className="space-y-4">
-          <p className="text-gray-600 text-sm line-clamp-3">{project.description}</p>
+          <p className={`text-sm line-clamp-3 ${isFullyFunded || isCompleted ? 'text-gray-500' : 'text-gray-600'}`}>
+            {project.description}
+          </p>
           
           {renderFundingInfo(project)}
           
@@ -348,7 +369,7 @@ export default function ProjectsPage() {
                   </Link>
                 )}
                 
-                {user?.role === "volunteer" && (
+                {user?.role === "volunteer" && !isParticipating && (
                   <Button size="sm" variant="outline">
                     <Users className="h-4 w-4 mr-1" />
                     Подати заявку
@@ -415,7 +436,8 @@ export default function ProjectsPage() {
     <div className="bg-gray-50 min-h-screen py-10">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 mb-4">Волонтерські проєкти</h1>
+          <h1 className="text-3xl font-bold text-gray-900 mb-2">Актуальні проєкти</h1>
+          <p className="text-gray-600 mb-6">Долучайтесь до проєктів, які потребують вашої підтримки саме зараз.</p>
           
           {/* Search and Controls */}
           <div className="flex flex-wrap gap-4 items-center mb-6">
