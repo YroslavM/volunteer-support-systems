@@ -75,7 +75,7 @@ export default function ProjectsPage() {
       }
 
       // Amount range filter
-      if (filters.amountRange) {
+      if (filters.amountRange && filters.amountRange !== "all") {
         const amount = project.targetAmount;
         switch (filters.amountRange) {
           case "0-10000":
@@ -98,7 +98,7 @@ export default function ProjectsPage() {
       }
 
       // Collected percentage filter
-      if (filters.collectedPercentage) {
+      if (filters.collectedPercentage && filters.collectedPercentage !== "all") {
         const percentage = (project.collectedAmount / project.targetAmount) * 100;
         switch (filters.collectedPercentage) {
           case "0-25":
@@ -117,7 +117,7 @@ export default function ProjectsPage() {
       }
 
       // Remaining amount filter
-      if (filters.remainingAmount) {
+      if (filters.remainingAmount && filters.remainingAmount !== "all") {
         const remaining = project.targetAmount - project.collectedAmount;
         switch (filters.remainingAmount) {
           case "0-5000":
@@ -188,14 +188,16 @@ export default function ProjectsPage() {
       p.status === "funding" && p.collectedAmount < p.targetAmount
     );
     const completedFunding = approved.filter(p => 
-      (p.status === "in_progress" || p.status === "completed") && 
-      p.collectedAmount >= p.targetAmount
+      p.collectedAmount >= p.targetAmount && p.status !== "completed"
+    );
+    const actualProjects = approved.filter(p => 
+      p.status === "funding" && p.collectedAmount < p.targetAmount
     );
 
     if (!user || user.role === "donor") {
       return {
-        all: approved,
-        active: activeFunding,
+        actual: actualProjects,
+        fundingCompleted: completedFunding,
         completed: completedProjects,
       };
     } else if (user.role === "volunteer") {
@@ -205,11 +207,10 @@ export default function ProjectsPage() {
       
       const participating = approved.filter(p => myProjectIds.includes(p.id));
       const available = approved.filter(p => 
-        !myProjectIds.includes(p.id) && p.status === "funding"
+        !myProjectIds.includes(p.id) && p.status === "funding" && p.collectedAmount < p.targetAmount
       );
       
       return {
-        all: approved,
         participating,
         available,
         completed: completedProjects,
@@ -226,8 +227,8 @@ export default function ProjectsPage() {
       };
     } else {
       return {
-        all: approved,
-        active: activeFunding,
+        actual: actualProjects,
+        fundingCompleted: completedFunding,
         completed: completedProjects,
       };
     }
@@ -235,12 +236,13 @@ export default function ProjectsPage() {
 
   const getProjectsForTab = (tabValue: string) => {
     switch (tabValue) {
-      case "all": return categorizedProjects.all;
-      case "active": return categorizedProjects.active || [];
+      case "actual": return categorizedProjects.actual || [];
+      case "fundingCompleted": return categorizedProjects.fundingCompleted || [];
       case "participating": return categorizedProjects.participating || [];
       case "available": return categorizedProjects.available || [];
       case "mine": return categorizedProjects.mine || [];
       case "other": return categorizedProjects.other || [];
+      case "all": return categorizedProjects.all || [];
       case "completed": return categorizedProjects.completed;
       default: return [];
     }
@@ -363,28 +365,27 @@ export default function ProjectsPage() {
   const getTabsForRole = () => {
     if (!user || user.role === "donor") {
       return [
-        { value: "all", label: "Всі проєкти", count: categorizedProjects.all.length },
-        { value: "active", label: "Активний збір", count: categorizedProjects.active?.length || 0 },
+        { value: "actual", label: "Актуальні проєкти", count: categorizedProjects.actual?.length || 0 },
+        { value: "fundingCompleted", label: "Збір завершено", count: categorizedProjects.fundingCompleted?.length || 0 },
         { value: "completed", label: "Завершені", count: categorizedProjects.completed.length },
       ];
     } else if (user.role === "volunteer") {
       return [
-        { value: "all", label: "Всі проєкти", count: categorizedProjects.all.length },
         { value: "participating", label: "Мої проєкти", count: categorizedProjects.participating?.length || 0 },
-        { value: "available", label: "Доступні", count: categorizedProjects.available?.length || 0 },
-        { value: "completed", label: "Завершені", count: categorizedProjects.completed.length },
+        { value: "available", label: "Доступні проєкти", count: categorizedProjects.available?.length || 0 },
+        { value: "completed", label: "Завершені проєкти", count: categorizedProjects.completed.length },
       ];
     } else if (user.role === "coordinator") {
       return [
-        { value: "all", label: "Всі проєкти", count: categorizedProjects.all.length },
+        { value: "all", label: "Всі проєкти", count: categorizedProjects.all?.length || 0 },
         { value: "mine", label: "Мої проєкти", count: categorizedProjects.mine?.length || 0 },
         { value: "other", label: "Інші проєкти", count: categorizedProjects.other?.length || 0 },
         { value: "completed", label: "Завершені", count: categorizedProjects.completed.length },
       ];
     } else {
       return [
-        { value: "all", label: "Всі проєкти", count: categorizedProjects.all.length },
-        { value: "active", label: "Активні", count: categorizedProjects.active?.length || 0 },
+        { value: "actual", label: "Актуальні проєкти", count: categorizedProjects.actual?.length || 0 },
+        { value: "fundingCompleted", label: "Збір завершено", count: categorizedProjects.fundingCompleted?.length || 0 },
         { value: "completed", label: "Завершені", count: categorizedProjects.completed.length },
       ];
     }
@@ -463,7 +464,7 @@ export default function ProjectsPage() {
                       <SelectValue placeholder="Всі суми" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="">Всі суми</SelectItem>
+                      <SelectItem value="all">Всі суми</SelectItem>
                       <SelectItem value="0-10000">0 – 10 000 грн</SelectItem>
                       <SelectItem value="10000-100000">10 000 – 100 000 грн</SelectItem>
                       <SelectItem value="100000+">100 000+ грн</SelectItem>
@@ -487,7 +488,7 @@ export default function ProjectsPage() {
                       <SelectValue placeholder="Всі проєкти" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="">Всі проєкти</SelectItem>
+                      <SelectItem value="all">Всі проєкти</SelectItem>
                       <SelectItem value="0-25">0-25%</SelectItem>
                       <SelectItem value="25-50">25-50%</SelectItem>
                       <SelectItem value="50-75">50-75%</SelectItem>
@@ -503,7 +504,7 @@ export default function ProjectsPage() {
                       <SelectValue placeholder="Всі суми" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="">Всі суми</SelectItem>
+                      <SelectItem value="all">Всі суми</SelectItem>
                       <SelectItem value="0-5000">0 – 5 000 грн</SelectItem>
                       <SelectItem value="5000-20000">5 000 – 20 000 грн</SelectItem>
                       <SelectItem value="20000+">20 000+ грн</SelectItem>
