@@ -7,7 +7,7 @@ import { AuthProvider } from "@/hooks/use-auth";
 import NotFound from "@/pages/not-found";
 import HomePage from "@/pages/home-page";
 import AuthPage from "@/pages/auth-page";
-import OptimizedProjectsPage from "@/pages/optimized-projects-page";
+import ProjectsPage from "@/pages/projects-page";
 import ProjectDetails from "@/pages/project-details";
 import ProjectSliderPage from "@/pages/project-slider-page";
 import DonatePage from "@/pages/donate-page";
