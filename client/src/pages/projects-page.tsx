@@ -1,8 +1,9 @@
 import { useState, useMemo } from "react";
-import { useQuery } from "@tanstack/react-query";
-import { getQueryFn } from "@/lib/queryClient";
+import { useQuery, useMutation } from "@tanstack/react-query";
+import { getQueryFn, apiRequest, queryClient } from "@/lib/queryClient";
 import { useAuth } from "@/hooks/use-auth";
 import { useTranslation } from "react-i18next";
+import { useToast } from "@/hooks/use-toast";
 import { SelectProject } from "@shared/schema";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -12,7 +13,7 @@ import { Progress } from "@/components/ui/progress";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Heart, Users, Calendar, MapPin, CheckCircle, Filter, SortAsc, Search } from "lucide-react";
+import { Heart, Users, Calendar, MapPin, CheckCircle, Filter, SortAsc, Search, Loader2 } from "lucide-react";
 import { Link } from "wouter";
 
 // Types for user applications and filtering
@@ -39,6 +40,7 @@ interface SortState {
 export default function ProjectsPage() {
   const { t } = useTranslation();
   const { user } = useAuth();
+  const { toast } = useToast();
   const [activeTab, setActiveTab] = useState("all");
   const [showFilters, setShowFilters] = useState(false);
   const [filters, setFilters] = useState<FilterState>({
@@ -64,6 +66,31 @@ export default function ProjectsPage() {
     queryKey: ["/api/user/applications"],
     queryFn: getQueryFn({ on401: "returnNull" }),
     enabled: user?.role === "volunteer",
+  });
+
+  // Mutation for submitting application
+  const applyMutation = useMutation({
+    mutationFn: async (projectId: number) => {
+      const response = await apiRequest("POST", "/api/applications", {
+        projectId,
+        message: "Хочу долучитися до цього проєкту"
+      });
+      return response.json();
+    },
+    onSuccess: () => {
+      toast({
+        title: "Заявку подано успішно",
+        description: "Координатор розгляне вашу заявку найближчим часом",
+      });
+      queryClient.invalidateQueries({ queryKey: ["/api/user/applications"] });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Помилка",
+        description: error.message || "Не вдалося подати заявку",
+        variant: "destructive",
+      });
+    },
   });
 
   // Filter and sort projects
@@ -196,6 +223,7 @@ export default function ProjectsPage() {
 
     if (!user || user.role === "donor") {
       return {
+        all: approved,
         actual: actualProjects,
         fundingCompleted: completedFunding,
         completed: completedProjects,
@@ -211,8 +239,10 @@ export default function ProjectsPage() {
       );
       
       return {
+        all: approved,
         participating,
         available,
+        fundingCompleted: completedFunding,
         completed: completedProjects,
       };
     } else if (user.role === "coordinator") {
@@ -308,6 +338,9 @@ export default function ProjectsPage() {
     const isParticipating = user?.role === "volunteer" && userApplications.some(
       app => app.projectId === project.id && app.status === "approved"
     );
+    const hasApplied = user?.role === "volunteer" && userApplications.some(
+      app => app.projectId === project.id
+    );
     
     // Determine card styling based on project status
     const cardClasses = isFullyFunded && !isCompleted 
@@ -315,6 +348,12 @@ export default function ProjectsPage() {
       : isCompleted
       ? "h-full transition-shadow bg-gray-50 border-gray-200"
       : "h-full hover:shadow-lg transition-shadow";
+
+    const handleApply = () => {
+      if (user?.role === "volunteer" && !hasApplied) {
+        applyMutation.mutate(project.id);
+      }
+    };
     
     return (
       <Card className={cardClasses}>
@@ -370,9 +409,18 @@ export default function ProjectsPage() {
                 )}
                 
                 {user?.role === "volunteer" && !isParticipating && (
-                  <Button size="sm" variant="outline">
-                    <Users className="h-4 w-4 mr-1" />
-                    Подати заявку
+                  <Button 
+                    size="sm" 
+                    variant="outline"
+                    onClick={handleApply}
+                    disabled={hasApplied || applyMutation.isPending}
+                  >
+                    {applyMutation.isPending ? (
+                      <Loader2 className="h-4 w-4 mr-1 animate-spin" />
+                    ) : (
+                      <Users className="h-4 w-4 mr-1" />
+                    )}
+                    {hasApplied ? "Заявку подано" : "Подати заявку"}
                   </Button>
                 )}
               </>
@@ -386,14 +434,16 @@ export default function ProjectsPage() {
   const getTabsForRole = () => {
     if (!user || user.role === "donor") {
       return [
-        { value: "actual", label: "Актуальні проєкти", count: categorizedProjects.actual?.length || 0 },
+        { value: "all", label: "Всі проєкти", count: categorizedProjects.all?.length || 0 },
         { value: "fundingCompleted", label: "Збір завершено", count: categorizedProjects.fundingCompleted?.length || 0 },
         { value: "completed", label: "Завершені", count: categorizedProjects.completed.length },
       ];
     } else if (user.role === "volunteer") {
       return [
+        { value: "all", label: "Всі проєкти", count: categorizedProjects.all?.length || 0 },
         { value: "participating", label: "Мої проєкти", count: categorizedProjects.participating?.length || 0 },
         { value: "available", label: "Доступні проєкти", count: categorizedProjects.available?.length || 0 },
+        { value: "fundingCompleted", label: "Збір завершено", count: categorizedProjects.fundingCompleted?.length || 0 },
         { value: "completed", label: "Завершені проєкти", count: categorizedProjects.completed.length },
       ];
     } else if (user.role === "coordinator") {
@@ -405,7 +455,7 @@ export default function ProjectsPage() {
       ];
     } else {
       return [
-        { value: "actual", label: "Актуальні проєкти", count: categorizedProjects.actual?.length || 0 },
+        { value: "all", label: "Всі проєкти", count: categorizedProjects.all?.length || 0 },
         { value: "fundingCompleted", label: "Збір завершено", count: categorizedProjects.fundingCompleted?.length || 0 },
         { value: "completed", label: "Завершені", count: categorizedProjects.completed.length },
       ];
