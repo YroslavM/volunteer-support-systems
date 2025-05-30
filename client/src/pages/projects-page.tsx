@@ -1,14 +1,17 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { Link } from "wouter";
 import { useTranslation } from "react-i18next";
 import { useQuery } from "@tanstack/react-query";
 import { z } from "zod";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { useAuth } from "@/hooks/use-auth";
 import { ProjectCard } from "@/components/project-card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Badge } from "@/components/ui/badge";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Select,
   SelectContent,
@@ -31,7 +34,7 @@ import {
 import { SelectProject } from "@shared/schema";
 // Temporary commenting out auth for debugging
 // import { useAuth } from "@/hooks/use-auth";
-import { AddCircle, FilterList, Search, Refresh } from "@mui/icons-material";
+import { AddCircle, FilterList, Search, Refresh, CheckCircle, AttachMoney } from "@mui/icons-material";
 import { Loader2 } from "lucide-react";
 
 // Filter schema
