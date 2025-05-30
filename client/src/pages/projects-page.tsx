@@ -1,79 +1,56 @@
-import { useState, useEffect, useMemo } from "react";
-import { Link } from "wouter";
-import { useTranslation } from "react-i18next";
+import { useState, useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { z } from "zod";
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
+import { getQueryFn } from "@/lib/queryClient";
 import { useAuth } from "@/hooks/use-auth";
+import { useTranslation } from "react-i18next";
+import { SelectProject } from "@shared/schema";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Badge } from "@/components/ui/badge";
+import { Progress } from "@/components/ui/progress";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Badge } from "@/components/ui/badge";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-} from "@/components/ui/form";
-import { SelectProject } from "@shared/schema";
-import { AddCircle, FilterList, Search, Refresh, CheckCircle, AttachMoney, Assignment } from "@mui/icons-material";
-import { getQueryFn } from "@/lib/queryClient";
-import { Loader2 } from "lucide-react";
+import { Heart, Users, Calendar, MapPin, CheckCircle, Filter, SortAsc, Search } from "lucide-react";
+import { Link } from "wouter";
 
-// Extended filter schema
-const filterSchema = z.object({
-  status: z.enum(["all", "funding", "in_progress", "completed"]).default("all"),
-  search: z.string().optional(),
-  fundingStatus: z.enum(["all", "active", "completed"]).default("all"),
-});
-
-type FilterFormValues = z.infer<typeof filterSchema>;
-
-type ProjectWithMeta = SelectProject & {
-  fundingCompleted: boolean;
-  participationStatus?: "participating" | "applied" | "available" | "unavailable";
-  hasActiveTasks?: boolean;
-};
-
-type UserApplication = {
+// Types for user applications and filtering
+interface UserApplication {
   id: number;
   projectId: number;
+  volunteerId: number;
   status: string;
-};
+}
 
-type UserProject = {
-  id: number;
-  name: string;
-  status: string;
-};
+interface FilterState {
+  search: string;
+  amountRange: string;
+  dateStart: string;
+  collectedPercentage: string;
+  remainingAmount: string;
+}
+
+interface SortState {
+  field: string;
+  direction: 'asc' | 'desc';
+}
 
 export default function ProjectsPage() {
   const { t } = useTranslation();
   const { user } = useAuth();
   const [activeTab, setActiveTab] = useState("all");
-
-  const form = useForm<FilterFormValues>({
-    resolver: zodResolver(filterSchema),
-    defaultValues: {
-      status: "all",
-      search: "",
-      fundingStatus: "all",
-    },
+  const [showFilters, setShowFilters] = useState(false);
+  const [filters, setFilters] = useState<FilterState>({
+    search: "",
+    amountRange: "",
+    dateStart: "",
+    collectedPercentage: "",
+    remainingAmount: ""
+  });
+  const [sort, setSort] = useState<SortState>({
+    field: "default",
+    direction: "asc"
   });
 
   // Load all projects
@@ -86,240 +63,297 @@ export default function ProjectsPage() {
   const { data: userApplications = [] } = useQuery<UserApplication[]>({
     queryKey: ["/api/user/applications"],
     queryFn: getQueryFn({ on401: "returnNull" }),
-    enabled: !!user && user.role === "volunteer",
+    enabled: user?.role === "volunteer",
   });
 
-  const { data: userProjects = [] } = useQuery<UserProject[]>({
-    queryKey: ["/api/volunteer/projects"],
-    queryFn: getQueryFn({ on401: "returnNull" }),
-    enabled: !!user && user.role === "volunteer",
-  });
-
-  const { data: coordinatorProjects = [] } = useQuery<SelectProject[]>({
-    queryKey: [`/api/projects/coordinator/${user?.id}`],
-    queryFn: getQueryFn({ on401: "returnNull" }),
-    enabled: !!user && user.role === "coordinator",
-  });
-
-  // Enhanced project processing with metadata
-  const processedProjects = useMemo(() => {
-    return projects.map((project): ProjectWithMeta => {
-      const fundingCompleted = project.collectedAmount >= project.targetAmount;
-      let participationStatus: ProjectWithMeta["participationStatus"] = "available";
-
-      if (user && user.role === "volunteer") {
-        // Check if user is participating in this project
-        const isParticipating = userProjects.some(p => p.id === project.id);
-        if (isParticipating) {
-          participationStatus = "participating";
-        } else {
-          // Check if user has applied
-          const application = userApplications.find(app => app.projectId === project.id);
-          if (application) {
-            participationStatus = application.status === "approved" ? "participating" : "applied";
-          } else if (fundingCompleted && project.status !== "in_progress") {
-            participationStatus = "unavailable";
-          }
-        }
-      } else if (user && user.role === "coordinator") {
-        participationStatus = coordinatorProjects.some(p => p.id === project.id) ? "participating" : "available";
-      } else if (user && (user.role === "donor" || !user)) {
-        participationStatus = fundingCompleted ? "unavailable" : "available";
-      }
-
-      return {
-        ...project,
-        fundingCompleted,
-        participationStatus,
-        hasActiveTasks: project.status === "in_progress",
-      };
-    });
-  }, [projects, user, userApplications, userProjects, coordinatorProjects]);
-
-  // Categorize projects based on user role and filters
-  const categorizedProjects = useMemo(() => {
-    const filters = form.watch() || { status: "all", search: "", fundingStatus: "all" };
-    
-    let filtered = processedProjects.filter(project => {
-      // Status filter
-      if (filters.status !== "all" && project.status !== filters.status) {
-        return false;
-      }
-
+  // Filter and sort projects
+  const filteredAndSortedProjects = useMemo(() => {
+    let filtered = projects.filter(project => {
       // Search filter
-      if (filters.search) {
-        const searchLower = filters.search.toLowerCase();
-        if (!project.name.toLowerCase().includes(searchLower) && 
-            !project.description.toLowerCase().includes(searchLower)) {
-          return false;
+      if (filters.search && !project.name.toLowerCase().includes(filters.search.toLowerCase())) {
+        return false;
+      }
+
+      // Amount range filter
+      if (filters.amountRange) {
+        const amount = project.targetAmount;
+        switch (filters.amountRange) {
+          case "0-10000":
+            if (amount >= 10000) return false;
+            break;
+          case "10000-100000":
+            if (amount < 10000 || amount >= 100000) return false;
+            break;
+          case "100000+":
+            if (amount < 100000) return false;
+            break;
         }
       }
 
-      // Funding status filter
-      if (filters.fundingStatus === "active" && project.fundingCompleted) {
-        return false;
+      // Date filter
+      if (filters.dateStart) {
+        const projectDate = new Date(project.createdAt);
+        const filterDate = new Date(filters.dateStart);
+        if (projectDate < filterDate) return false;
       }
-      if (filters.fundingStatus === "completed" && !project.fundingCompleted) {
-        return false;
+
+      // Collected percentage filter
+      if (filters.collectedPercentage) {
+        const percentage = (project.collectedAmount / project.targetAmount) * 100;
+        switch (filters.collectedPercentage) {
+          case "0-25":
+            if (percentage >= 25) return false;
+            break;
+          case "25-50":
+            if (percentage < 25 || percentage >= 50) return false;
+            break;
+          case "50-75":
+            if (percentage < 50 || percentage >= 75) return false;
+            break;
+          case "75-100":
+            if (percentage < 75) return false;
+            break;
+        }
+      }
+
+      // Remaining amount filter
+      if (filters.remainingAmount) {
+        const remaining = project.targetAmount - project.collectedAmount;
+        switch (filters.remainingAmount) {
+          case "0-5000":
+            if (remaining >= 5000) return false;
+            break;
+          case "5000-20000":
+            if (remaining < 5000 || remaining >= 20000) return false;
+            break;
+          case "20000+":
+            if (remaining < 20000) return false;
+            break;
+        }
       }
 
       return true;
     });
 
-    // Role-based filtering and sorting
+    // Sort projects
+    if (sort.field !== "default") {
+      filtered.sort((a, b) => {
+        let aValue, bValue;
+        
+        switch (sort.field) {
+          case "remaining":
+            aValue = a.targetAmount - a.collectedAmount;
+            bValue = b.targetAmount - b.collectedAmount;
+            break;
+          case "date":
+            aValue = new Date(a.createdAt).getTime();
+            bValue = new Date(b.createdAt).getTime();
+            break;
+          case "donors":
+            // This would require donation count data
+            aValue = 0;
+            bValue = 0;
+            break;
+          case "amount-asc":
+            aValue = a.targetAmount;
+            bValue = b.targetAmount;
+            break;
+          case "amount-desc":
+            aValue = a.targetAmount;
+            bValue = b.targetAmount;
+            break;
+          default:
+            return 0;
+        }
+
+        if (sort.field === "amount-desc") {
+          return bValue - aValue;
+        }
+        
+        return sort.direction === "asc" ? aValue - bValue : bValue - aValue;
+      });
+    }
+
+    return filtered;
+  }, [projects, filters, sort]);
+
+  // Categorize projects based on user role
+  const categorizedProjects = useMemo(() => {
+    const approved = filteredAndSortedProjects.filter(p => 
+      p.status === "funding" || p.status === "in_progress" || p.status === "completed"
+    );
+    
+    const completedProjects = approved.filter(p => p.status === "completed");
+    const activeFunding = approved.filter(p => 
+      p.status === "funding" && p.collectedAmount < p.targetAmount
+    );
+    const completedFunding = approved.filter(p => 
+      (p.status === "in_progress" || p.status === "completed") && 
+      p.collectedAmount >= p.targetAmount
+    );
+
     if (!user || user.role === "donor") {
-      // For donors and guests: prioritize active funding projects
-      const activeFunding = filtered.filter(p => !p.fundingCompleted);
-      const completedFunding = filtered.filter(p => p.fundingCompleted);
-      
       return {
-        all: [...activeFunding, ...completedFunding],
+        all: approved,
         active: activeFunding,
-        completed: completedFunding,
-        participating: [],
-        available: activeFunding,
+        completed: completedProjects,
       };
     } else if (user.role === "volunteer") {
-      const participating = filtered.filter(p => p.participationStatus === "participating");
-      const applied = filtered.filter(p => p.participationStatus === "applied");
-      const available = filtered.filter(p => p.participationStatus === "available" && !p.fundingCompleted);
-      const unavailable = filtered.filter(p => p.participationStatus === "unavailable" || p.fundingCompleted);
+      const myProjectIds = userApplications
+        .filter(app => app.status === "approved")
+        .map(app => app.projectId);
+      
+      const participating = approved.filter(p => myProjectIds.includes(p.id));
+      const available = approved.filter(p => 
+        !myProjectIds.includes(p.id) && p.status === "funding"
+      );
       
       return {
-        all: [...participating, ...applied, ...available, ...unavailable],
+        all: approved,
         participating,
-        available: [...applied, ...available],
-        completed: unavailable,
+        available,
+        completed: completedProjects,
       };
     } else if (user.role === "coordinator") {
-      const myProjects = filtered.filter(p => p.participationStatus === "participating");
-      const otherProjects = filtered.filter(p => p.participationStatus !== "participating");
+      const mine = approved.filter(p => p.coordinatorId === user.id);
+      const other = approved.filter(p => p.coordinatorId !== user.id);
       
       return {
-        all: [...myProjects, ...otherProjects],
-        mine: myProjects,
-        other: otherProjects,
-        completed: filtered.filter(p => p.status === "completed"),
+        all: approved,
+        mine,
+        other,
+        completed: completedProjects,
       };
     } else {
-      // For moderators and admins: show all projects
       return {
-        all: filtered,
-        active: filtered.filter(p => !p.fundingCompleted && p.status !== "completed"),
-        completed: filtered.filter(p => p.fundingCompleted || p.status === "completed"),
+        all: approved,
+        active: activeFunding,
+        completed: completedProjects,
       };
     }
-  }, [processedProjects, form.watch(), user]);
+  }, [filteredAndSortedProjects, user, userApplications]);
 
-  const onFilterChange = () => {
-    // Trigger re-filtering through form watch
-    setTimeout(() => refetch(), 100);
+  const getProjectsForTab = (tabValue: string) => {
+    switch (tabValue) {
+      case "all": return categorizedProjects.all;
+      case "active": return categorizedProjects.active || [];
+      case "participating": return categorizedProjects.participating || [];
+      case "available": return categorizedProjects.available || [];
+      case "mine": return categorizedProjects.mine || [];
+      case "other": return categorizedProjects.other || [];
+      case "completed": return categorizedProjects.completed;
+      default: return [];
+    }
   };
 
-  const resetFilters = () => {
-    form.reset();
-    onFilterChange();
+  const formatCurrency = (amount: number) => {
+    return new Intl.NumberFormat('uk-UA', {
+      style: 'currency',
+      currency: 'UAH',
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 0,
+    }).format(amount).replace('UAH', 'грн.');
   };
 
-  const getProjectBadges = (project: ProjectWithMeta) => {
-    const badges = [];
+  const getStatusBadge = (project: SelectProject) => {
+    const isFullyFunded = project.collectedAmount >= project.targetAmount;
     
-    if (project.fundingCompleted) {
-      badges.push(
-        <Badge key="funding-completed" className="bg-green-100 text-green-800">
-          <CheckCircle className="w-3 h-3 mr-1" />
-          Збір завершено
-        </Badge>
-      );
+    if (project.status === "completed") {
+      return <Badge variant="default" className="bg-green-100 text-green-800">Завершено</Badge>;
+    } else if (isFullyFunded) {
+      return <Badge variant="default" className="bg-blue-100 text-blue-800">Збір завершено</Badge>;
+    } else {
+      return <Badge variant="outline" className="border-green-500 text-green-700">Активний збір</Badge>;
     }
-
-    if (project.participationStatus === "participating") {
-      badges.push(
-        <Badge key="participating" className="bg-blue-100 text-blue-800">
-          <Assignment className="w-3 h-3 mr-1" />
-          Ви берете участь
-        </Badge>
-      );
-    }
-
-    if (project.participationStatus === "applied") {
-      badges.push(
-        <Badge key="applied" className="bg-yellow-100 text-yellow-800">
-          Заявку подано
-        </Badge>
-      );
-    }
-
-    return badges;
   };
 
-  const renderProjectCard = (project: ProjectWithMeta) => {
-    const isDisabled = project.fundingCompleted && (user?.role === "donor" || !user);
+  const renderFundingInfo = (project: SelectProject) => {
+    const isFullyFunded = project.collectedAmount >= project.targetAmount;
+    const percentage = Math.min((project.collectedAmount / project.targetAmount) * 100, 100);
+    
+    if (isFullyFunded) {
+      return (
+        <div className="space-y-2">
+          <div className="flex justify-between text-sm text-gray-600">
+            <span>Зібрано</span>
+            <span>Збір завершено</span>
+          </div>
+          <div className="text-lg font-semibold text-gray-900">
+            {formatCurrency(project.collectedAmount)}
+          </div>
+        </div>
+      );
+    } else {
+      return (
+        <div className="space-y-2">
+          <div className="flex justify-between text-sm text-gray-600">
+            <span>Зібрано</span>
+            <span>Залишилось зібрати</span>
+          </div>
+          <div className="flex justify-between text-lg font-semibold">
+            <span className="text-gray-900">{formatCurrency(project.collectedAmount)}</span>
+            <span className="text-gray-900">{formatCurrency(project.targetAmount - project.collectedAmount)}</span>
+          </div>
+          <Progress value={percentage} className="h-2" />
+        </div>
+      );
+    }
+  };
+
+  const ProjectCard = ({ project }: { project: SelectProject }) => {
+    const isCompleted = project.status === "completed";
+    const isFullyFunded = project.collectedAmount >= project.targetAmount;
     
     return (
-      <Card 
-        key={project.id} 
-        className={`transition-all duration-200 hover:shadow-lg ${
-          isDisabled ? "opacity-60 bg-gray-50" : ""
-        }`}
-      >
-        <CardHeader>
-          <div className="flex justify-between items-start">
+      <Card className="h-full hover:shadow-lg transition-shadow">
+        {project.imageUrl && (
+          <div className="aspect-video w-full overflow-hidden rounded-t-lg">
+            <img 
+              src={project.imageUrl} 
+              alt={project.name}
+              className="w-full h-full object-cover"
+            />
+          </div>
+        )}
+        
+        <CardHeader className="pb-3">
+          <div className="flex justify-between items-start gap-2">
             <CardTitle className="text-lg line-clamp-2">{project.name}</CardTitle>
-            <div className="flex flex-wrap gap-1 ml-2">
-              {getProjectBadges(project)}
-            </div>
+            {getStatusBadge(project)}
           </div>
         </CardHeader>
-        <CardContent>
-          <p className="text-gray-600 mb-4 line-clamp-3">{project.description}</p>
+        
+        <CardContent className="space-y-4">
+          <p className="text-gray-600 text-sm line-clamp-3">{project.description}</p>
           
-          <div className="mb-4">
-            <div className="flex justify-between text-sm text-gray-500 mb-1">
-              <span>Зібрано коштів</span>
-              <span>{project.collectedAmount} / {project.targetAmount} грн</span>
-            </div>
-            <div className="w-full bg-gray-200 rounded-full h-2">
-              <div 
-                className={`h-2 rounded-full ${
-                  project.fundingCompleted ? "bg-green-500" : "bg-blue-500"
-                }`}
-                style={{ 
-                  width: `${Math.min((project.collectedAmount / project.targetAmount) * 100, 100)}%` 
-                }}
-              />
-            </div>
-          </div>
-
-          <div className="flex items-center justify-between">
-            <Badge variant="outline">
-              {t(`projects.status.${project.status}`)}
-            </Badge>
+          {renderFundingInfo(project)}
+          
+          <div className="flex gap-2">
+            <Link href={`/projects/${project.id}`}>
+              <Button variant="outline" size="sm" className="flex-1">
+                Детальніше
+              </Button>
+            </Link>
             
-            <div className="flex gap-2">
-              <Link href={`/projects/${project.id}`}>
-                <Button variant="outline" size="sm">
-                  Деталі
-                </Button>
-              </Link>
-              
-              {!isDisabled && !project.fundingCompleted && (
-                <Link href={`/donate/${project.id}`}>
-                  <Button size="sm">
-                    <AttachMoney className="w-4 h-4 mr-1" />
-                    Підтримати
-                  </Button>
-                </Link>
-              )}
-              
-              {user?.role === "volunteer" && project.participationStatus === "available" && (
-                <Link href={`/projects/${project.id}`}>
-                  <Button size="sm" variant="secondary">
+            {!isCompleted && !isFullyFunded && (
+              <>
+                {(user?.role === "donor" || !user) && (
+                  <Link href={`/donate/${project.id}`}>
+                    <Button size="sm" className="bg-green-600 hover:bg-green-700">
+                      <Heart className="h-4 w-4 mr-1" />
+                      Підтримати
+                    </Button>
+                  </Link>
+                )}
+                
+                {user?.role === "volunteer" && (
+                  <Button size="sm" variant="outline">
+                    <Users className="h-4 w-4 mr-1" />
                     Подати заявку
                   </Button>
-                </Link>
-              )}
-            </div>
+                )}
+              </>
+            )}
           </div>
         </CardContent>
       </Card>
@@ -331,7 +365,7 @@ export default function ProjectsPage() {
       return [
         { value: "all", label: "Всі проєкти", count: categorizedProjects.all.length },
         { value: "active", label: "Активний збір", count: categorizedProjects.active?.length || 0 },
-        { value: "completed", label: "Збір завершено", count: categorizedProjects.completed.length },
+        { value: "completed", label: "Завершені", count: categorizedProjects.completed.length },
       ];
     } else if (user.role === "volunteer") {
       return [
@@ -356,186 +390,179 @@ export default function ProjectsPage() {
     }
   };
 
+  if (isLoading) {
+    return (
+      <div className="bg-gray-50 min-h-screen py-10">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center">Завантаження проєктів...</div>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="bg-gray-50 min-h-screen py-10">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center text-red-600">Помилка завантаження проєктів</div>
+        </div>
+      </div>
+    );
+  }
+
   return (
-    <div className="bg-gray-50 py-10">
+    <div className="bg-gray-50 min-h-screen py-10">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-8">
-          <div>
-            <h1 className="text-3xl font-extrabold tracking-tight text-gray-900 font-heading">
-              {t('home.projects.title')}
-            </h1>
-            <p className="mt-2 text-lg text-gray-500">
-              {t('home.projects.subtitle')}
-            </p>
-          </div>
+        <div className="mb-8">
+          <h1 className="text-3xl font-bold text-gray-900 mb-4">Волонтерські проєкти</h1>
           
-          {user?.role === "coordinator" && (
-            <Link href="/create-project">
-              <Button className="flex items-center">
-                <AddCircle className="mr-2 h-4 w-4" />
-                Створити проєкт
-              </Button>
-            </Link>
+          {/* Search and Controls */}
+          <div className="flex flex-wrap gap-4 items-center mb-6">
+            <div className="relative flex-1 min-w-64">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+              <Input
+                placeholder="Пошук проєктів..."
+                value={filters.search}
+                onChange={(e) => setFilters(prev => ({ ...prev, search: e.target.value }))}
+                className="pl-10"
+              />
+            </div>
+            
+            <Button
+              variant="outline"
+              onClick={() => setShowFilters(!showFilters)}
+              className="flex items-center gap-2"
+            >
+              <Filter className="h-4 w-4" />
+              Фільтри
+            </Button>
+            
+            <Select value={sort.field} onValueChange={(value) => setSort(prev => ({ ...prev, field: value }))}>
+              <SelectTrigger className="w-48">
+                <SortAsc className="h-4 w-4 mr-2" />
+                <SelectValue placeholder="Сортування" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="default">За замовчуванням</SelectItem>
+                <SelectItem value="remaining">За залишком збору</SelectItem>
+                <SelectItem value="date">За датою публікації</SelectItem>
+                <SelectItem value="amount-asc">За сумою (0-9)</SelectItem>
+                <SelectItem value="amount-desc">За сумою (9-0)</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          {/* Filters Panel */}
+          {showFilters && (
+            <Card className="p-4 mb-6">
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                <div>
+                  <Label htmlFor="amountRange">Потрібна сума</Label>
+                  <Select value={filters.amountRange} onValueChange={(value) => setFilters(prev => ({ ...prev, amountRange: value }))}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Всі суми" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="">Всі суми</SelectItem>
+                      <SelectItem value="0-10000">0 – 10 000 грн</SelectItem>
+                      <SelectItem value="10000-100000">10 000 – 100 000 грн</SelectItem>
+                      <SelectItem value="100000+">100 000+ грн</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                
+                <div>
+                  <Label htmlFor="dateStart">Дата створення від</Label>
+                  <Input
+                    type="date"
+                    value={filters.dateStart}
+                    onChange={(e) => setFilters(prev => ({ ...prev, dateStart: e.target.value }))}
+                  />
+                </div>
+                
+                <div>
+                  <Label htmlFor="collectedPercentage">Зібрано коштів</Label>
+                  <Select value={filters.collectedPercentage} onValueChange={(value) => setFilters(prev => ({ ...prev, collectedPercentage: value }))}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Всі проєкти" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="">Всі проєкти</SelectItem>
+                      <SelectItem value="0-25">0-25%</SelectItem>
+                      <SelectItem value="25-50">25-50%</SelectItem>
+                      <SelectItem value="50-75">50-75%</SelectItem>
+                      <SelectItem value="75-100">75-100%</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                
+                <div>
+                  <Label htmlFor="remainingAmount">Залишилось зібрати</Label>
+                  <Select value={filters.remainingAmount} onValueChange={(value) => setFilters(prev => ({ ...prev, remainingAmount: value }))}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Всі суми" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="">Всі суми</SelectItem>
+                      <SelectItem value="0-5000">0 – 5 000 грн</SelectItem>
+                      <SelectItem value="5000-20000">5 000 – 20 000 грн</SelectItem>
+                      <SelectItem value="20000+">20 000+ грн</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+              
+              <div className="mt-4 pt-4 border-t">
+                <Button 
+                  variant="outline" 
+                  onClick={() => setFilters({
+                    search: "",
+                    amountRange: "",
+                    dateStart: "",
+                    collectedPercentage: "",
+                    remainingAmount: ""
+                  })}
+                >
+                  Очистити фільтри
+                </Button>
+              </div>
+            </Card>
           )}
         </div>
-        
-        {/* Filters */}
-        <Card className="mb-8">
-          <CardHeader>
-            <CardTitle className="text-lg flex items-center">
-              <FilterList className="mr-2" />
-              Фільтри
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <Form {...form}>
-              <form className="grid sm:grid-cols-4 gap-4" onChange={onFilterChange}>
-                <FormField
-                  control={form.control}
-                  name="status"
-                  render={({ field }) => (
-                    <FormItem>
-                      <Label>Статус проєкту</Label>
-                      <Select 
-                        onValueChange={(value) => {
-                          field.onChange(value);
-                          onFilterChange();
-                        }}
-                        value={field.value}
-                      >
-                        <FormControl>
-                          <SelectTrigger>
-                            <SelectValue />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          <SelectItem value="all">Всі статуси</SelectItem>
-                          <SelectItem value="funding">Збір коштів</SelectItem>
-                          <SelectItem value="in_progress">У процесі</SelectItem>
-                          <SelectItem value="completed">Завершено</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </FormItem>
-                  )}
-                />
 
-                <FormField
-                  control={form.control}
-                  name="fundingStatus"
-                  render={({ field }) => (
-                    <FormItem>
-                      <Label>Стан збору</Label>
-                      <Select 
-                        onValueChange={(value) => {
-                          field.onChange(value);
-                          onFilterChange();
-                        }}
-                        value={field.value}
-                      >
-                        <FormControl>
-                          <SelectTrigger>
-                            <SelectValue />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          <SelectItem value="all">Всі</SelectItem>
-                          <SelectItem value="active">Активний збір</SelectItem>
-                          <SelectItem value="completed">Збір завершено</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </FormItem>
-                  )}
-                />
-                
-                <FormField
-                  control={form.control}
-                  name="search"
-                  render={({ field }) => (
-                    <FormItem>
-                      <Label>Пошук</Label>
-                      <div className="relative">
-                        <Search className="absolute left-2 top-3 h-4 w-4 text-gray-500" />
-                        <FormControl>
-                          <Input
-                            className="pl-8"
-                            placeholder="Пошук проєктів..."
-                            {...field}
-                            onChange={(e) => {
-                              field.onChange(e);
-                              const timeout = setTimeout(() => {
-                                onFilterChange();
-                              }, 500);
-                              return () => clearTimeout(timeout);
-                            }}
-                          />
-                        </FormControl>
-                      </div>
-                    </FormItem>
-                  )}
-                />
-                
-                <div className="flex items-end">
-                  <Button variant="outline" onClick={resetFilters} className="flex items-center">
-                    <Refresh className="mr-2 h-4 w-4" />
-                    Скинути
-                  </Button>
-                </div>
-              </form>
-            </Form>
-          </CardContent>
-        </Card>
-        
-        {/* Projects with Tabs */}
-        {isLoading ? (
-          <div className="flex justify-center items-center py-10">
-            <Loader2 className="h-8 w-8 animate-spin text-primary" />
-          </div>
-        ) : error ? (
-          <div className="text-center py-16 bg-white rounded-lg shadow">
-            <div className="mx-auto max-w-md">
-              <h2 className="text-2xl font-semibold text-gray-900 mb-2">Помилка завантаження</h2>
-              <p className="text-gray-500 mb-6">Не вдалося завантажити проєкти</p>
-              <Button onClick={() => refetch()}>Спробувати знову</Button>
-            </div>
-          </div>
-        ) : (
-          <Tabs value={activeTab} onValueChange={setActiveTab}>
-            <TabsList className="grid w-full grid-cols-4 mb-6">
-              {getTabsForRole().map((tab) => (
-                <TabsTrigger key={tab.value} value={tab.value} className="flex items-center">
-                  {tab.label}
-                  <Badge variant="secondary" className="ml-2">
-                    {tab.count}
-                  </Badge>
-                </TabsTrigger>
-              ))}
-            </TabsList>
-
-            {getTabsForRole().map((tab) => (
-              <TabsContent key={tab.value} value={tab.value}>
-                {categorizedProjects[tab.value as keyof typeof categorizedProjects]?.length === 0 ? (
-                  <div className="text-center py-16 bg-white rounded-lg shadow">
-                    <div className="mx-auto max-w-md">
-                      <h2 className="text-2xl font-semibold text-gray-900 mb-2">
-                        Проєктів не знайдено
-                      </h2>
-                      <p className="text-gray-500 mb-6">
-                        У цій категорії немає проєктів або вони не відповідають фільтрам
-                      </p>
-                      <Button variant="outline" onClick={resetFilters}>
-                        Скинути фільтри
-                      </Button>
-                    </div>
-                  </div>
-                ) : (
-                  <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-                    {(categorizedProjects[tab.value as keyof typeof categorizedProjects] || []).map(renderProjectCard)}
-                  </div>
-                )}
-              </TabsContent>
+        <Tabs value={activeTab} onValueChange={setActiveTab}>
+          <TabsList className="grid w-full grid-cols-3 md:grid-cols-4 lg:inline-flex lg:h-auto lg:w-auto">
+            {getTabsForRole().map(tab => (
+              <TabsTrigger key={tab.value} value={tab.value} className="flex items-center gap-2">
+                {tab.label}
+                <Badge variant="secondary" className="ml-1">
+                  {tab.count}
+                </Badge>
+              </TabsTrigger>
             ))}
-          </Tabs>
-        )}
+          </TabsList>
+
+          {getTabsForRole().map(tab => (
+            <TabsContent key={tab.value} value={tab.value} className="mt-8">
+              {getProjectsForTab(tab.value).length === 0 ? (
+                <div className="text-center py-12">
+                  <div className="text-gray-500 text-lg">
+                    {filters.search || filters.amountRange || filters.dateStart || filters.collectedPercentage || filters.remainingAmount
+                      ? "Проєкти за вашими критеріями не знайдено"
+                      : "Проєктів в цій категорії поки немає"
+                    }
+                  </div>
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {getProjectsForTab(tab.value).map(project => (
+                    <ProjectCard key={project.id} project={project} />
+                  ))}
+                </div>
+              )}
+            </TabsContent>
+          ))}
+        </Tabs>
       </div>
     </div>
   );
