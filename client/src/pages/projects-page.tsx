@@ -79,7 +79,7 @@ export default function ProjectsPage() {
   // Load all projects
   const { data: projects = [], isLoading, error, refetch } = useQuery<SelectProject[]>({
     queryKey: ["/api/projects"],
-    queryFn: getQueryFn(),
+    queryFn: getQueryFn({ on401: "returnNull" }),
   });
 
   // Load user-specific data based on role
