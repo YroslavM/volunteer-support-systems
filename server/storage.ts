@@ -373,10 +373,24 @@ export class DatabaseStorage implements IStorage {
       .orderBy(desc(reports.createdAt));
   }
   
-  async createReport(insertReport: InsertReport): Promise<Report> {
+  async createReport(insertReport: any): Promise<Report> {
     const [report] = await db
       .insert(reports)
-      .values(insertReport)
+      .values({
+        taskId: insertReport.taskId,
+        volunteerId: insertReport.volunteerId,
+        comment: insertReport.description || '',
+        description: insertReport.description || '',
+        imageUrl: insertReport.imageUrls?.[0] || null,
+        imageUrls: insertReport.imageUrls || [],
+        spentAmount: insertReport.spentAmount || null,
+        remainingAmount: insertReport.remainingAmount || null,
+        expensePurpose: insertReport.expensePurpose || null,
+        receiptUrls: insertReport.receiptUrls || [],
+        financialConfirmed: insertReport.financialConfirmed || false,
+        status: insertReport.status || 'pending',
+        coordinatorComment: null,
+      })
       .returning();
     return report;
   }
