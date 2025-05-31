@@ -49,7 +49,7 @@ export default function SubmitReportPage() {
   });
 
   // Check if report already exists
-  const { data: existingReports = [] } = useQuery({
+  const { data: existingReports = [] } = useQuery<any[]>({
     queryKey: ["/api/tasks", taskId, "reports"],
     queryFn: getQueryFn({ on401: "returnNull" }),
     enabled: !!taskId,
