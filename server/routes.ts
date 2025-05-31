@@ -577,50 +577,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
-  // Get single task by ID
-  app.get("/api/tasks/:id", isAuthenticated, async (req, res, next) => {
-    try {
-      const taskId = parseInt(req.params.id);
-      if (isNaN(taskId)) {
-        return res.status(400).json({ message: "Некоректний ID завдання" });
-      }
-      
-      const task = await storage.getTaskById(taskId);
-      if (!task) {
-        return res.status(404).json({ message: "Завдання не знайдено" });
-      }
-      
-      // Check access rights
-      const project = await storage.getProjectById(task.projectId);
-      if (!project) {
-        return res.status(404).json({ message: "Проєкт не знайдено" });
-      }
-      
-      const isCoordinator = req.user!.role === "coordinator" && project.coordinatorId === req.user!.id;
-      const isAssignedVolunteer = req.user!.role === "volunteer" && task.assignedVolunteerId === req.user!.id;
-      const isModerator = req.user!.role === "moderator" || req.user!.role === "admin";
-      
-      if (!isCoordinator && !isAssignedVolunteer && !isModerator) {
-        return res.status(403).json({ message: "Недостатньо прав для цієї дії" });
-      }
-      
-      res.json(task);
-    } catch (error) {
-      next(error);
-    }
-  });
-
   // =========================
   // Report Routes
   // =========================
   
   // Submit report for a task
-  app.post("/api/tasks/:id/reports", hasRole(["volunteer"]), upload.fields([
-    { name: 'images', maxCount: 10 },
-    { name: 'documents', maxCount: 5 }
-  ]), async (req, res, next) => {
+  app.post("/api/tasks/:taskId/reports", hasRole(["volunteer"]), async (req, res, next) => {
     try {
-      const taskId = parseInt(req.params.id);
+      const taskId = parseInt(req.params.taskId);
       if (isNaN(taskId)) {
         return res.status(400).json({ message: "Некоректний ID завдання" });
       }
@@ -635,24 +599,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(403).json({ message: "Ви не призначені до цього завдання" });
       }
       
-      const files = req.files as { [fieldname: string]: Express.Multer.File[] };
-      const imageUrls = files?.images?.map(file => `/uploads/${file.filename}`) || [];
-      const receiptUrls = files?.documents?.map(file => `/uploads/${file.filename}`) || [];
+      const data = insertReportSchema.parse(req.body);
       
-      const reportData = {
+      const report = await storage.createReport({
+        ...data,
         taskId,
-        volunteerId: req.user!.id,
-        description: req.body.description || '',
-        spentAmount: req.body.spentAmount ? parseFloat(req.body.spentAmount) : null,
-        remainingAmount: req.body.remainingAmount ? parseFloat(req.body.remainingAmount) : null,
-        expensePurpose: req.body.expensePurpose || null,
-        financialConfirmed: req.body.financialConfirmed === 'true',
-        imageUrls,
-        receiptUrls,
-        status: 'pending'
-      };
+      });
       
-      const report = await storage.createReport(reportData);
+      // Update task status to completed
+      await storage.updateTaskStatus(taskId, "completed");
       
       res.status(201).json(report);
     } catch (error) {

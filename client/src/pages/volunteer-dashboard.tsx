@@ -262,7 +262,7 @@ export default function VolunteerDashboard() {
                           >
                             <div>
                               <div className="flex items-center mb-2">
-                                <h3 className="font-medium text-lg text-gray-900">{task.name}</h3>
+                                <h3 className="font-medium text-lg text-gray-900">{task.title}</h3>
                                 <Badge className={`ml-2 ${getTaskStatusColor(task.status)}`}>
                                   {t(`tasks.status.${task.status}`)}
                                 </Badge>
@@ -395,7 +395,7 @@ export default function VolunteerDashboard() {
                           >
                             <div>
                               <div className="flex items-center mb-2">
-                                <h3 className="font-medium text-lg text-gray-900">{task.name}</h3>
+                                <h3 className="font-medium text-lg text-gray-900">{task.title}</h3>
                                 <Badge className="ml-2 bg-green-100 text-green-800">
                                   {t(`tasks.status.${task.status}`)}
                                 </Badge>

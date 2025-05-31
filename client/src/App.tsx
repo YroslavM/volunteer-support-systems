@@ -75,7 +75,7 @@ function Router() {
       <Route path="/coordinator/tasks/:taskId/assign">
         <ProtectedRoute component={AssignVolunteersPage} roles={["coordinator", "admin"]} />
       </Route>
-      <Route path="/tasks/:id">
+      <Route path="/tasks/:taskId">
         <ProtectedRoute component={TaskDetailsPage} roles={["volunteer", "coordinator", "admin"]} />
       </Route>
       <Route path="/tasks/:id/report">
