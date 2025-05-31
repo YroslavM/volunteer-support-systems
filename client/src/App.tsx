@@ -23,6 +23,7 @@ import CoordinatorTasksManagement from "@/pages/coordinator-tasks-management";
 import AssignVolunteersPage from "@/pages/assign-volunteers-page";
 import CoordinatorTasksPage from "@/pages/coordinator-tasks";
 import TaskDetailsPage from "@/pages/task-details-page";
+import SubmitReportPage from "@/pages/submit-report-page";
 import AboutPage from "@/pages/about-page";
 import ContactsPage from "@/pages/contacts-page";
 import PrivacyPage from "@/pages/privacy-page";

@@ -5,7 +5,14 @@ import { storage } from "./storage";
 import { setupAuth } from "./auth";
 import { z } from "zod";
 import path from "path";
+import multer from "multer";
 import { projectImageUpload } from "./middleware/upload";
+
+// Configure multer for file uploads
+const upload = multer({ 
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 5 * 1024 * 1024 } // 5MB limit
+});
 import { 
   insertProjectSchema, 
   insertTaskSchema, 
@@ -638,6 +645,66 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json(reports);
     } catch (error) {
       next(error);
+    }
+  });
+
+  // Create a new report
+  app.post("/api/reports", upload.array('files'), async (req, res, next) => {
+    if (!req.isAuthenticated() || req.user.role !== "volunteer") {
+      return res.status(403).json({ message: "Доступ заборонено" });
+    }
+
+    try {
+      const { taskId, description, spentAmount, expensePurpose, comment, financialConfirmed } = req.body;
+      
+      if (!taskId || !description) {
+        return res.status(400).json({ message: "Обов'язкові поля не заповнені" });
+      }
+
+      // Check if task exists and belongs to user
+      const task = await storage.getTaskById(parseInt(taskId));
+      if (!task || task.assignedVolunteerId !== req.user.id) {
+        return res.status(403).json({ message: "Доступ до завдання заборонено" });
+      }
+
+      // Process uploaded files
+      const files = req.files as Express.Multer.File[];
+      const imageUrls: string[] = [];
+      const receiptUrls: string[] = [];
+
+      if (files) {
+        files.forEach(file => {
+          const fileName = `${Date.now()}-${file.originalname}`;
+          const filePath = `/uploads/${fileName}`;
+          
+          // Save file to uploads directory
+          require('fs').writeFileSync(`./uploads/${fileName}`, file.buffer);
+          
+          if (file.fieldname === 'images') {
+            imageUrls.push(filePath);
+          } else if (file.fieldname === 'documents') {
+            receiptUrls.push(filePath);
+          }
+        });
+      }
+
+      const reportData = {
+        taskId: parseInt(taskId),
+        volunteerId: req.user.id,
+        description,
+        imageUrls: imageUrls.length > 0 ? imageUrls : null,
+        spentAmount: spentAmount ? parseFloat(spentAmount) : null,
+        expensePurpose: expensePurpose || null,
+        receiptUrls: receiptUrls.length > 0 ? receiptUrls : null,
+        financialConfirmed: financialConfirmed === 'true',
+        status: 'pending'
+      };
+
+      const report = await storage.createReport(reportData);
+      res.status(201).json(report);
+    } catch (error) {
+      console.error("Error creating report:", error);
+      res.status(500).json({ message: "Помилка створення звіту" });
     }
   });
   
