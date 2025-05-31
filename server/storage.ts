@@ -379,9 +379,7 @@ export class DatabaseStorage implements IStorage {
       .values({
         taskId: insertReport.taskId,
         volunteerId: insertReport.volunteerId,
-        comment: insertReport.description || '',
         description: insertReport.description || '',
-        imageUrl: insertReport.imageUrls?.[0] || null,
         imageUrls: insertReport.imageUrls || [],
         spentAmount: insertReport.spentAmount || null,
         remainingAmount: insertReport.remainingAmount || null,
