@@ -10,11 +10,12 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useAuth } from "@/hooks/use-auth";
 import { useToast } from "@/hooks/use-toast";
 import { Project } from "@shared/schema";
 import { queryClient, apiRequest } from "@/lib/queryClient";
-import { ArrowLeft, Heart } from "lucide-react";
+import { ArrowLeft, Heart, CreditCard, Banknote } from "lucide-react";
 
 // Схема для валідації форми донату
 const donationSchema = z.object({
@@ -22,12 +23,19 @@ const donationSchema = z.object({
   email: z.string().email("Невірний формат email"),
   comment: z.string().optional(),
   anonymous: z.boolean().default(false),
+  paymentMethod: z.string().min(1, "Оберіть спосіб оплати"),
   agreeToTerms: z.boolean().refine(val => val === true, {
     message: "Необхідно погодитися з правилами"
   }),
 });
 
 type DonationForm = z.infer<typeof donationSchema>;
+
+// Способи оплати
+const paymentMethods = [
+  { value: "card", label: "Visa, Master Card / LiqPay / Приват24", icon: CreditCard },
+  { value: "bank", label: "Готівкою у відділенні банку", icon: Banknote },
+];
 
 // Функція форматування валюти
 function formatCurrency(amount: number): string {
@@ -60,6 +68,7 @@ export default function DonatePage() {
       email: user?.email || "",
       comment: "",
       anonymous: false,
+      paymentMethod: "",
       agreeToTerms: false,
     },
   });
