@@ -196,27 +196,58 @@ export default function DonatePage() {
                       <FormLabel className="text-base font-medium">Сума внеску</FormLabel>
                       <FormControl>
                         <div className="relative">
+                          <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500 font-medium">₴</span>
                           <Input
                             type="number"
                             placeholder="10000"
-                            min="1"
+                            min="0"
                             max={remainingAmount}
-                            className="text-right pr-8 h-12 text-lg"
+                            className="pl-8 text-left h-12 text-lg"
                             {...field}
                             onChange={(e) => {
                               let value = Number(e.target.value);
-                              // Автоматично обмежуємо значення
-                              if (value < 1) value = 1;
+                              // Заборона значень менше 0
+                              if (value < 0) value = 0;
                               if (value > remainingAmount) value = remainingAmount;
                               field.onChange(value);
                             }}
                           />
-                          <span className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500">₴</span>
                         </div>
                       </FormControl>
                       <p className="text-xs text-gray-500">
                         Сума внеску не має перевищувати залишок {formatCurrency(remainingAmount)} грн
                       </p>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={donationForm.control}
+                  name="paymentMethod"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="text-base font-medium">Спосіб оплати</FormLabel>
+                      <Select onValueChange={field.onChange} defaultValue={field.value}>
+                        <FormControl>
+                          <SelectTrigger className="h-12">
+                            <SelectValue placeholder="Оберіть спосіб оплати" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          {paymentMethods.map((method) => {
+                            const Icon = method.icon;
+                            return (
+                              <SelectItem key={method.value} value={method.value}>
+                                <div className="flex items-center gap-2">
+                                  <Icon className="h-4 w-4" />
+                                  {method.label}
+                                </div>
+                              </SelectItem>
+                            );
+                          })}
+                        </SelectContent>
+                      </Select>
                       <FormMessage />
                     </FormItem>
                   )}
@@ -234,6 +265,8 @@ export default function DonatePage() {
                             placeholder="your@email.com"
                             className="h-12"
                             {...field}
+                            value={user?.email || field.value}
+                            onChange={field.onChange}
                           />
                         </FormControl>
                         <p className="text-xs text-gray-500">
@@ -289,7 +322,7 @@ export default function DonatePage() {
                   <div className="flex justify-between items-center mb-4">
                     <span className="text-lg font-medium">Всього до сплати:</span>
                     <span className="text-2xl font-bold text-green-600">
-                      {formatCurrency(donationForm.watch("amount") || 0)} грн
+                      ₴{formatCurrency(donationForm.watch("amount") || 0)}
                     </span>
                   </div>
                   
@@ -308,7 +341,10 @@ export default function DonatePage() {
                         <div className="space-y-1 leading-none">
                           <FormLabel className="text-sm text-gray-600">
                             Я прочитав і погоджуюся з{" "}
-                            <span className="text-blue-600 underline cursor-pointer">
+                            <span 
+                              className="text-blue-600 underline cursor-pointer hover:text-blue-800"
+                              onClick={() => setLocation("/donation-rules")}
+                            >
                               Правилами переказування коштів
                             </span>
                           </FormLabel>
@@ -326,6 +362,7 @@ export default function DonatePage() {
                       !donationForm.watch("amount") ||
                       donationForm.watch("amount") < 1 ||
                       !donationForm.watch("email") ||
+                      !donationForm.watch("paymentMethod") ||
                       !donationForm.watch("agreeToTerms")
                     }
                   >
